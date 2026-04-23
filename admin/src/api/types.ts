@@ -124,8 +124,8 @@ export type PaginatedPages = Paginated<Page>;
 // ── Settings ──────────────────────────────────────────────────────────────────
 
 export interface NavLink {
-  /** "builtin" | "page" | "external" */
-  type: "builtin" | "page" | "external";
+  /** "builtin" | "page" | "external" | "divider" */
+  type: "builtin" | "page" | "external" | "divider";
   label: string;
   /** Per-language label overrides. Falls back to `label` if not set. */
   labels?: Record<string, string>;
@@ -134,6 +134,8 @@ export interface NavLink {
   /** DB page id, only when type === "page" */
   page_id?: number;
   order: number;
+  /** When present, this link renders as a dropdown containing these items. */
+  children?: NavLink[];
 }
 
 export interface SocialLink {

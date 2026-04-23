@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../api/client";
 import { MediaPickerModal } from "../../components/admin/MediaPickerModal";
@@ -452,6 +453,358 @@ function GeneralTab({
 
 // ── Link list editor (used for nav + footer) ──────────────────────────────────
 
+const BUILTIN_OPTIONS = [
+  { label: "Home", url: "/" },
+  { label: "Articles", url: "/articles/" },
+  { label: "Contact", url: "/contact/" },
+  { label: "Unsubscribe", url: "/unsubscribe/" },
+];
+
+function LinkTargetFields({
+  link,
+  onUpdate,
+  pages,
+  defaultLang,
+  sizeClass,
+}: {
+  link: NavLink;
+  onUpdate: (patch: Partial<NavLink>) => void;
+  pages: import("../../api/types").Page[];
+  defaultLang: string;
+  sizeClass: string;
+}) {
+  return (
+    <>
+      <select
+        value={link.type}
+        onChange={(e) => {
+          const type = e.target.value as NavLink["type"];
+          if (type === "builtin")
+            onUpdate({ type, url: "/", label: "Home", page_id: undefined });
+          else if (type === "page")
+            onUpdate({ type, page_id: pages[0]?.id, url: "", label: "" });
+          else
+            onUpdate({ type, url: "https://", label: "", page_id: undefined });
+        }}
+        className={`${sizeClass} px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)`}
+      >
+        <option value="builtin">Built-in page</option>
+        <option value="page">Custom page</option>
+        <option value="external">External URL</option>
+      </select>
+
+      {link.type === "builtin" && (
+        <select
+          value={link.url}
+          onChange={(e) => {
+            const opt = BUILTIN_OPTIONS.find((o) => o.url === e.target.value);
+            onUpdate({ url: e.target.value, label: opt?.label ?? link.label });
+          }}
+          className={`${sizeClass} px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)`}
+        >
+          {BUILTIN_OPTIONS.map((o) => (
+            <option key={o.url} value={o.url}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      )}
+      {link.type === "page" && (
+        <select
+          value={link.page_id ?? ""}
+          onChange={(e) => {
+            const p = pages.find((pg) => pg.id === Number(e.target.value));
+            const slug =
+              p?.translations.find((t) => t.lang_code === defaultLang)?.slug ??
+              p?.translations[0]?.slug ??
+              "";
+            const title =
+              p?.translations.find((t) => t.lang_code === defaultLang)?.title ??
+              p?.translations[0]?.title ??
+              "";
+            onUpdate({
+              page_id: Number(e.target.value),
+              url: `/${slug}/`,
+              label: link.label || title,
+            });
+          }}
+          className={`${sizeClass} px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)`}
+        >
+          <option value="">— pick a page —</option>
+          {pages.map((p) => {
+            const title =
+              p.translations.find((t) => t.lang_code === defaultLang)?.title ??
+              p.translations[0]?.title ??
+              `Page ${p.id}`;
+            return (
+              <option key={p.id} value={p.id}>
+                {title}
+              </option>
+            );
+          })}
+        </select>
+      )}
+      {link.type === "external" && (
+        <input
+          type="url"
+          placeholder="https://…"
+          value={link.url}
+          onChange={(e) => onUpdate({ url: e.target.value })}
+          className={`${sizeClass} px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)`}
+        />
+      )}
+    </>
+  );
+}
+
+// ── Portalled language-label popover ─────────────────────────────────────────
+
+function LangLabelPopover({
+  anchorRef,
+  open,
+  onClose,
+  langs,
+  defaultLang,
+  value,
+  labels,
+  onChange,
+}: {
+  anchorRef: React.RefObject<HTMLButtonElement | null>;
+  open: boolean;
+  onClose: () => void;
+  langs: Language[];
+  defaultLang: string;
+  value: string;
+  labels: Record<string, string> | undefined;
+  onChange: (langCode: string, val: string) => void;
+}) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (open && anchorRef.current) {
+      setRect(anchorRef.current.getBoundingClientRect());
+    }
+  }, [open, anchorRef]);
+
+  if (!open || !rect) return null;
+
+  const sortedLangs = [
+    ...langs.filter((l) => l.code === defaultLang),
+    ...langs.filter((l) => l.code !== defaultLang),
+  ];
+
+  return createPortal(
+    <>
+      <div className="fixed inset-0 z-40" onClick={onClose} />
+      <div
+        className="fixed z-50 min-w-56 bg-(--color-bg) border border-(--color-border) rounded-lg shadow-lg p-3 space-y-2"
+        style={{ top: rect.bottom + 6, right: window.innerWidth - rect.right }}
+      >
+        {sortedLangs.map((l) => {
+          const isDefault = l.code === defaultLang;
+          const val = isDefault ? value : (labels?.[l.code] ?? "");
+          return (
+            <div key={l.code} className="flex items-center gap-2">
+              <span className="font-mono text-xs font-semibold uppercase w-8 shrink-0 text-(--color-muted)">
+                {l.code}
+              </span>
+              <input
+                type="text"
+                placeholder={isDefault ? "Default label" : value || "Label"}
+                value={val}
+                onChange={(e) => onChange(l.code, e.target.value)}
+                className="flex-1 px-2 py-1 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:border-(--color-accent) outline-none"
+                autoFocus={isDefault}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </>,
+    document.body,
+  );
+}
+
+function LabelWithTranslations({
+  value,
+  labels,
+  langs,
+  defaultLang,
+  placeholder,
+  showCount,
+  onLabelChange,
+  onLabelsChange,
+}: {
+  value: string;
+  labels: Record<string, string> | undefined;
+  langs: Language[];
+  defaultLang: string;
+  placeholder?: string;
+  showCount?: boolean;
+  onLabelChange: (val: string) => void;
+  onLabelsChange: (labels: Record<string, string>) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const filledLangs =
+    (value ? 1 : 0) +
+    langs.filter((l) => l.code !== defaultLang && labels?.[l.code]).length;
+
+  return (
+    <div className="relative flex gap-1 items-center flex-1 min-w-24">
+      <input
+        type="text"
+        placeholder={placeholder ?? "Label"}
+        value={value}
+        onChange={(e) => onLabelChange(e.target.value)}
+        className="flex-1 min-w-0 px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
+      />
+      {langs.length > 1 && (
+        <>
+          <button
+            ref={btnRef}
+            onClick={() => setOpen((o) => !o)}
+            title="Per-language labels"
+            className={`flex items-center gap-1 px-2 py-1.5 rounded border text-xs shrink-0 transition-colors ${
+              open
+                ? "border-(--color-accent) bg-(--color-bg-surface) text-(--color-accent)"
+                : "border-(--color-border) bg-(--color-bg) text-(--color-muted) hover:text-(--color-text)"
+            }`}
+          >
+            <span>🌐</span>
+            {showCount && (
+              <span>
+                {filledLangs}/{langs.length}
+              </span>
+            )}
+          </button>
+          <LangLabelPopover
+            anchorRef={btnRef}
+            open={open}
+            onClose={() => setOpen(false)}
+            langs={langs}
+            defaultLang={defaultLang}
+            value={value}
+            labels={labels}
+            onChange={(code, val) => {
+              if (code === defaultLang) onLabelChange(val);
+              else onLabelsChange({ ...(labels ?? {}), [code]: val });
+            }}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+function ChildRow({
+  child,
+  idx,
+  total,
+  onUpdate,
+  onRemove,
+  onMoveUp,
+  onMoveDown,
+  pages,
+  defaultLang,
+  langs,
+}: {
+  child: NavLink;
+  idx: number;
+  total: number;
+  onUpdate: (patch: Partial<NavLink>) => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  pages: import("../../api/types").Page[];
+  defaultLang: string;
+  langs: Language[];
+}) {
+  if (child.type === "divider") {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-0.5 shrink-0">
+          <button
+            onClick={onMoveUp}
+            disabled={idx === 0}
+            className="text-xs text-(--color-muted) disabled:opacity-30 hover:text-(--color-text)"
+            title="Move up"
+          >
+            ▲
+          </button>
+          <button
+            onClick={onMoveDown}
+            disabled={idx === total - 1}
+            className="text-xs text-(--color-muted) disabled:opacity-30 hover:text-(--color-text)"
+            title="Move down"
+          >
+            ▼
+          </button>
+        </div>
+        <div className="flex-1 flex items-center gap-2">
+          <div className="flex-1 border-t border-dashed border-(--color-border)" />
+          <span className="text-xs text-(--color-muted) italic px-1 shrink-0">
+            Divider
+          </span>
+          <div className="flex-1 border-t border-dashed border-(--color-border)" />
+        </div>
+        <button
+          onClick={onRemove}
+          className="text-(--color-destructive) text-sm hover:opacity-70 shrink-0"
+          title="Remove"
+        >
+          ✕
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex gap-2 items-center flex-wrap">
+      <div className="flex flex-col gap-0.5 shrink-0">
+        <button
+          onClick={onMoveUp}
+          disabled={idx === 0}
+          className="text-xs text-(--color-muted) disabled:opacity-30 hover:text-(--color-text)"
+          title="Move up"
+        >
+          ▲
+        </button>
+        <button
+          onClick={onMoveDown}
+          disabled={idx === total - 1}
+          className="text-xs text-(--color-muted) disabled:opacity-30 hover:text-(--color-text)"
+          title="Move down"
+        >
+          ▼
+        </button>
+      </div>
+      <LinkTargetFields
+        link={child}
+        onUpdate={onUpdate}
+        pages={pages}
+        defaultLang={defaultLang}
+        sizeClass="shrink-0"
+      />
+      <LabelWithTranslations
+        value={child.label}
+        labels={child.labels}
+        langs={langs}
+        defaultLang={defaultLang}
+        onLabelChange={(val) => onUpdate({ label: val })}
+        onLabelsChange={(labels) => onUpdate({ labels })}
+      />
+      <button
+        onClick={onRemove}
+        className="text-(--color-destructive) text-sm hover:opacity-70 shrink-0"
+        title="Remove"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function LinksTab({
   label,
   links,
@@ -467,6 +820,8 @@ function LinksTab({
   defaultLang: string;
   langs: Language[];
 }) {
+  const [openDropdowns, setOpenDropdowns] = useState<Set<number>>(new Set());
+
   function addLink() {
     onChange([
       ...links,
@@ -494,247 +849,229 @@ function LinksTab({
     onChange(next.map((l, i) => ({ ...l, order: i })));
   }
 
-  const [openPopover, setOpenPopover] = useState<number | null>(null);
-
   function updateLink(idx: number, patch: Partial<NavLink>) {
     onChange(links.map((l, i) => (i === idx ? { ...l, ...patch } : l)));
   }
 
-  const BUILTIN_OPTIONS = [
-    { label: "Home", url: "/" },
-    { label: "Articles", url: "/articles/" },
-    { label: "Contact", url: "/contact/" },
-    { label: "Unsubscribe", url: "/unsubscribe/" },
-  ];
+  function enableDropdown(idx: number) {
+    updateLink(idx, { children: [] });
+    setOpenDropdowns((s) => new Set(s).add(idx));
+  }
+
+  function toggleDropdownOpen(idx: number) {
+    setOpenDropdowns((s) => {
+      const next = new Set(s);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  }
+
+  function addChild(linkIdx: number, type: "link" | "divider") {
+    const children = links[linkIdx].children ?? [];
+    const child: NavLink =
+      type === "divider"
+        ? { type: "divider", label: "", url: "", order: children.length }
+        : { type: "builtin", label: "Home", url: "/", order: children.length };
+    updateLink(linkIdx, { children: [...children, child] });
+  }
+
+  function removeChild(linkIdx: number, childIdx: number) {
+    const children = (links[linkIdx].children ?? [])
+      .filter((_, i) => i !== childIdx)
+      .map((c, i) => ({ ...c, order: i }));
+    updateLink(linkIdx, { children });
+  }
+
+  function updateChild(
+    linkIdx: number,
+    childIdx: number,
+    patch: Partial<NavLink>,
+  ) {
+    const children = (links[linkIdx].children ?? []).map((c, i) =>
+      i === childIdx ? { ...c, ...patch } : c,
+    );
+    updateLink(linkIdx, { children });
+  }
+
+  function moveChildUp(linkIdx: number, childIdx: number) {
+    if (childIdx === 0) return;
+    const children = [...(links[linkIdx].children ?? [])];
+    [children[childIdx - 1], children[childIdx]] = [
+      children[childIdx],
+      children[childIdx - 1],
+    ];
+    updateLink(linkIdx, {
+      children: children.map((c, i) => ({ ...c, order: i })),
+    });
+  }
+
+  function moveChildDown(linkIdx: number, childIdx: number) {
+    const children = links[linkIdx].children ?? [];
+    if (childIdx === children.length - 1) return;
+    const next = [...children];
+    [next[childIdx], next[childIdx + 1]] = [next[childIdx + 1], next[childIdx]];
+    updateLink(linkIdx, { children: next.map((c, i) => ({ ...c, order: i })) });
+  }
 
   return (
     <div className="space-y-3">
       <p className="text-sm text-(--color-muted)">{label}</p>
       <p className="text-xs text-(--color-muted)">
-        Use ▲▼ to reorder. Set per-language label translations with the 🌐
-        button (visible when more than one language is configured).
+        Use ▲▼ to reorder · 🌐 for per-language labels · circle+ to add a
+        dropdown with nested links and dividers.
       </p>
-      {links.map((link, idx) => (
-        <div
-          key={idx}
-          className="flex gap-2 items-start p-3 rounded border border-(--color-border) bg-(--color-bg-surface)"
-        >
-          <div className="flex flex-col gap-1 pt-1">
-            <button
-              onClick={() => moveUp(idx)}
-              disabled={idx === 0}
-              className="text-xs text-(--color-muted) disabled:opacity-30 hover:text-(--color-text)"
-              title="Move up"
-            >
-              ▲
-            </button>
-            <button
-              onClick={() => moveDown(idx)}
-              disabled={idx === links.length - 1}
-              className="text-xs text-(--color-muted) disabled:opacity-30 hover:text-(--color-text)"
-              title="Move down"
-            >
-              ▼
-            </button>
-          </div>
 
-          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {/* Type */}
-            <select
-              value={link.type}
-              onChange={(e) => {
-                const type = e.target.value as NavLink["type"];
-                if (type === "builtin")
-                  updateLink(idx, {
-                    type,
-                    url: "/",
-                    label: "Home",
-                    page_id: undefined,
-                  });
-                else if (type === "page")
-                  updateLink(idx, {
-                    type,
-                    page_id: pages[0]?.id,
-                    url: "",
-                    label: "",
-                  });
-                else
-                  updateLink(idx, {
-                    type,
-                    url: "https://",
-                    label: "",
-                    page_id: undefined,
-                  });
-              }}
-              className="px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
-            >
-              <option value="builtin">Built-in page</option>
-              <option value="page">Custom page</option>
-              <option value="external">External URL</option>
-            </select>
+      {links.map((link, idx) => {
+        const hasChildren = link.children !== undefined;
+        const isDropdownOpen = hasChildren && openDropdowns.has(idx);
 
-            {/* Target selector */}
-            {link.type === "builtin" && (
-              <select
-                value={link.url}
-                onChange={(e) => {
-                  const opt = BUILTIN_OPTIONS.find(
-                    (o) => o.url === e.target.value,
-                  );
-                  updateLink(idx, {
-                    url: e.target.value,
-                    label: opt?.label ?? link.label,
-                  });
-                }}
-                className="px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
-              >
-                {BUILTIN_OPTIONS.map((o) => (
-                  <option key={o.url} value={o.url}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            )}
-            {link.type === "page" && (
-              <select
-                value={link.page_id ?? ""}
-                onChange={(e) => {
-                  const p = pages.find(
-                    (pg) => pg.id === Number(e.target.value),
-                  );
-                  const slug =
-                    p?.translations.find((t) => t.lang_code === defaultLang)
-                      ?.slug ??
-                    p?.translations[0]?.slug ??
-                    "";
-                  const title =
-                    p?.translations.find((t) => t.lang_code === defaultLang)
-                      ?.title ??
-                    p?.translations[0]?.title ??
-                    "";
-                  updateLink(idx, {
-                    page_id: Number(e.target.value),
-                    url: `/${slug}/`,
-                    label: link.label || title,
-                  });
-                }}
-                className="px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
-              >
-                <option value="">— pick a page —</option>
-                {pages.map((p) => {
-                  const title =
-                    p.translations.find((t) => t.lang_code === defaultLang)
-                      ?.title ??
-                    p.translations[0]?.title ??
-                    `Page ${p.id}`;
-                  return (
-                    <option key={p.id} value={p.id}>
-                      {title}
-                    </option>
-                  );
-                })}
-              </select>
-            )}
-            {link.type === "external" && (
-              <input
-                type="url"
-                placeholder="https://…"
-                value={link.url}
-                onChange={(e) => updateLink(idx, { url: e.target.value })}
-                className="px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
-              />
-            )}
-
-            {/* Label + translations popover */}
-            <div className="relative flex gap-1 items-center">
-              <input
-                type="text"
-                placeholder="Label"
-                value={link.label}
-                onChange={(e) => updateLink(idx, { label: e.target.value })}
-                className="flex-1 min-w-0 px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
-              />
-              {langs.length > 1 && (() => {
-                const filled =
-                  (link.label ? 1 : 0) +
-                  langs
-                    .filter((l) => l.code !== defaultLang)
-                    .filter((l) => link.labels?.[l.code])
-                    .length;
-                const isOpen = openPopover === idx;
-                const sortedLangs = [
-                  ...langs.filter((l) => l.code === defaultLang),
-                  ...langs.filter((l) => l.code !== defaultLang),
-                ];
-                return (
-                  <>
-                    <button
-                      onClick={() => setOpenPopover(isOpen ? null : idx)}
-                      title="Translations"
-                      className={`flex items-center gap-1 px-2 py-1.5 rounded border text-xs shrink-0 transition-colors ${isOpen ? "border-(--color-accent) bg-(--color-bg-surface) text-(--color-accent)" : "border-(--color-border) bg-(--color-bg) text-(--color-muted) hover:text-(--color-text)"}`}
-                    >
-                      <span>🌐</span>
-                      <span>{filled}/{langs.length}</span>
-                    </button>
-                    {isOpen && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setOpenPopover(null)}
-                        />
-                        <div className="absolute right-0 top-full mt-1 z-20 min-w-56 bg-(--color-bg) border border-(--color-border) rounded-lg shadow-lg p-3 space-y-2">
-                          {sortedLangs.map((l) => {
-                            const isDefault = l.code === defaultLang;
-                            const val = isDefault
-                              ? link.label
-                              : (link.labels?.[l.code] ?? "");
-                            return (
-                              <div key={l.code} className="flex items-center gap-2">
-                                <span className="font-mono text-xs font-semibold uppercase w-8 shrink-0 text-(--color-muted)">
-                                  {l.code}
-                                </span>
-                                <input
-                                  type="text"
-                                  placeholder={
-                                    isDefault ? "Default label" : link.label || "Label"
-                                  }
-                                  value={val}
-                                  onChange={(e) => {
-                                    if (isDefault) {
-                                      updateLink(idx, { label: e.target.value });
-                                    } else {
-                                      updateLink(idx, {
-                                        labels: {
-                                          ...(link.labels ?? {}),
-                                          [l.code]: e.target.value,
-                                        },
-                                      });
-                                    }
-                                  }}
-                                  className="flex-1 px-2 py-1 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:border-(--color-accent) outline-none"
-                                  autoFocus={isDefault}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-
-          <button
-            onClick={() => removeLink(idx)}
-            className="text-(--color-destructive) text-sm hover:opacity-70 pt-1"
-            title="Remove"
+        return (
+          <div
+            key={idx}
+            className="rounded-lg border border-(--color-border) bg-(--color-bg-surface) overflow-hidden"
           >
-            ✕
-          </button>
-        </div>
-      ))}
+            {/* Top-level row */}
+            <div className="flex gap-2 items-start p-3">
+              {/* Reorder */}
+              <div className="flex flex-col gap-1 pt-1 shrink-0">
+                <button
+                  onClick={() => moveUp(idx)}
+                  disabled={idx === 0}
+                  className="text-xs text-(--color-muted) disabled:opacity-30 hover:text-(--color-text)"
+                  title="Move up"
+                >
+                  ▲
+                </button>
+                <button
+                  onClick={() => moveDown(idx)}
+                  disabled={idx === links.length - 1}
+                  className="text-xs text-(--color-muted) disabled:opacity-30 hover:text-(--color-text)"
+                  title="Move down"
+                >
+                  ▼
+                </button>
+              </div>
+
+              {/* Type + target + label */}
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <LinkTargetFields
+                  link={link}
+                  onUpdate={(patch) => updateLink(idx, patch)}
+                  pages={pages}
+                  defaultLang={defaultLang}
+                  sizeClass=""
+                />
+
+                {/* Label + translations popover */}
+                <LabelWithTranslations
+                  value={link.label}
+                  labels={link.labels}
+                  langs={langs}
+                  defaultLang={defaultLang}
+                  placeholder={hasChildren ? "Dropdown label" : "Label"}
+                  showCount
+                  onLabelChange={(val) => updateLink(idx, { label: val })}
+                  onLabelsChange={(labels) => updateLink(idx, { labels })}
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-1 shrink-0">
+                <button
+                  onClick={() =>
+                    hasChildren ? toggleDropdownOpen(idx) : enableDropdown(idx)
+                  }
+                  title={
+                    isDropdownOpen
+                      ? "Collapse dropdown"
+                      : hasChildren
+                        ? "Expand dropdown"
+                        : "Turn into dropdown"
+                  }
+                  className="p-1.5 rounded border transition-colors border-(--color-accent) text-(--color-accent) bg-(--color-accent)/10 hover:bg-(--color-accent)/20"
+                >
+                  {isDropdownOpen ? (
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <path stroke-linecap="round" d="M8 12h8" />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <path stroke-linecap="round" d="M12 8v8M8 12h8" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => removeLink(idx)}
+                  className="text-(--color-destructive) text-sm hover:opacity-70"
+                  title="Remove"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Children panel */}
+            {isDropdownOpen && (
+              <div className="border-t border-(--color-border) bg-(--color-bg) px-4 py-3 space-y-2">
+                <p className="text-xs font-medium text-(--color-muted)">
+                  Dropdown items
+                  {link.children!.length === 0 && (
+                    <span className="italic font-normal">
+                      {" "}
+                      — add items below
+                    </span>
+                  )}
+                </p>
+                {link.children!.map((child, childIdx) => (
+                  <ChildRow
+                    key={childIdx}
+                    child={child}
+                    idx={childIdx}
+                    total={link.children!.length}
+                    onUpdate={(patch) => updateChild(idx, childIdx, patch)}
+                    onRemove={() => removeChild(idx, childIdx)}
+                    onMoveUp={() => moveChildUp(idx, childIdx)}
+                    onMoveDown={() => moveChildDown(idx, childIdx)}
+                    pages={pages}
+                    defaultLang={defaultLang}
+                    langs={langs}
+                  />
+                ))}
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={() => addChild(idx, "link")}
+                    className="text-xs text-(--color-accent) hover:underline"
+                  >
+                    + Child link
+                  </button>
+                  <button
+                    onClick={() => addChild(idx, "divider")}
+                    className="text-xs text-(--color-muted) hover:text-(--color-text) hover:underline"
+                  >
+                    + Divider
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
       <button
         onClick={addLink}
         className="text-sm text-(--color-accent) hover:underline"
@@ -851,9 +1188,7 @@ function ThemeTab({
 
   // Live preview: update the global #folio-theme tag so the whole admin reflects changes
   useEffect(() => {
-    let el = document.getElementById(
-      "folio-theme",
-    ) as HTMLStyleElement | null;
+    let el = document.getElementById("folio-theme") as HTMLStyleElement | null;
     if (!el) {
       el = document.createElement("style");
       el.id = "folio-theme";

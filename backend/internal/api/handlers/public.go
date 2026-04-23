@@ -99,20 +99,75 @@ func (h *PublicHandler) getLinksForLang(c echo.Context, key string) error {
 
 		var typeStr string
 		if err := json.Unmarshal(link["type"], &typeStr); err != nil || typeStr != "page" {
+			// Still resolve children even if the parent is not a page link.
+			resolveNavChildren(links[i], lang, slugByID)
 			continue
 		}
 		var pageID int64
 		if err := json.Unmarshal(link["page_id"], &pageID); err != nil || pageID == 0 {
+			resolveNavChildren(links[i], lang, slugByID)
 			continue
 		}
 		if slug, ok := slugByID[pageID]; ok {
 			resolved, _ := json.Marshal("/" + slug + "/")
 			links[i]["url"] = json.RawMessage(resolved)
 		}
+		resolveNavChildren(links[i], lang, slugByID)
 	}
 
 	out, _ := json.Marshal(links)
 	return c.JSONBlob(http.StatusOK, out)
+}
+
+// resolveNavChildren resolves per-language labels and page-type URLs inside a
+// link's "children" array (dropdown items), mutating the map in place.
+func resolveNavChildren(link map[string]json.RawMessage, lang string, slugByID map[int64]string) {
+	childrenRaw, ok := link["children"]
+	if !ok || string(childrenRaw) == "null" || string(childrenRaw) == "[]" {
+		return
+	}
+	var children []map[string]json.RawMessage
+	if err := json.Unmarshal(childrenRaw, &children); err != nil {
+		return
+	}
+	changed := false
+	for j, child := range children {
+		// Resolve per-language label.
+		if labelsRaw, ok := child["labels"]; ok {
+			var labels map[string]string
+			if json.Unmarshal(labelsRaw, &labels) == nil {
+				if localLabel, ok := labels[lang]; ok && localLabel != "" {
+					resolved, _ := json.Marshal(localLabel)
+					children[j]["label"] = json.RawMessage(resolved)
+					changed = true
+				}
+			}
+		}
+		// Resolve page-type URL.
+		var typeStr string
+		if child["type"] == nil {
+			continue
+		}
+		if err := json.Unmarshal(child["type"], &typeStr); err != nil || typeStr != "page" {
+			continue
+		}
+		if child["page_id"] == nil {
+			continue
+		}
+		var pageID int64
+		if err := json.Unmarshal(child["page_id"], &pageID); err != nil || pageID == 0 {
+			continue
+		}
+		if slug, ok := slugByID[pageID]; ok {
+			resolved, _ := json.Marshal("/" + slug + "/")
+			children[j]["url"] = json.RawMessage(resolved)
+			changed = true
+		}
+	}
+	if changed {
+		resolvedChildren, _ := json.Marshal(children)
+		link["children"] = json.RawMessage(resolvedChildren)
+	}
 }
 
 // GetUIStrings returns per-language UI strings from DB settings.
