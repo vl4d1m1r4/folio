@@ -1,0 +1,50 @@
+<nav style="background: var(--color-bg-surface, #ffffff); border-bottom: 1px solid var(--color-border, #e5e7eb);" class="sticky top-0 z-30">
+  <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="/{{ lang }}/" class="font-bold text-lg tracking-tight" style="color: var(--color-accent);">{{ site.name }}</a>
+
+    <!-- Desktop links -->
+    <div class="hidden md:flex items-center gap-6 text-sm">
+      <a href="/{{ lang }}/" data-nav-href="/{{ lang }}/" class="transition-colors" style="color: var(--color-muted);" onmouseout="this.dataset.active!=='1'&&(this.style.color='var(--color-muted)')">Home</a>
+      <a href="/{{ lang }}/articles/" data-nav-href="/{{ lang }}/articles/" class="transition-colors" style="color: var(--color-muted);" onmouseout="this.dataset.active!=='1'&&(this.style.color='var(--color-muted)')">Articles</a>
+      <a href="/{{ lang }}/contact/" data-nav-href="/{{ lang }}/contact/" class="transition-colors" style="color: var(--color-muted);" onmouseout="this.dataset.active!=='1'&&(this.style.color='var(--color-muted)')">Contact</a>
+
+      <!-- Language switcher (rendered only when >1 language configured) -->
+      {% if config.languages | length > 1 %}
+        <div class="relative" data-lang-switcher>
+          <button class="text-xs uppercase tracking-wider" style="color: var(--color-muted);" data-lang-toggle>{{ lang }} ▾</button>
+          <div class="absolute right-0 top-full mt-1 rounded shadow-md min-w-[80px] hidden" style="background: var(--color-bg-surface); border: 1px solid var(--color-border);" data-lang-menu>
+            {% for l in config.languages %}
+              {% if l.code !== lang %}
+                <a href="/{{ l.code }}/" class="block px-4 py-2 text-sm uppercase" style="color: var(--color-text);" onmouseover="this.style.background='var(--color-border)'" onmouseout="this.style.background=''">{{ l.code }}</a>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Mobile hamburger -->
+    <button class="md:hidden p-2" style="color: var(--color-muted);" data-nav-toggle aria-label="Open menu">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="md:hidden hidden" style="border-top: 1px solid var(--color-border);" data-mobile-menu>
+    <div class="px-6 py-4 space-y-3 text-sm">
+      <a href="/{{ lang }}/" data-nav-href="/{{ lang }}/" class="block" style="color: var(--color-text);">Home</a>
+      <a href="/{{ lang }}/articles/" data-nav-href="/{{ lang }}/articles/" class="block" style="color: var(--color-text);">Articles</a>
+      <a href="/{{ lang }}/contact/" data-nav-href="/{{ lang }}/contact/" class="block" style="color: var(--color-text);">Contact</a>
+      {% if config.languages | length > 1 %}
+        <div class="flex flex-wrap gap-3" style="border-top: 1px solid var(--color-border); padding-top: 0.75rem;">
+          {% for l in config.languages %}
+            {% if l.code !== lang %}
+              <a href="/{{ l.code }}/" class="text-xs uppercase" style="color: var(--color-muted);">{{ l.code }}</a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,92 @@
+---
+pagination:
+  data: config.languages
+  size: 1
+  alias: lang
+permalink: "/{{ lang.code }}/articles/index.html"
+---
+{% extends "layouts/base.njk" %}
+
+{% set langCode = lang.code %}
+{% set dir = lang.dir %}
+{% set lang = langCode %}
+{% set allArticles = articles.byLang[lang] %}
+
+{% block title %}Articles · {{ site.name }}{% endblock %}
+{% block description %}Read the latest articles from {{ site.name }}.{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-12">
+  <h1 class="text-4xl font-extrabold mb-2" style="color: var(--color-text);">Articles</h1>
+  <p class="mb-8" style="color: var(--color-muted);">Articles, guides and news from {{ site.name }}.</p>
+
+  {% if allArticles | length %}
+    {# Collect unique tags from articles #}
+    {% set usedTags = [] %}
+    {% for article in allArticles %}
+      {% if article.tag and article.tag not in usedTags %}
+        {% set usedTags = usedTags.concat([article.tag]) %}
+      {% endif %}
+    {% endfor %}
+
+    {% if usedTags | length %}
+    <div class="flex flex-wrap gap-2 mb-8" id="tag-filters">
+      <button data-filter="all" class="tag-btn px-4 py-1.5 text-sm font-medium rounded-full transition-colors active" style="background: var(--color-accent); color: #fff; border-radius: var(--radius-button);">All</button>
+      {% for tag in usedTags %}
+        <button data-filter="{{ tag }}" class="tag-btn px-4 py-1.5 text-sm font-medium rounded-full transition-colors" style="border: 1px solid var(--color-border); color: var(--color-muted); border-radius: var(--radius-button);">{{ tag }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="articles-grid">
+      {% for article in allArticles %}
+        {% set lang = langCode %}
+        {% include "partials/article-card.njk" %}
+      {% endfor %}
+    </div>
+    <p class="hidden mt-10 text-center" style="color: var(--color-muted);" id="no-results">No articles found for this tag.</p>
+  {% else %}
+    <p style="color: var(--color-muted);">No articles published yet. Check back soon.</p>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  const btns = document.querySelectorAll('.tag-btn');
+  const cards = document.querySelectorAll('#articles-grid article[data-tag]');
+  const noResults = document.getElementById('no-results');
+  const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim();
+  const mutedColor  = getComputedStyle(document.documentElement).getPropertyValue('--color-muted').trim();
+
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter;
+
+      // Update button styles
+      btns.forEach(b => {
+        if (b === btn) {
+          b.style.background = accentColor;
+          b.style.color = '#fff';
+          b.style.border = 'none';
+        } else {
+          b.style.background = '';
+          b.style.color = mutedColor;
+          b.style.border = `1px solid ${borderColor}`;
+        }
+      });
+
+      // Filter cards
+      let visible = 0;
+      cards.forEach(card => {
+        const match = filter === 'all' || card.dataset.tag === filter;
+        card.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+
+      if (noResults) noResults.classList.toggle('hidden', visible > 0);
+    });
+  });
+})();
+</script>
+{% endblock %}

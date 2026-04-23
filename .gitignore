@@ -1,0 +1,26 @@
+# ── Build outputs ──────────────────────────────────
+site/dist/
+site/.cache/
+site/node_modules/
+admin/dist/
+admin/node_modules/
+backend/openblog
+backend/blog.db
+backend/blog.db-shm
+backend/blog.db-wal
+backend/uploads/
+
+# ── Secrets ────────────────────────────────────────
+.env
+
+# ── User theme overrides (keep customizations local) ──
+site/src/user-theme/*.njk
+!site/src/user-theme/.gitkeep
+!site/src/user-theme/README.md
+
+# ── OS / editors ──────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

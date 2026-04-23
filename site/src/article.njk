@@ -1,0 +1,68 @@
+---
+pagination:
+  data: articles.pages
+  size: 1
+  alias: item
+permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
+---
+{% extends "layouts/base.njk" %}
+
+{% set lang = item.lang.code %}
+{% set dir = item.lang.dir %}
+{% set article = item.article %}
+
+{% block title %}{{ article.meta_title or article.title }} · {{ site.name }}{% endblock %}
+{% block description %}{{ article.meta_description or article.excerpt }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-6 py-12">
+  <!-- Breadcrumb -->
+  <nav class="text-xs mb-8" style="color: var(--color-muted);">
+    <a href="/{{ lang }}/" style="color: var(--color-muted);">Home</a>
+    <span class="mx-2">›</span>
+    <a href="/{{ lang }}/articles/" style="color: var(--color-muted);">Articles</a>
+    <span class="mx-2">›</span>
+    <span style="color: var(--color-text);">{{ article.title }}</span>
+  </nav>
+
+  <!-- Cover image -->
+  {% if article.cover_image_path %}
+    <img
+      src="/uploads/{{ article.cover_image_path }}"
+      alt="{{ article.title }}"
+      class="w-full rounded-xl object-cover mb-10"
+      style="max-height: 420px;"
+    />
+  {% endif %}
+
+  <!-- Tag -->
+  {% if article.tag %}
+    <span class="inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4"
+          style="background: color-mix(in srgb, var(--color-accent, #1a56db) 10%, transparent); color: var(--color-accent, #1a56db);">
+      {{ article.tag }}
+    </span>
+  {% endif %}
+
+  <!-- Title -->
+  <h1 class="text-4xl font-extrabold leading-tight mb-4" style="color: var(--color-text);">{{ article.title }}</h1>
+
+  <!-- Meta row -->
+  <div class="flex items-center gap-4 text-sm mb-10 pb-6" style="color: var(--color-muted); border-bottom: 1px solid var(--color-border);">
+    <time datetime="{{ article.published_at }}">{{ article.published_at | localizedDate(lang) }}</time>
+    <span>·</span>
+    <span>{{ article.body | readingTime(lang) }}</span>
+  </div>
+
+  <!-- Body -->
+  <div class="prose max-w-none">
+    {{ article.body | safe }}
+  </div>
+
+  <!-- Back link -->
+  <div class="mt-16 pt-6 border-t">
+    <a href="/{{ lang }}/articles/" class="text-sm font-medium" style="color: var(--color-accent, #1a56db);">
+      ← Back to Insights
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+<article class="group flex flex-col overflow-hidden transition-shadow hover:shadow-lg" data-tag="{{ article.tag }}" style="background: var(--color-bg-surface); border-radius: var(--radius-card); border: 1px solid var(--color-border);">
+  {% if article.cover_image_path %}
+    <a href="/{{ lang }}/articles/{{ article.slug }}.html">
+      <img src="/uploads/{{ article.cover_image_path }}" alt="{{ article.title }}" class="w-full h-48 object-cover" loading="lazy" />
+    </a>
+  {% endif %}
+  <div class="flex flex-col flex-1 p-5">
+    {% if article.tag %}
+      <span class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--color-accent);">{{ article.tag }}</span>
+    {% endif %}
+    <h3 class="text-lg font-bold mb-2 transition-colors" style="color: var(--color-text);">
+      <a href="/{{ lang }}/articles/{{ article.slug }}.html" style="color: var(--color-text);">{{ article.title }}</a>
+    </h3>
+    <p class="text-sm flex-1 line-clamp-3" style="color: var(--color-muted);">{{ article.excerpt }}</p>
+    <p class="text-xs mt-4" style="color: var(--color-muted);">{{ article.published_at | localizedDate(lang) }}</p>
+  </div>
+</article>

@@ -1,0 +1,60 @@
+services:
+  # ── Go backend ────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - DB_PATH=/data/blog.db
+      - UPLOAD_DIR=/uploads
+      - PORT=8080
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+    env_file:
+      - .env
+    volumes:
+      - db_data:/data
+      - uploads:/uploads
+      - site_dist:/site-dist
+
+  # ── Site builder (Eleventy) ───────────────────────────────────────────────
+  site-builder:
+    image: node:20-alpine
+    working_dir: /app/site
+    command: sh -c "npm install && npm run build"
+    environment:
+      - BACKEND_URL=http://backend:8080
+    volumes:
+      - ./site:/app/site:ro
+      - site_dist:/app/site/dist
+    depends_on:
+      - backend
+
+  # ── Reverse proxy ─────────────────────────────────────────────────────────
+  # Routes:
+  #   /api/*        → backend:8080
+  #   /uploads/*    → backend:8080
+  #   /admin/*      → backend:8080 (admin UI is served by the Go binary)
+  #   /*            → site/dist (static HTML)
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - site_dist:/srv/site:ro
+      - uploads:/srv/uploads:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - site-builder
+
+volumes:
+  db_data:
+  uploads:
+  site_dist:
+  caddy_data:
+  caddy_config:

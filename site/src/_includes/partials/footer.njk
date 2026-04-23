@@ -1,0 +1,39 @@
+<footer class="mt-20" style="border-top: 1px solid var(--color-border); background: var(--color-bg-surface);">
+  <div class="max-w-5xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div>
+      <p class="font-semibold" style="color: var(--color-text);">{{ site.name }}</p>
+      {% if site.tagline %}
+        <p class="text-sm mt-1" style="color: var(--color-muted);">{{ site.tagline }}</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--color-muted);">Links</p>
+      <ul class="space-y-2 text-sm" style="color: var(--color-muted);">
+        <li><a href="/{{ lang }}/" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">Home</a></li>
+        <li><a href="/{{ lang }}/articles/" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">Articles</a></li>
+        <li><a href="/{{ lang }}/contact/" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">Contact</a></li>
+      </ul>
+    </div>
+
+    <div>
+      {% if site.social %}
+        <p class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--color-muted);">Social</p>
+        <ul class="space-y-2 text-sm">
+          {% if site.social.twitter %}
+            <li><a href="{{ site.social.twitter }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">Twitter / X</a></li>
+          {% endif %}
+          {% if site.social.linkedin %}
+            <li><a href="{{ site.social.linkedin }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">LinkedIn</a></li>
+          {% endif %}
+          {% if site.social.github %}
+            <li><a href="{{ site.social.github }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">GitHub</a></li>
+          {% endif %}
+        </ul>
+      {% endif %}
+    </div>
+  </div>
+  <div style="border-top: 1px solid var(--color-border);">
+    <p class="text-xs text-center py-4" style="color: var(--color-muted);">© {{ site.name }} · Powered by <a href="https://github.com/yourorg/openblog" class="hover:underline" style="color: var(--color-muted);">openblog</a></p>
+  </div>
+</footer>

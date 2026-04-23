@@ -1,0 +1,16 @@
+{% if site.bookingUrl %}
+<section class="py-16" style="background: var(--color-bg-surface); border-top: 1px solid var(--color-border);">
+  <div class="max-w-2xl mx-auto px-6 text-center">
+    <h2 class="text-3xl font-bold mb-4" style="color: var(--color-text);">Ready to get started?</h2>
+    {% if site.ctaBandText %}
+      <p class="mb-8" style="color: var(--color-muted);">{{ site.ctaBandText }}</p>
+    {% endif %}
+    <div class="flex flex-wrap justify-center gap-4">
+      <a href="{{ site.bookingUrl }}" target="_blank" rel="noopener noreferrer"
+         class="px-6 py-3 font-semibold transition-colors text-white" style="background: var(--color-accent); border-radius: var(--radius-button);">
+        Book a call
+      </a>
+    </div>
+  </div>
+</section>
+{% endif %}

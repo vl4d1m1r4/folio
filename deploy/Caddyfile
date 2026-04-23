@@ -1,0 +1,30 @@
+{$DOMAIN:localhost} {
+    # ── API: proxy to Go backend ──────────────────────────────────────────────
+    handle /api/* {
+        reverse_proxy backend:8080
+    }
+
+    # ── Uploads: served directly from the shared volume (no backend hop) ──────
+    handle /uploads/* {
+        root * /srv
+        file_server
+    }
+
+    # ── Static site ────────────────────────────────────────────────────────
+    handle {
+        root * /srv/site
+        try_files {path} {path}/index.html =404
+        file_server
+    }
+
+    # ── Gzip compression ───────────────────────────────────────────────────
+    encode gzip
+
+    # ── Security headers ───────────────────────────────────────────────────
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options SAMEORIGIN
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+    }
+}

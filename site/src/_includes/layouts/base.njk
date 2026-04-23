@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ dir | default('ltr') }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{{ site.name }}{% endblock %}</title>
+    <meta name="description" content="{% block description %}{{ site.description }}{% endblock %}" />
+    {% block noindex %}{% endblock %}
+    <link rel="stylesheet" href="/site-assets/style.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% block head %}{% endblock %}
+  </head>
+  <body class="min-h-screen flex flex-col">
+    {% block header %}
+      {% include "partials/nav.njk" %}
+    {% endblock %}
+
+    <main class="flex-1">
+      {% block content %}{% endblock %}
+    </main>
+
+    {% block cta_band %}
+      {% include "partials/cta-band.njk" %}
+    {% endblock %}
+
+    {% block footer %}
+      {% include "partials/footer.njk" %}
+    {% endblock %}
+
+    <script src="/site-assets/nav.js" defer></script>
+    {% if site.goatcounterUrl %}
+      <script src="/site-assets/analytics.js" defer></script>
+    {% endif %}
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

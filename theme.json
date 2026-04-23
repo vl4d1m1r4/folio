@@ -1,0 +1,22 @@
+{
+  "preset": "dark",
+  "colors": {
+    "accent": "#10b981",
+    "accent-hover": "#059669",
+    "accent-dark": "#047857",
+    "cta": "#6366f1",
+    "cta-hover": "#4f46e5",
+    "nav-from": "#1e1e2e",
+    "nav-to": "#181825",
+    "bg": "#0f0f1a",
+    "bg-surface": "#1e1e2e",
+    "text": "#e2e8f0",
+    "muted": "#94a3b8",
+    "border": "#2d2d44",
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "destructive": "#f43f5e"
+  },
+  "fonts": { "body": "Inter", "fallback": "system-ui, sans-serif" },
+  "radius": { "button": "6px", "card": "10px", "input": "4px" }
+}

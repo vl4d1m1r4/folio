@@ -1,0 +1,22 @@
+{
+  "preset": "warm",
+  "colors": {
+    "accent": "#c2410c",
+    "accent-hover": "#9a3412",
+    "accent-dark": "#7c2d12",
+    "cta": "#b45309",
+    "cta-hover": "#92400e",
+    "nav-from": "#c2410c",
+    "nav-to": "#b45309",
+    "bg": "#fffbf5",
+    "bg-surface": "#fef3e2",
+    "text": "#1c1917",
+    "muted": "#78716c",
+    "border": "#e7e5e4",
+    "success": "#15803d",
+    "warning": "#d97706",
+    "destructive": "#b91c1c"
+  },
+  "fonts": { "body": "Merriweather", "fallback": "Georgia, serif" },
+  "radius": { "button": "12px", "card": "16px", "input": "8px" }
+}

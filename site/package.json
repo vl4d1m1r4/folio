@@ -1,0 +1,14 @@
+{
+  "name": "openblog-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npx @11ty/eleventy",
+    "dev": "npx @11ty/eleventy --serve --port 8081"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.0.0",
+    "node-fetch": "^3.3.2"
+  }
+}

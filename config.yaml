@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────
+#  OpenBlog — Main Configuration
+#  Edit this file to configure your blog.
+#  Then run: make build  (or docker compose up)
+# ─────────────────────────────────────────────────
+
+site:
+  name: "My Blog"
+  tagline: "Thoughts, ideas, and more."
+  url: "https://yourblog.com"
+  # Optional CTA / booking link shown in the call-to-action band.
+  # Leave empty to hide the CTA band buttons.
+  bookingUrl: ""
+  social:
+    twitter: ""
+    linkedin: ""
+    github: ""
+
+# ── Languages ──────────────────────────────────────
+# Add as many languages as you need.
+# The entry with  default: true  is the primary language.
+# For a single-language blog, just keep one entry.
+# RTL languages: set  dir: "rtl"  (e.g. Arabic, Hebrew).
+languages:
+  - code: "en"
+    label: "English"
+    dir: "ltr"
+    default: true
+  # - code: "de"
+  #   label: "Deutsch"
+  #   dir: "ltr"
+  # - code: "fr"
+  #   label: "Français"
+  #   dir: "ltr"
+  # - code: "ar"
+  #   label: "العربية"
+  #   dir: "rtl"
+
+# ── Article Tags ───────────────────────────────────
+# These appear as category labels on articles.
+# Admin UI lets you pick from this list when editing.
+tags:
+  - "Tutorials"
+  - "News"
+  - "Guides"
+  - "Opinion"
+
+# ── Contact form ───────────────────────────────────
+# Email address that receives contact form submissions.
+# Actual sending requires SMTP or MS Graph credentials in .env
+contactEmail: "vladimir.trajkovski@protonmail.com"
