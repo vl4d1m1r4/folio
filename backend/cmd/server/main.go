@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -26,6 +28,103 @@ func getEnv(key, def string) string {
 	return def
 }
 
+// seedSettings seeds DB settings from config.yaml + theme.json on first boot.
+func seedSettings(repo *models.Repository, cfg *config.Config, themePath string) {
+	ctx := context.Background()
+	all, err := repo.GetAllSettings(ctx)
+	if err != nil {
+		log.Printf("seedSettings: failed to read settings: %v", err)
+		return
+	}
+
+	// Seed "site" from config.yaml if not yet stored.
+	if _, ok := all["site"]; !ok {
+		type sitePayload struct {
+			Name         string      `json:"name"`
+			Tagline      string      `json:"tagline"`
+			URL          string      `json:"url"`
+			BookingURL   string      `json:"bookingUrl"`
+			ContactEmail string      `json:"contactEmail"`
+			Tags         []string    `json:"tags"`
+			Social       interface{} `json:"social"`
+		}
+		sp := sitePayload{
+			Name:         cfg.Site.Name,
+			Tagline:      cfg.Site.Tagline,
+			URL:          cfg.Site.URL,
+			BookingURL:   cfg.Site.BookingURL,
+			ContactEmail: cfg.ContactEmail,
+			Tags:         cfg.Tags,
+			Social:       cfg.Site.Social,
+		}
+		b, _ := json.Marshal(sp)
+		if err := repo.SetSetting(ctx, "site", string(b)); err != nil {
+			log.Printf("seedSettings: failed to seed site: %v", err)
+		}
+	}
+
+	// Seed "theme" from theme.json if not yet stored.
+	if _, ok := all["theme"]; !ok {
+		data, err := os.ReadFile(themePath)
+		if err == nil {
+			if err := repo.SetSetting(ctx, "theme", string(data)); err != nil {
+				log.Printf("seedSettings: failed to seed theme: %v", err)
+			}
+		}
+	}
+
+	// Seed default nav_links / footer_links / social_links if absent.
+	if _, ok := all["nav_links"]; !ok {
+		defaultNav := `[{"type":"builtin","label":"Home","url":"/","order":0},{"type":"builtin","label":"Articles","url":"/articles/","order":1},{"type":"builtin","label":"Contact","url":"/contact/","order":2}]`
+		_ = repo.SetSetting(ctx, "nav_links", defaultNav)
+	}
+	if _, ok := all["footer_links"]; !ok {
+		defaultFooter := `[{"type":"builtin","label":"Home","url":"/","order":0},{"type":"builtin","label":"Articles","url":"/articles/","order":1},{"type":"builtin","label":"Contact","url":"/contact/","order":2}]`
+		_ = repo.SetSetting(ctx, "footer_links", defaultFooter)
+	}
+	if _, ok := all["social_links"]; !ok {
+		type socialLink struct {
+			Platform string `json:"platform"`
+			URL      string `json:"url"`
+		}
+		var links []socialLink
+		if cfg.Site.Social.Twitter != "" {
+			links = append(links, socialLink{"twitter", cfg.Site.Social.Twitter})
+		}
+		if cfg.Site.Social.LinkedIn != "" {
+			links = append(links, socialLink{"linkedin", cfg.Site.Social.LinkedIn})
+		}
+		if cfg.Site.Social.GitHub != "" {
+			links = append(links, socialLink{"github", cfg.Site.Social.GitHub})
+		}
+		b, _ := json.Marshal(links)
+		_ = repo.SetSetting(ctx, "social_links", string(b))
+	}
+
+	// Seed default home_sections matching the existing layout.
+	if _, ok := all["home_sections"]; !ok {
+		defaultSections := `[
+			{"id":"hero","type":"hero","visible":true,"order":0,"config":{},"translations":{"en":{"headline":"","subheadline":"","cta_label":"Book a free call","cta_url":""}}},
+			{"id":"featured","type":"featured-articles","visible":true,"order":1,"config":{"max_count":4},"translations":{"en":{"title":"Featured"}}},
+			{"id":"latest","type":"latest-articles","visible":true,"order":2,"config":{"max_count":6},"translations":{"en":{"title":"Latest Articles"}}},
+			{"id":"cta","type":"cta-band","visible":true,"order":3,"config":{},"translations":{"en":{"headline":"Ready to get started?","body":"","cta_label":"Book a call","cta_url":""}}}
+		]`
+		_ = repo.SetSetting(ctx, "home_sections", defaultSections)
+	}
+
+	// Seed languages from config.yaml if not yet stored in DB.
+	if _, ok := all["languages"]; !ok {
+		b, _ := json.Marshal(cfg.Languages)
+		_ = repo.SetSetting(ctx, "languages", string(b))
+	}
+
+	// Seed default UI strings (English) if not yet stored.
+	if _, ok := all["ui_strings"]; !ok {
+		defaultUI := `{"en":{"contact_title":"Contact","contact_intro":"Fill in the form below and we'll get back to you.","contact_first_name":"First name","contact_last_name":"Last name","contact_company":"Company","contact_email":"Email","contact_phone":"Phone","contact_message":"Message","contact_submit":"Send message","contact_success":"Thank you for your message — we'll be in touch soon!","contact_error":"Something went wrong. Please try again.","unsubscribe_title":"Unsubscribe","unsubscribe_intro":"Enter your email address below to unsubscribe from the newsletter.","unsubscribe_email_placeholder":"Your email address","unsubscribe_submit":"Unsubscribe","unsubscribe_success":"You have been unsubscribed successfully.","articles_title":"Articles","articles_intro":"Articles, guides and news.","articles_all_filter":"All","articles_no_results":"No articles found for this tag.","articles_no_articles":"No articles published yet. Check back soon.","article_home":"Home","article_read_more":"Read more","reading_time_suffix":"min read"}}`
+		_ = repo.SetSetting(ctx, "ui_strings", defaultUI)
+	}
+}
+
 func main() {
 	// 1. Load .env (ignored if absent)
 	_ = godotenv.Load()
@@ -44,6 +143,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to load config.yaml: %v", err)
 	}
+
+	// Resolve theme.json path alongside config.yaml.
+	themeDir := filepath.Dir(configPath)
+	themePath := filepath.Join(themeDir, "theme.json")
 
 	// 3. Read env vars
 	jwtSecret := os.Getenv("JWT_SECRET")
@@ -77,12 +180,18 @@ func main() {
 
 	// 6. Instantiate services and handlers
 	repo := models.NewRepository(database)
+
+	// Seed DB from config.yaml + theme.json on first boot.
+	seedSettings(repo, cfg, themePath)
+
 	emailSvc := services.NewEmailService(tenantID, clientID, clientSecret, sender)
 	authH := handlers.NewAuthHandler(repo, jwtSecret)
 	publicH := handlers.NewPublicHandler(repo, cfg)
 	adminH := handlers.NewAdminHandler(repo, cfg, uploadDir)
 	contactH := handlers.NewContactHandler(repo, emailSvc, contactEmail)
 	newsletterH := handlers.NewNewsletterHandler(repo)
+	settingsH := handlers.NewSettingsHandler(repo)
+	pagesH := handlers.NewPagesHandler(repo)
 
 	// 7. Echo setup
 	e := echo.New()
@@ -130,10 +239,20 @@ func main() {
 	// Public config
 	api.GET("/config/languages", publicH.GetLanguages)
 	api.GET("/config/site", publicH.GetSiteConfig)
+	api.GET("/config/nav", publicH.GetNavConfig)
+	api.GET("/config/footer", publicH.GetFooterConfig)
+	api.GET("/config/social", publicH.GetSocialConfig)
+	api.GET("/config/theme", publicH.GetThemeConfig)
+	api.GET("/config/home", publicH.GetHomeSections)
+	api.GET("/config/ui-strings", publicH.GetUIStrings)
 
 	// Public articles
 	api.GET("/articles", publicH.ListArticles)
 	api.GET("/articles/:slug", publicH.GetArticle)
+
+	// Public pages
+	api.GET("/pages", pagesH.ListPublicPages)
+	api.GET("/pages/:slug", pagesH.GetPublicPage)
 
 	// Public forms
 	api.POST("/contact", contactH.SubmitContact)
@@ -157,6 +276,15 @@ func main() {
 
 	admin.GET("/contacts", adminH.ListContacts)
 	admin.GET("/newsletter", adminH.ListNewsletter)
+
+	admin.GET("/settings", settingsH.GetSettings)
+	admin.PUT("/settings", settingsH.PutSettings)
+
+	admin.GET("/pages", pagesH.ListPages)
+	admin.POST("/pages", pagesH.CreatePage)
+	admin.GET("/pages/:id", pagesH.GetPage)
+	admin.PUT("/pages/:id", pagesH.UpdatePage)
+	admin.DELETE("/pages/:id", pagesH.DeletePage)
 
 	// Public site — Eleventy static output, catch-all (must be registered last)
 	e.Static("/", siteDistDir)

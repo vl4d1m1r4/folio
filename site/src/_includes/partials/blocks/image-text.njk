@@ -1,0 +1,19 @@
+<section class="max-w-5xl mx-auto px-6 py-10">
+  <div class="flex flex-col {{ 'md:flex-row-reverse' if b.config.image_position === 'right' else 'md:flex-row' }} gap-10 items-center">
+    {% if b.config.image_url %}
+      <div class="md:w-1/2">
+        <img src="{{ b.config.image_url }}" alt="{{ b.config.headline | default('') }}"
+             class="rounded-xl w-full object-cover"
+             style="border-radius: var(--radius-card);" />
+      </div>
+    {% endif %}
+    <div class="{{ 'md:w-1/2' if b.config.image_url else 'w-full' }}">
+      {% if b.config.headline %}
+        <h2 class="text-3xl font-bold mb-4" style="color: var(--color-text);">{{ b.config.headline }}</h2>
+      {% endif %}
+      {% if b.config.body %}
+        <div class="prose" style="color: var(--color-muted);">{{ b.config.body | safe }}</div>
+      {% endif %}
+    </div>
+  </div>
+</section>

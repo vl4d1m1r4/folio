@@ -18,9 +18,9 @@ permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
 <div class="max-w-3xl mx-auto px-6 py-12">
   <!-- Breadcrumb -->
   <nav class="text-xs mb-8" style="color: var(--color-muted);">
-    <a href="/{{ lang }}/" style="color: var(--color-muted);">Home</a>
+    <a href="/{{ lang }}/" style="color: var(--color-muted);">{{ i18n[lang].article_home }}</a>
     <span class="mx-2">›</span>
-    <a href="/{{ lang }}/articles/" style="color: var(--color-muted);">Articles</a>
+    <a href="/{{ lang }}/articles/" style="color: var(--color-muted);">{{ i18n[lang].articles_title }}</a>
     <span class="mx-2">›</span>
     <span style="color: var(--color-text);">{{ article.title }}</span>
   </nav>
@@ -50,7 +50,7 @@ permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
   <div class="flex items-center gap-4 text-sm mb-10 pb-6" style="color: var(--color-muted); border-bottom: 1px solid var(--color-border);">
     <time datetime="{{ article.published_at }}">{{ article.published_at | localizedDate(lang) }}</time>
     <span>·</span>
-    <span>{{ article.body | readingTime(lang) }}</span>
+    <span>{{ article.body | readingTime(lang, i18n[lang].reading_time_suffix) }}</span>
   </div>
 
   <!-- Body -->

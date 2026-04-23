@@ -1,0 +1,24 @@
+{%- set containerConfig = b.config -%}
+{%- set containerChildren = b.children -%}
+<section class="max-w-5xl mx-auto px-6 py-10">
+  <div class="flex {{ 'flex-col' if containerConfig.direction === 'col' else 'flex-row flex-wrap' }} {{ containerConfig.padding | default('') }}"
+       style="align-items: {{ containerConfig.align | default('flex-start') }}; gap: 1.5rem;">
+    {% for child in containerChildren %}
+      {% if child.visible !== false %}
+        {% set b = child %}
+        <div class="flex-1 min-w-0">
+          {% if child.type === "hero" %}{% include "partials/blocks/hero.njk" %}
+          {% elif child.type === "featured-articles" %}{% include "partials/blocks/featured-articles.njk" %}
+          {% elif child.type === "latest-articles" %}{% include "partials/blocks/latest-articles.njk" %}
+          {% elif child.type === "cta-band" %}{% include "partials/blocks/cta-band.njk" %}
+          {% elif child.type === "rich-text" %}{% include "partials/blocks/rich-text.njk" %}
+          {% elif child.type === "image-text" %}{% include "partials/blocks/image-text.njk" %}
+          {% elif child.type === "testimonials" %}{% include "partials/blocks/testimonials.njk" %}
+          {% elif child.type === "newsletter" %}{% include "partials/blocks/newsletter.njk" %}
+          {% elif child.type === "container" %}{% include "partials/blocks/container.njk" %}
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>

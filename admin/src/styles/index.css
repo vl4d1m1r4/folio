@@ -48,7 +48,7 @@ select option {
 }
 
 /* ── Accent button — unlayered so it wins over Tailwind utilities ─────────── *
- * Using CSS directly because Tailwind's bg-[--color-*] arbitrary syntax does  *
+ * Using CSS directly because Tailwind's bg-(--color-*] arbitrary syntax does  *
  * not reliably generate var() in all v4 configurations.                       */
 .btn-accent {
   background-color: var(--color-accent);

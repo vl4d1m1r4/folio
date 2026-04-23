@@ -1,12 +1,12 @@
-import { useEditor, EditorContent, BubbleMenu } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MediaPickerModal } from "./MediaPickerModal";
 
 interface Props {
-  content: string;
+  value: string;
   onChange: (html: string) => void;
 }
 
@@ -31,8 +31,8 @@ function ToolbarButton({
       title={title}
       className={`px-2 py-1 rounded text-sm transition-colors ${
         active
-          ? "bg-[--color-accent] text-white"
-          : "hover:bg-[--color-bg] text-[--color-text]"
+          ? "bg-(--color-accent) text-white"
+          : "hover:bg-(--color-bg) text-(--color-text)"
       }`}
     >
       {children}
@@ -40,7 +40,7 @@ function ToolbarButton({
   );
 }
 
-export function RichTextEditor({ content, onChange }: Props) {
+export function RichTextEditor({ value, onChange }: Props) {
   const [linkUrl, setLinkUrl] = useState("");
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showMediaPicker, setShowMediaPicker] = useState(false);
@@ -54,7 +54,7 @@ export function RichTextEditor({ content, onChange }: Props) {
         HTMLAttributes: { class: "text-blue-600 underline" },
       }),
     ],
-    content,
+    content: value,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       attributes: {
@@ -63,6 +63,15 @@ export function RichTextEditor({ content, onChange }: Props) {
       },
     },
   });
+
+  // Sync editor content when the value prop changes externally (e.g. language switch)
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const current = editor.getHTML();
+    if (current !== value) {
+      editor.commands.setContent(value ?? "", false);
+    }
+  }, [value, editor]);
 
   if (!editor) return null;
 
@@ -94,9 +103,9 @@ export function RichTextEditor({ content, onChange }: Props) {
   }
 
   return (
-    <div className="border border-[--color-border] rounded-lg overflow-hidden bg-[--color-bg]">
+    <div className="border border-(--color-border) rounded-lg overflow-hidden bg-(--color-bg)">
       {/* Toolbar */}
-      <div className="flex flex-wrap gap-1 px-2 py-1.5 border-b border-[--color-border] bg-[--color-bg-surface]">
+      <div className="flex flex-wrap gap-1 px-2 py-1.5 border-b border-(--color-border) bg-(--color-bg-surface)">
         <ToolbarButton
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -129,7 +138,7 @@ export function RichTextEditor({ content, onChange }: Props) {
         >
           H3
         </ToolbarButton>
-        <span className="w-px bg-[--color-border] mx-1 self-stretch" />
+        <span className="w-px bg-(--color-border) mx-1 self-stretch" />
         <ToolbarButton
           active={editor.isActive("bulletList")}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -158,7 +167,7 @@ export function RichTextEditor({ content, onChange }: Props) {
         >
           {"<>"}
         </ToolbarButton>
-        <span className="w-px bg-[--color-border] mx-1 self-stretch" />
+        <span className="w-px bg-(--color-border) mx-1 self-stretch" />
         <ToolbarButton
           active={editor.isActive("link")}
           onClick={openLinkInput}
@@ -172,7 +181,7 @@ export function RichTextEditor({ content, onChange }: Props) {
         >
           🖼 Image
         </ToolbarButton>
-        <span className="w-px bg-[--color-border] mx-1 self-stretch" />
+        <span className="w-px bg-(--color-border) mx-1 self-stretch" />
         <ToolbarButton
           onClick={() => editor.chain().focus().undo().run()}
           title="Undo"
@@ -189,14 +198,14 @@ export function RichTextEditor({ content, onChange }: Props) {
 
       {/* Link input bar */}
       {showLinkInput && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[--color-bg-surface] border-b border-[--color-border]">
-          <span className="text-xs text-[--color-muted] shrink-0">URL:</span>
+        <div className="flex items-center gap-2 px-3 py-2 bg-(--color-bg-surface) border-b border-(--color-border)">
+          <span className="text-xs text-(--color-muted) shrink-0">URL:</span>
           <input
             type="url"
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             placeholder="https://example.com"
-            className="flex-1 text-sm border border-[--color-border] rounded px-2 py-1 bg-[--color-bg] text-[--color-text] focus:outline-none focus:ring-2 focus:ring-[--color-accent]"
+            className="flex-1 text-sm border border-(--color-border) rounded px-2 py-1 bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -230,49 +239,12 @@ export function RichTextEditor({ content, onChange }: Props) {
           <button
             type="button"
             onClick={() => setShowLinkInput(false)}
-            className="text-sm text-[--color-muted] hover:text-[--color-text]"
+            className="text-sm text-(--color-muted) hover:text-(--color-text)"
           >
             ✕
           </button>
         </div>
       )}
-
-      {/* Bubble menu — shown when cursor is on an existing link */}
-      <BubbleMenu
-        editor={editor}
-        tippyOptions={{ duration: 150, placement: "bottom" }}
-        shouldShow={({ editor }) => editor.isActive("link")}
-      >
-        <div className="flex items-center gap-1 bg-[--color-bg-surface] border border-[--color-border] shadow-lg rounded px-2 py-1.5">
-          <a
-            href={editor.getAttributes("link").href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-[--color-accent] hover:underline max-w-[180px] truncate"
-          >
-            {editor.getAttributes("link").href}
-          </a>
-          <button
-            type="button"
-            onClick={() => {
-              setLinkUrl(editor.getAttributes("link").href ?? "");
-              setShowLinkInput(true);
-            }}
-            className="text-xs text-[--color-muted] hover:text-[--color-text] px-1 border-l border-[--color-border] ml-1 pl-2"
-            title="Edit link"
-          >
-            ✏ Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().unsetLink().run()}
-            className="text-xs text-red-500 hover:text-red-700 px-1"
-            title="Remove link"
-          >
-            ✕
-          </button>
-        </div>
-      </BubbleMenu>
 
       <EditorContent editor={editor} />
 

@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // AdminUser is an authenticated admin account.
 type AdminUser struct {
@@ -90,7 +93,53 @@ type MediaFile struct {
 	UploadedAt   time.Time `json:"uploaded_at"`
 }
 
-// PaginatedResult is a generic pagination wrapper.
+// ── Custom Pages ─────────────────────────────────────────────────────────────
+
+// PageTranslation holds per-language content for a custom page.
+type PageTranslation struct {
+	PageID          int64           `json:"page_id"`
+	LangCode        string          `json:"lang_code"`
+	Slug            string          `json:"slug"`
+	Title           string          `json:"title"`
+	Body            string          `json:"body"`
+	Sections        json.RawMessage `json:"sections"`
+	MetaTitle       string          `json:"meta_title"`
+	MetaDescription string          `json:"meta_description"`
+}
+
+// Page is the language-independent page record, with all translations attached.
+type Page struct {
+	ID           int64             `json:"id"`
+	IsPublished  bool              `json:"is_published"`
+	CreatedAt    time.Time         `json:"created_at"`
+	UpdatedAt    time.Time         `json:"updated_at"`
+	Translations []PageTranslation `json:"translations"`
+}
+
+// PublicPage is the flattened single-language page for public endpoints.
+type PublicPage struct {
+	ID              int64           `json:"id"`
+	IsPublished     bool            `json:"is_published"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+	LangCode        string          `json:"lang_code"`
+	Slug            string          `json:"slug"`
+	Title           string          `json:"title"`
+	Body            string          `json:"body"`
+	Sections        json.RawMessage `json:"sections"`
+	MetaTitle       string          `json:"meta_title"`
+	MetaDescription string          `json:"meta_description"`
+}
+
+// ── Site Settings ─────────────────────────────────────────────────────────────
+
+// SiteSetting is a single key/value settings row.
+type SiteSetting struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// ── PaginatedResult is a generic pagination wrapper.
 type PaginatedResult[T any] struct {
 	Items []T `json:"items"`
 	Total int `json:"total"`
@@ -132,4 +181,11 @@ type PaginatedSubscribers struct {
 	Total int                    `json:"total"`
 	Page  int                    `json:"page"`
 	Limit int                    `json:"limit"`
+}
+
+type PaginatedPages struct {
+	Items []Page `json:"items"`
+	Total int    `json:"total"`
+	Page  int    `json:"page"`
+	Limit int    `json:"limit"`
 }

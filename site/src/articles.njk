@@ -12,13 +12,13 @@ permalink: "/{{ lang.code }}/articles/index.html"
 {% set lang = langCode %}
 {% set allArticles = articles.byLang[lang] %}
 
-{% block title %}Articles · {{ site.name }}{% endblock %}
-{% block description %}Read the latest articles from {{ site.name }}.{% endblock %}
+{% block title %}{{ i18n[lang].articles_title }} · {{ site.name }}{% endblock %}
+{% block description %}{{ i18n[lang].articles_intro }}{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto px-6 py-12">
-  <h1 class="text-4xl font-extrabold mb-2" style="color: var(--color-text);">Articles</h1>
-  <p class="mb-8" style="color: var(--color-muted);">Articles, guides and news from {{ site.name }}.</p>
+  <h1 class="text-4xl font-extrabold mb-2" style="color: var(--color-text);">{{ i18n[lang].articles_title }}</h1>
+  <p class="mb-8" style="color: var(--color-muted);">{{ i18n[lang].articles_intro }}</p>
 
   {% if allArticles | length %}
     {# Collect unique tags from articles #}
@@ -31,7 +31,7 @@ permalink: "/{{ lang.code }}/articles/index.html"
 
     {% if usedTags | length %}
     <div class="flex flex-wrap gap-2 mb-8" id="tag-filters">
-      <button data-filter="all" class="tag-btn px-4 py-1.5 text-sm font-medium rounded-full transition-colors active" style="background: var(--color-accent); color: #fff; border-radius: var(--radius-button);">All</button>
+      <button data-filter="all" class="tag-btn px-4 py-1.5 text-sm font-medium rounded-full transition-colors active" style="background: var(--color-accent); color: #fff; border-radius: var(--radius-button);">{{ i18n[lang].articles_all_filter }}</button>
       {% for tag in usedTags %}
         <button data-filter="{{ tag }}" class="tag-btn px-4 py-1.5 text-sm font-medium rounded-full transition-colors" style="border: 1px solid var(--color-border); color: var(--color-muted); border-radius: var(--radius-button);">{{ tag }}</button>
       {% endfor %}
@@ -44,9 +44,9 @@ permalink: "/{{ lang.code }}/articles/index.html"
         {% include "partials/article-card.njk" %}
       {% endfor %}
     </div>
-    <p class="hidden mt-10 text-center" style="color: var(--color-muted);" id="no-results">No articles found for this tag.</p>
+    <p class="hidden mt-10 text-center" style="color: var(--color-muted);" id="no-results">{{ i18n[lang].articles_no_results }}</p>
   {% else %}
-    <p style="color: var(--color-muted);">No articles published yet. Check back soon.</p>
+    <p style="color: var(--color-muted);">{{ i18n[lang].articles_no_articles }}</p>
   {% endif %}
 </div>
 

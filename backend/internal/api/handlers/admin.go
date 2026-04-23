@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -231,6 +232,19 @@ func (h *AdminHandler) DeleteArticle(c echo.Context) error {
 // GetTags returns the configured tag list.
 // GET /admin/tags
 func (h *AdminHandler) GetTags(c echo.Context) error {
+	// Prefer tags stored in the "site" setting (set via Settings page).
+	all, err := h.repo.GetAllSettings(c.Request().Context())
+	if err == nil {
+		if raw, ok := all["site"]; ok && raw != "" {
+			var site struct {
+				Tags []string `json:"tags"`
+			}
+			if json.Unmarshal([]byte(raw), &site) == nil && len(site.Tags) > 0 {
+				return c.JSON(http.StatusOK, site.Tags)
+			}
+		}
+	}
+	// Fall back to config.yaml
 	return c.JSON(http.StatusOK, h.cfg.Tags)
 }
 

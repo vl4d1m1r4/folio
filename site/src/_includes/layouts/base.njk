@@ -6,6 +6,9 @@
     <title>{% block title %}{{ site.name }}{% endblock %}</title>
     <meta name="description" content="{% block description %}{{ site.description }}{% endblock %}" />
     {% block noindex %}{% endblock %}
+    {% if site.favicon %}
+      <link rel="icon" href="{{ site.favicon }}" />
+    {% endif %}
     <link rel="stylesheet" href="/site-assets/style.css" />
     <script src="https://cdn.tailwindcss.com"></script>
     {% block head %}{% endblock %}
@@ -19,15 +22,12 @@
       {% block content %}{% endblock %}
     </main>
 
-    {% block cta_band %}
-      {% include "partials/cta-band.njk" %}
-    {% endblock %}
-
     {% block footer %}
       {% include "partials/footer.njk" %}
     {% endblock %}
 
     <script src="/site-assets/nav.js" defer></script>
+    <script src="/site-assets/forms.js" defer></script>
     {% if site.goatcounterUrl %}
       <script src="/site-assets/analytics.js" defer></script>
     {% endif %}

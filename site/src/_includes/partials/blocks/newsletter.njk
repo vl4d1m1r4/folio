@@ -1,0 +1,33 @@
+<section class="max-w-2xl mx-auto px-6 py-16 text-center">
+  {% if b.config.headline %}
+    <h2 class="text-3xl font-bold mb-3" style="color: var(--color-text);">{{ b.config.headline }}</h2>
+  {% endif %}
+  {% if b.config.body %}
+    <p class="mb-8" style="color: var(--color-muted);">{{ b.config.body }}</p>
+  {% endif %}
+
+  <div data-newsletter-block>
+    <form class="newsletter-subscribe-form flex flex-col sm:flex-row gap-3 justify-center" novalidate>
+      <input
+        type="email"
+        name="email"
+        required
+        placeholder="{{ b.config.placeholder | default('Your email address') }}"
+        class="flex-1 max-w-sm px-4 py-3 rounded text-sm border focus:outline-none focus:ring-2"
+        style="border-color: var(--color-border); background: var(--color-bg); color: var(--color-text); border-radius: var(--radius-input); --tw-ring-color: var(--color-accent);"
+      />
+      <button
+        type="submit"
+        class="px-6 py-3 text-sm font-semibold text-white transition-colors"
+        style="background: var(--color-accent); border-radius: var(--radius-button);"
+      >
+        {{ b.config.button_label | default("Subscribe") }}
+      </button>
+    </form>
+
+    <p class="newsletter-subscribe-success hidden mt-4 text-sm" style="color: var(--color-success);">
+      {{ b.config.success_message | default("You're subscribed — thank you!") }}
+    </p>
+    <p class="newsletter-subscribe-error hidden mt-4 text-sm" style="color: var(--color-destructive);"></p>
+  </div>
+</section>

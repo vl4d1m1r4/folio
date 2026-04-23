@@ -1,18 +1,60 @@
+import { useEffect } from "react";
 import { Navigate, Outlet, Link, NavLink } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { adminApi } from "../api/client";
+
+/** Fetches the saved theme from the DB and writes it to the #openblog-theme
+ * style tag so the whole admin reflects the user's chosen theme. */
+function useThemeSync() {
+  useEffect(() => {
+    adminApi
+      .getSettings()
+      .then((settings) => {
+        const theme = settings?.theme;
+        if (!theme?.colors) return;
+        let el = document.getElementById(
+          "openblog-theme",
+        ) as HTMLStyleElement | null;
+        if (!el) {
+          el = document.createElement("style");
+          el.id = "openblog-theme";
+          document.head.appendChild(el);
+        }
+        const vars = [
+          ...Object.entries(theme.colors).map(
+            ([k, v]) => `  --color-${k}: ${v};`,
+          ),
+          `  --font-body: ${theme.fonts?.body ?? "Inter"};`,
+          `  --font-fallback: ${theme.fonts?.fallback ?? "system-ui, sans-serif"};`,
+          `  --radius-button: ${theme.radius?.button ?? "8px"};`,
+          `  --radius-card: ${theme.radius?.card ?? "12px"};`,
+          `  --radius-input: ${theme.radius?.input ?? "6px"};`,
+        ].join("\n");
+        el.textContent = `:root {\n${vars}\n}`;
+      })
+      .catch(() => {
+        /* ignore — fallback to CSS defaults */
+      });
+  }, []);
+}
 
 const links = [
   { label: "Dashboard", to: "/admin", section: false },
   { label: "Content", to: null, section: true },
   { label: "Articles", to: "/admin/articles", section: false },
+  { label: "Pages", to: "/admin/pages", section: false },
   { label: "Media", to: "/admin/media", section: false },
   { label: "Data", to: null, section: true },
   { label: "Contacts", to: "/admin/contacts", section: false },
   { label: "Newsletter", to: "/admin/newsletter", section: false },
+  { label: "Customization", to: null, section: true },
+  { label: "Home Builder", to: "/admin/home-builder", section: false },
+  { label: "Settings", to: "/admin/settings", section: false },
 ] as const;
 
 export default function AdminLayout() {
   const { isAuthenticated, logout } = useAuth();
+  useThemeSync();
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
@@ -71,7 +113,7 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 bg-[--color-bg]">
+      <div className="flex-1 flex flex-col min-w-0 bg-(--color-bg)">
         <main className="flex-1 p-6 overflow-auto">
           <Outlet />
         </main>

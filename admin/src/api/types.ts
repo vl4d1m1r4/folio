@@ -97,3 +97,134 @@ export type PaginatedPublicArticles = Paginated<PublicArticle>;
 export type PaginatedMediaFiles = Paginated<MediaFile>;
 export type PaginatedContacts = Paginated<ContactSubmission>;
 export type PaginatedSubscribers = Paginated<NewsletterSubscriber>;
+
+// ── Custom Pages ──────────────────────────────────────────────────────────────
+
+export interface PageTranslation {
+  page_id: number;
+  lang_code: string;
+  slug: string;
+  title: string;
+  body: string;
+  sections: PageBlock[];
+  meta_title: string;
+  meta_description: string;
+}
+
+export interface Page {
+  id: number;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+  translations: PageTranslation[];
+}
+
+export type PaginatedPages = Paginated<Page>;
+
+// ── Settings ──────────────────────────────────────────────────────────────────
+
+export interface NavLink {
+  /** "builtin" | "page" | "external" */
+  type: "builtin" | "page" | "external";
+  label: string;
+  /** Per-language label overrides. Falls back to `label` if not set. */
+  labels?: Record<string, string>;
+  /** Resolved URL (for builtin/external) */
+  url: string;
+  /** DB page id, only when type === "page" */
+  page_id?: number;
+  order: number;
+}
+
+export interface SocialLink {
+  /** "twitter" | "linkedin" | "github" | custom label */
+  platform: string;
+  url: string;
+}
+
+export interface ThemeColors {
+  accent: string;
+  "accent-hover": string;
+  "accent-dark": string;
+  cta: string;
+  "cta-hover": string;
+  "nav-from": string;
+  "nav-to": string;
+  bg: string;
+  "bg-surface": string;
+  text: string;
+  muted: string;
+  border: string;
+  success: string;
+  warning: string;
+  destructive: string;
+  [key: string]: string;
+}
+
+export interface ThemeSettings {
+  preset: string;
+  colors: ThemeColors;
+  fonts: { body: string; fallback: string };
+  radius: { button: string; card: string; input: string };
+}
+
+export interface SiteSettingsData {
+  name: string;
+  tagline: string;
+  url: string;
+  bookingUrl: string;
+  contactEmail: string;
+  tags: string[];
+  favicon: string;
+  logo: string;
+  social: { twitter: string; linkedin: string; github: string };
+}
+
+// ── Page Block Builder ────────────────────────────────────────────────────────
+
+/** A block inside a custom page (text stored directly in config, no lang sub-object). */
+export interface PageBlock {
+  id: string;
+  type: BlockType;
+  visible: boolean;
+  order: number;
+  config: Record<string, unknown>;
+  children?: PageBlock[];
+}
+
+// ── Home Builder ──────────────────────────────────────────────────────────────
+
+export type BlockType =
+  | "hero"
+  | "featured-articles"
+  | "latest-articles"
+  | "cta-band"
+  | "rich-text"
+  | "image-text"
+  | "testimonials"
+  | "newsletter"
+  | "container";
+
+export interface HomeBlock {
+  id: string;
+  type: BlockType;
+  visible: boolean;
+  order: number;
+  /** Block-specific non-text config (counts, layout flags, etc.) */
+  config: Record<string, unknown>;
+  /** Text fields keyed by lang code */
+  translations: Record<string, Record<string, string>>;
+  /** For container blocks only — nested child blocks */
+  children?: HomeBlock[];
+}
+
+export interface AllSettings {
+  site: SiteSettingsData | null;
+  theme: ThemeSettings | null;
+  nav_links: NavLink[] | null;
+  footer_links: NavLink[] | null;
+  social_links: SocialLink[] | null;
+  home_sections: HomeBlock[] | null;
+  languages: Language[] | null;
+  ui_strings: Record<string, Record<string, string>> | null;
+}

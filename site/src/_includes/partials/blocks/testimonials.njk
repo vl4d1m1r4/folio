@@ -1,0 +1,20 @@
+{% if b.config.items | length %}
+<section class="max-w-5xl mx-auto px-6 py-10">
+  {% if b.config.title %}
+    <h2 class="text-2xl font-bold mb-8 text-center" style="color: var(--color-text);">{{ b.config.title }}</h2>
+  {% endif %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for item in b.config.items %}
+      <div class="p-6 rounded-xl border" style="background: var(--color-bg-surface); border-color: var(--color-border); border-radius: var(--radius-card);">
+        <p class="text-base italic mb-4" style="color: var(--color-text);">"{{ item.quote }}"</p>
+        <div>
+          <p class="font-semibold text-sm" style="color: var(--color-text);">{{ item.author }}</p>
+          {% if item.role %}
+            <p class="text-xs" style="color: var(--color-muted);">{{ item.role }}</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

@@ -10,60 +10,41 @@ permalink: "/{{ lang.code }}/index.html"
 {% set dir = lang.dir %}
 {% set langCode = lang.code %}
 {% set lang = langCode %}
-{% set featuredArticles = articles.byLang[lang] | selectattr("is_featured") | list %}
-{% set latestArticles = articles.byLang[lang] | list %}
+{% set sections = home.byLang[lang] %}
 
 {% block title %}{{ site.name }}{% endblock %}
 {% block description %}{{ site.description }}{% endblock %}
 
 {% block content %}
-<!-- Hero -->
-<section class="max-w-5xl mx-auto px-6 py-20 text-center">
-  <h1 class="text-5xl font-extrabold tracking-tight mb-5 leading-tight" style="color: var(--color-text);">
-    {{ site.headline | default(site.name) }}
-  </h1>
-  {% if site.subheadline %}
-    <p class="text-xl max-w-2xl mx-auto" style="color: var(--color-muted);">{{ site.subheadline }}</p>
+{% for block in sections %}
+  {% if block.type === "hero" %}
+    {% set b = block %}
+    {% include "partials/blocks/hero.njk" %}
+  {% elif block.type === "featured-articles" %}
+    {% set b = block %}
+    {% include "partials/blocks/featured-articles.njk" %}
+  {% elif block.type === "latest-articles" %}
+    {% set b = block %}
+    {% include "partials/blocks/latest-articles.njk" %}
+  {% elif block.type === "cta-band" %}
+    {% set b = block %}
+    {% include "partials/blocks/cta-band.njk" %}
+  {% elif block.type === "rich-text" %}
+    {% set b = block %}
+    {% include "partials/blocks/rich-text.njk" %}
+  {% elif block.type === "image-text" %}
+    {% set b = block %}
+    {% include "partials/blocks/image-text.njk" %}
+  {% elif block.type === "testimonials" %}
+    {% set b = block %}
+    {% include "partials/blocks/testimonials.njk" %}
+  {% elif block.type === "newsletter" %}
+    {% set b = block %}
+    {% include "partials/blocks/newsletter.njk" %}
+  {% elif block.type === "container" %}
+    {% set b = block %}
+    {% include "partials/blocks/container.njk" %}
   {% endif %}
-  {% if site.bookingUrl %}
-    <div class="mt-8">
-      <a href="{{ site.bookingUrl }}" target="_blank" rel="noopener noreferrer"
-         class="inline-block px-8 py-4 text-white font-semibold rounded-xl text-lg transition-colors"
-         style="background: var(--color-accent, #1a56db);">
-        Book a free call
-      </a>
-    </div>
-  {% endif %}
-</section>
-
-<!-- Featured articles -->
-{% if featuredArticles | length %}
-<section class="max-w-5xl mx-auto px-6 py-10">
-  <h2 class="text-2xl font-bold mb-6" style="color: var(--color-text);">Featured</h2>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    {% for article in featuredArticles %}
-      {% set article = article %}
-      {% set lang = lang %}
-      {% include "partials/article-card.njk" %}
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
-
-<!-- Latest articles -->
-{% if latestArticles | length %}
-<section class="max-w-5xl mx-auto px-6 py-10">
-  <div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold" style="color: var(--color-text);">Latest Articles</h2>
-    <a href="/{{ lang }}/articles/" class="text-sm font-medium" style="color: var(--color-accent, #1a56db);">View all →</a>
-  </div>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for article in latestArticles | limit(6) %}
-      {% set article = article %}
-      {% set lang = lang %}
-      {% include "partials/article-card.njk" %}
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
+{% endfor %}
 {% endblock %}
+

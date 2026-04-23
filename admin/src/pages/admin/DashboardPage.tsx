@@ -14,10 +14,10 @@ function StatCard({
   return (
     <Link
       to={to}
-      className="bg-[--color-bg-surface] rounded-lg shadow p-6 hover:shadow-md transition-shadow block border border-[--color-border]"
+      className="bg-(--color-bg-surface) rounded-lg shadow p-6 hover:shadow-md transition-shadow block border border-(--color-border)"
     >
-      <p className="text-sm text-[--color-muted]">{label}</p>
-      <p className="text-3xl font-bold mt-1 text-[--color-text]">
+      <p className="text-sm text-(--color-muted)">{label}</p>
+      <p className="text-3xl font-bold mt-1 text-(--color-text)">
         {value ?? "—"}
       </p>
     </Link>
@@ -58,7 +58,7 @@ export default function DashboardPage() {
           to="/admin/newsletter"
         />
       </div>
-      <div className="bg-[--color-bg-surface] rounded-lg shadow p-6 border border-[--color-border]">
+      <div className="bg-(--color-bg-surface) rounded-lg shadow p-6 border border-(--color-border)">
         <h2 className="font-semibold mb-3">Quick links</h2>
         <div className="flex flex-wrap gap-3">
           {[
@@ -68,7 +68,7 @@ export default function DashboardPage() {
             <Link
               key={l.to}
               to={l.to}
-              className="px-4 py-2 bg-[--color-bg] hover:bg-[--color-border] rounded text-sm transition-colors"
+              className="px-4 py-2 bg-(--color-bg) hover:bg-(--color-border) rounded text-sm transition-colors"
             >
               {l.label}
             </Link>

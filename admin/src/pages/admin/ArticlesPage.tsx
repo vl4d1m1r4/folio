@@ -84,7 +84,7 @@ export default function ArticlesPage() {
         return (
           <span
             title={otherSlugs || undefined}
-            className="text-[--color-muted] text-xs font-mono"
+            className="text-(--color-muted) text-xs font-mono"
           >
             {t?.slug ?? "—"}
           </span>
@@ -108,7 +108,7 @@ export default function ArticlesPage() {
             className={`text-xs px-2 py-1 rounded cursor-pointer select-none transition-colors ${
               val
                 ? "bg-green-100 text-green-700 hover:bg-green-200"
-                : "bg-[--color-bg] text-[--color-muted] hover:bg-[--color-border]"
+                : "bg-(--color-bg) text-(--color-muted) hover:bg-(--color-border)"
             }`}
           >
             {val ? "● Live" : "○ Draft"}
@@ -154,7 +154,7 @@ export default function ArticlesPage() {
   });
 
   if (isLoading)
-    return <div className="p-6 text-[--color-muted]">Loading…</div>;
+    return <div className="p-6 text-(--color-muted)">Loading…</div>;
 
   return (
     <div>
@@ -200,7 +200,7 @@ export default function ArticlesPage() {
               }
             }}
             disabled={rebuildStatus === "pending"}
-            className="px-4 py-2 border border-[--color-border] rounded text-sm text-[--color-muted] hover:bg-[--color-bg-surface] disabled:opacity-50"
+            className="px-4 py-2 border border-(--color-border) rounded text-sm text-(--color-muted) hover:bg-(--color-bg-surface) disabled:opacity-50"
           >
             {rebuildStatus === "pending" ? "Rebuilding…" : "↺ Regenerate Site"}
           </button>
@@ -213,15 +213,15 @@ export default function ArticlesPage() {
         </div>
       </div>
 
-      <div className="bg-[--color-bg-surface] rounded-lg shadow overflow-hidden border border-[--color-border]">
-        <table className="min-w-full divide-y divide-[--color-border]">
-          <thead className="bg-[--color-bg]">
+      <div className="bg-(--color-bg-surface) rounded-lg shadow overflow-hidden border border-(--color-border)">
+        <table className="min-w-full divide-y divide-(--color-border)">
+          <thead className="bg-(--color-bg)">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((h) => (
                   <th
                     key={h.id}
-                    className="px-4 py-3 text-left text-xs font-medium text-[--color-muted] uppercase"
+                    className="px-4 py-3 text-left text-xs font-medium text-(--color-muted) uppercase"
                   >
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
@@ -229,23 +229,23 @@ export default function ArticlesPage() {
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-[--color-border]">
+          <tbody className="divide-y divide-(--color-border)">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-8 text-center text-[--color-muted] text-sm"
+                  className="px-4 py-8 text-center text-(--color-muted) text-sm"
                 >
                   No articles yet. Click "+ New" to create one.
                 </td>
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-[--color-bg]">
+                <tr key={row.id} className="hover:bg-(--color-bg)">
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-4 py-3 text-sm text-[--color-text]"
+                      className="px-4 py-3 text-sm text-(--color-text)"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -269,7 +269,7 @@ export default function ArticlesPage() {
           >
             ← Prev
           </button>
-          <span className="text-sm text-[--color-muted]">
+          <span className="text-sm text-(--color-muted)">
             Page {page} of {totalPages}
           </span>
           <button

@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -42,6 +43,14 @@ func boolToInt(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// sectionsJSON returns the raw JSON for sections, defaulting to '[]' if nil/empty.
+func sectionsJSON(raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return "[]"
+	}
+	return string(raw)
 }
 
 func timePtrToStr(t *time.Time) any {
@@ -531,4 +540,299 @@ func (r *Repository) GetMediaFile(ctx context.Context, id int64) (*MediaFile, er
 func (r *Repository) DeleteMediaFile(ctx context.Context, id int64) error {
 	_, err := r.db.ExecContext(ctx, `DELETE FROM media_files WHERE id = ?`, id)
 	return err
+}
+
+// ── Site Settings ─────────────────────────────────────────────────────────────
+
+// GetSetting fetches a single setting value by key. Returns "" if not found.
+func (r *Repository) GetSetting(ctx context.Context, key string) (string, error) {
+	var value string
+	err := r.db.QueryRowContext(ctx,
+		`SELECT value FROM site_settings WHERE key = ?`, key,
+	).Scan(&value)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	return value, err
+}
+
+// SetSetting upserts a single setting row.
+func (r *Repository) SetSetting(ctx context.Context, key, value string) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO site_settings (key, value, updated_at)
+		 VALUES (?, ?, CURRENT_TIMESTAMP)
+		 ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP`,
+		key, value,
+	)
+	return err
+}
+
+// GetAllSettings returns every settings row as a map[key]value.
+func (r *Repository) GetAllSettings(ctx context.Context) (map[string]string, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT key, value FROM site_settings`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[string]string)
+	for rows.Next() {
+		var k, v string
+		if err := rows.Scan(&k, &v); err != nil {
+			return nil, err
+		}
+		result[k] = v
+	}
+	return result, rows.Err()
+}
+
+// ── Pages ─────────────────────────────────────────────────────────────────────
+
+const pageCols = `id, is_published, created_at, updated_at`
+
+func scanPageRow(row interface{ Scan(dest ...any) error }) (*Page, error) {
+	var p Page
+	var isPublished int
+	var createdAt, updatedAt string
+	if err := row.Scan(&p.ID, &isPublished, &createdAt, &updatedAt); err != nil {
+		return nil, err
+	}
+	p.IsPublished = isPublished == 1
+	p.CreatedAt = parseDateTime(createdAt)
+	p.UpdatedAt = parseDateTime(updatedAt)
+	return &p, nil
+}
+
+func (r *Repository) loadPageTranslations(ctx context.Context, ids []int64) (map[int64][]PageTranslation, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	in := make([]interface{}, len(ids))
+	ph := make([]byte, 0, len(ids)*2)
+	for i, id := range ids {
+		in[i] = id
+		if i > 0 {
+			ph = append(ph, ',')
+		}
+		ph = append(ph, '?')
+	}
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT page_id, lang_code, slug, title, body, sections, meta_title, meta_description
+		 FROM page_translations WHERE page_id IN (`+string(ph)+`)
+		 ORDER BY page_id, lang_code`,
+		in...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make(map[int64][]PageTranslation)
+	for rows.Next() {
+		var t PageTranslation
+		var sectionsStr string
+		if err := rows.Scan(&t.PageID, &t.LangCode, &t.Slug, &t.Title, &t.Body, &sectionsStr, &t.MetaTitle, &t.MetaDescription); err != nil {
+			return nil, err
+		}
+		if sectionsStr == "" {
+			sectionsStr = "[]"
+		}
+		t.Sections = json.RawMessage(sectionsStr)
+		result[t.PageID] = append(result[t.PageID], t)
+	}
+	return result, rows.Err()
+}
+
+// ListAllPages returns all pages with translations (admin use).
+func (r *Repository) ListAllPages(ctx context.Context, limit, offset int) ([]Page, int, error) {
+	var total int
+	if err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM pages`).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT `+pageCols+` FROM pages ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+		limit, offset,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var pages []Page
+	var ids []int64
+	for rows.Next() {
+		p, err := scanPageRow(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		pages = append(pages, *p)
+		ids = append(ids, p.ID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+	tm, err := r.loadPageTranslations(ctx, ids)
+	if err != nil {
+		return nil, 0, err
+	}
+	for i := range pages {
+		pages[i].Translations = tm[pages[i].ID]
+		if pages[i].Translations == nil {
+			pages[i].Translations = []PageTranslation{}
+		}
+	}
+	return pages, total, nil
+}
+
+// ListPublishedPages returns published pages for a given language.
+func (r *Repository) ListPublishedPages(ctx context.Context, langCode string) ([]PublicPage, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT p.id, p.is_published, p.created_at, p.updated_at,
+		       t.lang_code, t.slug, t.title, t.body, t.sections, t.meta_title, t.meta_description
+		FROM pages p
+		JOIN page_translations t ON t.page_id = p.id
+		WHERE p.is_published = 1 AND t.lang_code = ?
+		ORDER BY p.created_at DESC`,
+		langCode,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []PublicPage
+	for rows.Next() {
+		var pp PublicPage
+		var isPublished int
+		var ca, ua string
+		var sectionsStr string
+		if err := rows.Scan(
+			&pp.ID, &isPublished, &ca, &ua,
+			&pp.LangCode, &pp.Slug, &pp.Title, &pp.Body, &sectionsStr, &pp.MetaTitle, &pp.MetaDescription,
+		); err != nil {
+			return nil, err
+		}
+		if sectionsStr == "" {
+			sectionsStr = "[]"
+		}
+		pp.Sections = json.RawMessage(sectionsStr)
+		pp.IsPublished = isPublished == 1
+		pp.CreatedAt = parseDateTime(ca)
+		pp.UpdatedAt = parseDateTime(ua)
+		result = append(result, pp)
+	}
+	return result, rows.Err()
+}
+
+// GetPublishedPageBySlug returns a single published page for the given slug + lang.
+func (r *Repository) GetPublishedPageBySlug(ctx context.Context, slug, langCode string) (*PublicPage, error) {
+	var pp PublicPage
+	var isPublished int
+	var ca, ua string
+	var sectionsStr string
+	err := r.db.QueryRowContext(ctx, `
+		SELECT p.id, p.is_published, p.created_at, p.updated_at,
+		       t.lang_code, t.slug, t.title, t.body, t.sections, t.meta_title, t.meta_description
+		FROM pages p
+		JOIN page_translations t ON t.page_id = p.id
+		WHERE t.slug = ? AND t.lang_code = ? AND p.is_published = 1`,
+		slug, langCode,
+	).Scan(&pp.ID, &isPublished, &ca, &ua,
+		&pp.LangCode, &pp.Slug, &pp.Title, &pp.Body, &sectionsStr, &pp.MetaTitle, &pp.MetaDescription)
+	if sectionsStr == "" {
+		sectionsStr = "[]"
+	}
+	pp.Sections = json.RawMessage(sectionsStr)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	pp.IsPublished = isPublished == 1
+	pp.CreatedAt = parseDateTime(ca)
+	pp.UpdatedAt = parseDateTime(ua)
+	return &pp, nil
+}
+
+// GetPageByID returns a page with all translations (admin use).
+func (r *Repository) GetPageByID(ctx context.Context, id int64) (*Page, error) {
+	row := r.db.QueryRowContext(ctx, `SELECT `+pageCols+` FROM pages WHERE id = ?`, id)
+	p, err := scanPageRow(row)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	tm, err := r.loadPageTranslations(ctx, []int64{p.ID})
+	if err != nil {
+		return nil, err
+	}
+	p.Translations = tm[p.ID]
+	if p.Translations == nil {
+		p.Translations = []PageTranslation{}
+	}
+	return p, nil
+}
+
+// CreatePage inserts a new page and its translations.
+func (r *Repository) CreatePage(ctx context.Context, p Page) (int64, error) {
+	res, err := r.db.ExecContext(ctx,
+		`INSERT INTO pages (is_published) VALUES (?)`, boolToInt(p.IsPublished))
+	if err != nil {
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	for _, t := range p.Translations {
+		if _, err := r.db.ExecContext(ctx, `
+			INSERT INTO page_translations (page_id, lang_code, slug, title, body, sections, meta_title, meta_description)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			id, t.LangCode, t.Slug, t.Title, t.Body, sectionsJSON(t.Sections), t.MetaTitle, t.MetaDescription,
+		); err != nil {
+			return 0, fmt.Errorf("insert page translation %s: %w", t.LangCode, err)
+		}
+	}
+	return id, nil
+}
+
+// UpdatePage updates shared fields and upserts translations.
+func (r *Repository) UpdatePage(ctx context.Context, p Page) error {
+	if _, err := r.db.ExecContext(ctx,
+		`UPDATE pages SET is_published=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`,
+		boolToInt(p.IsPublished), p.ID,
+	); err != nil {
+		return err
+	}
+	for _, t := range p.Translations {
+		if _, err := r.db.ExecContext(ctx, `
+			INSERT INTO page_translations (page_id, lang_code, slug, title, body, sections, meta_title, meta_description)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			ON CONFLICT(page_id, lang_code) DO UPDATE SET
+				slug=excluded.slug, title=excluded.title, body=excluded.body,
+				sections=excluded.sections,
+				meta_title=excluded.meta_title, meta_description=excluded.meta_description`,
+			p.ID, t.LangCode, t.Slug, t.Title, t.Body, sectionsJSON(t.Sections), t.MetaTitle, t.MetaDescription,
+		); err != nil {
+			return fmt.Errorf("upsert page translation %s: %w", t.LangCode, err)
+		}
+	}
+	return nil
+}
+
+// DeletePage deletes a page; CASCADE removes its translations.
+func (r *Repository) DeletePage(ctx context.Context, id int64) error {
+	_, err := r.db.ExecContext(ctx, `DELETE FROM pages WHERE id = ?`, id)
+	return err
+}
+
+// PageSlugConflictExists returns true if a different page already uses the slug.
+func (r *Repository) PageSlugConflictExists(ctx context.Context, slug, langCode string, excludePageID int64) (bool, error) {
+	var count int
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM page_translations WHERE slug = ? AND lang_code = ? AND page_id != ?`,
+		slug, langCode, excludePageID,
+	).Scan(&count)
+	return count > 0, err
 }

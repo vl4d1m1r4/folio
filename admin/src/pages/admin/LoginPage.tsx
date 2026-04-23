@@ -25,32 +25,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[--color-bg]">
-      <div className="bg-[--color-bg-surface] rounded-lg shadow p-8 w-full max-w-sm border border-[--color-border]">
+    <div className="min-h-screen flex items-center justify-center bg-(--color-bg)">
+      <div className="bg-(--color-bg-surface) rounded-lg shadow p-8 w-full max-w-sm border border-(--color-border)">
         <h1 className="text-2xl font-bold mb-6 text-center">Blog Admin</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[--color-muted] mb-1">
+            <label className="block text-sm font-medium text-(--color-muted) mb-1">
               Username
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="border border-[--color-border] rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[--color-accent] bg-[--color-bg] text-[--color-text]"
+              className="border border-(--color-border) rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-(--color-accent) bg-(--color-bg) text-(--color-text)"
               required
               autoComplete="username"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-[--color-muted] mb-1">
+            <label className="block text-sm font-medium text-(--color-muted) mb-1">
               Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border border-[--color-border] rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[--color-accent] bg-[--color-bg] text-[--color-text]"
+              className="border border-(--color-border) rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-(--color-accent) bg-(--color-bg) text-(--color-text)"
               required
               autoComplete="current-password"
             />

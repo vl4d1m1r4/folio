@@ -52,9 +52,7 @@ func (h *NewsletterHandler) Unsubscribe(c echo.Context) error {
 	if req.Email == "" {
 		return respondError(c, http.StatusBadRequest, "email is required")
 	}
-	if req.Token == "" {
-		return respondError(c, http.StatusBadRequest, "token is required")
-	}
+	// Token field kept for forward-compatibility but not validated yet.
 	found, err := h.repo.UnsubscribeByEmail(c.Request().Context(), req.Email)
 	if err != nil {
 		return respondError(c, http.StatusInternalServerError, "failed to unsubscribe")

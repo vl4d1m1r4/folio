@@ -1,0 +1,15 @@
+{% set latestArticles = articles.byLang[lang] | list %}
+{% if latestArticles | length %}
+<section class="max-w-5xl mx-auto px-6 py-10">
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold" style="color: var(--color-text);">{{ b.config.title | default("Latest Articles") }}</h2>
+    <a href="/{{ lang }}/articles/" class="text-sm font-medium" style="color: var(--color-accent);">View all →</a>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for article in latestArticles | limit(b.config.max_count | default(6)) %}
+      {% set article = article %}
+      {% include "partials/article-card.njk" %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

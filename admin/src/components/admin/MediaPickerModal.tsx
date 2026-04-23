@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../api/client";
 import type { MediaFile } from "../../api/types";
@@ -44,30 +45,30 @@ export function MediaPickerModal({ mode = "image", onSelect, onClose }: Props) {
     },
   });
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-[--color-bg-surface] rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[80vh] border border-[--color-border]">
+      <div className="bg-(--color-bg-surface) rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[80vh] border border-(--color-border)">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[--color-border]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-(--color-border)">
           <h2 className="font-semibold">Select Media</h2>
           <button
             onClick={onClose}
-            className="text-[--color-muted] hover:text-[--color-text] text-xl leading-none"
+            className="text-(--color-muted) hover:text-(--color-text) text-xl leading-none"
           >
             ×
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[--color-border] px-6">
+        <div className="flex border-b border-(--color-border) px-6">
           {(["library", "upload"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`mr-6 py-2 text-sm border-b-2 transition-colors capitalize ${
                 tab === t
-                  ? "border-[--color-accent] text-accent font-medium"
-                  : "border-transparent text-[--color-muted]"
+                  ? "border-(--color-accent) text-accent font-medium"
+                  : "border-transparent text-(--color-muted)"
               }`}
             >
               {t === "library" ? "Media Library" : "Upload New"}
@@ -90,7 +91,7 @@ export function MediaPickerModal({ mode = "image", onSelect, onClose }: Props) {
                 }}
               />
               <div
-                className="border-2 border-dashed border-[--color-border] rounded-lg py-16 text-center cursor-pointer hover:border-[--color-accent] transition-colors"
+                className="border-2 border-dashed border-(--color-border) rounded-lg py-16 text-center cursor-pointer hover:border-(--color-accent) transition-colors"
                 onClick={() => fileRef.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
@@ -100,15 +101,15 @@ export function MediaPickerModal({ mode = "image", onSelect, onClose }: Props) {
                 }}
               >
                 {uploadMutation.isPending ? (
-                  <p className="text-[--color-muted] animate-pulse">
+                  <p className="text-(--color-muted) animate-pulse">
                     Uploading…
                   </p>
                 ) : (
                   <>
-                    <p className="text-[--color-muted]">
+                    <p className="text-(--color-muted)">
                       Drop a file here or click to browse
                     </p>
-                    <p className="text-xs text-[--color-border] mt-1">
+                    <p className="text-xs text-(--color-border) mt-1">
                       {mode === "image" ? "Images only" : "Any file"}
                     </p>
                   </>
@@ -125,11 +126,11 @@ export function MediaPickerModal({ mode = "image", onSelect, onClose }: Props) {
           {tab === "library" && (
             <div>
               {isLoading ? (
-                <p className="text-[--color-muted] text-sm text-center py-8">
+                <p className="text-(--color-muted) text-sm text-center py-8">
                   Loading…
                 </p>
               ) : files.length === 0 ? (
-                <p className="text-[--color-muted] text-sm text-center py-8">
+                <p className="text-(--color-muted) text-sm text-center py-8">
                   No files yet. Upload one first.
                 </p>
               ) : (
@@ -143,11 +144,11 @@ export function MediaPickerModal({ mode = "image", onSelect, onClose }: Props) {
                         onClick={() => setSelected(f)}
                         className={`border-2 rounded-lg overflow-hidden transition-all group ${
                           isSelected
-                            ? "border-[--color-accent] ring-2 ring-[--color-accent]"
-                            : "border-transparent hover:border-[--color-border]"
+                            ? "border-(--color-accent) ring-2 ring-(--color-accent)"
+                            : "border-transparent hover:border-(--color-border)"
                         }`}
                       >
-                        <div className="h-24 bg-[--color-bg] flex items-center justify-center overflow-hidden">
+                        <div className="h-24 bg-(--color-bg) flex items-center justify-center overflow-hidden">
                           {isImg ? (
                             <img
                               src={`/uploads/${f.filename}`}
@@ -159,10 +160,10 @@ export function MediaPickerModal({ mode = "image", onSelect, onClose }: Props) {
                           )}
                         </div>
                         <div className="p-1.5 text-left">
-                          <p className="text-xs text-[--color-text] truncate">
+                          <p className="text-xs text-(--color-text) truncate">
                             {f.original_name}
                           </p>
-                          <p className="text-xs text-[--color-muted]">
+                          <p className="text-xs text-(--color-muted)">
                             {formatBytes(f.size_bytes)}
                           </p>
                         </div>
@@ -180,7 +181,7 @@ export function MediaPickerModal({ mode = "image", onSelect, onClose }: Props) {
                   >
                     ← Prev
                   </button>
-                  <span className="text-sm text-[--color-muted]">
+                  <span className="text-sm text-(--color-muted)">
                     Page {page} of {totalPages}
                   </span>
                   <button
@@ -197,14 +198,14 @@ export function MediaPickerModal({ mode = "image", onSelect, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[--color-border] bg-[--color-bg-surface]">
-          <span className="text-sm text-[--color-muted]">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-(--color-border) bg-(--color-bg-surface)">
+          <span className="text-sm text-(--color-muted)">
             {selected ? selected.original_name : "No file selected"}
           </span>
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm border border-[--color-border] rounded text-[--color-muted] hover:bg-[--color-bg]"
+              className="px-4 py-2 text-sm border border-(--color-border) rounded text-(--color-muted) hover:bg-(--color-bg)"
             >
               Cancel
             </button>
@@ -220,6 +221,7 @@ export function MediaPickerModal({ mode = "image", onSelect, onClose }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

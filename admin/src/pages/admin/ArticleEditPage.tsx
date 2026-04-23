@@ -59,7 +59,7 @@ export default function ArticleEditPage() {
   });
 
   if (langsLoading || (!isNew && articleLoading)) {
-    return <div className="p-6 text-[--color-muted]">Loading…</div>;
+    return <div className="p-6 text-(--color-muted)">Loading…</div>;
   }
 
   return (
@@ -218,11 +218,11 @@ function ArticleForm({
     const readingMins = Math.max(1, Math.round(wordCount / 200));
 
     return (
-      <div className="flex flex-col min-h-screen bg-[--color-bg]">
+      <div className="flex flex-col min-h-screen bg-(--color-bg)">
         {/* Admin preview bar — not part of the site UI */}
-        <div className="sticky top-0 z-20 bg-[--color-bg-surface] border-b border-[--color-border] px-6 py-2 flex items-center justify-between text-sm">
+        <div className="sticky top-0 z-20 bg-(--color-bg-surface) border-b border-(--color-border) px-6 py-2 flex items-center justify-between text-sm">
           <div className="flex items-center gap-4">
-            <span className="text-[--color-muted] text-xs uppercase tracking-wider">
+            <span className="text-(--color-muted) text-xs uppercase tracking-wider">
               Preview
             </span>
             <div className="flex gap-3">
@@ -230,7 +230,7 @@ function ArticleForm({
                 <button
                   key={l.code}
                   onClick={() => setActiveLang(l.code)}
-                  className={`pb-0.5 border-b transition-colors ${activeLang === l.code ? "border-[--color-accent] text-[--color-accent] font-medium" : "border-transparent text-[--color-muted] hover:text-[--color-text]"}`}
+                  className={`pb-0.5 border-b transition-colors ${activeLang === l.code ? "border-(--color-accent) text-(--color-accent) font-medium" : "border-transparent text-(--color-muted) hover:text-(--color-text)"}`}
                 >
                   {l.label}
                 </button>
@@ -246,12 +246,12 @@ function ArticleForm({
         </div>
 
         {/* ── Simulated site nav ── */}
-        <nav className="bg-[--color-bg-surface] border-b border-[--color-border]">
+        <nav className="bg-(--color-bg-surface) border-b border-(--color-border)">
           <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-            <span className="font-bold text-lg tracking-tight text-[--color-accent]">
+            <span className="font-bold text-lg tracking-tight text-(--color-accent)">
               Site Preview
             </span>
-            <div className="flex items-center gap-6 text-sm text-[--color-muted]">
+            <div className="flex items-center gap-6 text-sm text-(--color-muted)">
               <span>Home</span>
               <span>Articles</span>
               <span>Contact</span>
@@ -260,19 +260,19 @@ function ArticleForm({
         </nav>
 
         {/* ── Article body — mirrors article.njk ── */}
-        <main className="flex-1 bg-[--color-bg]">
+        <main className="flex-1 bg-(--color-bg)">
           <div className="max-w-3xl mx-auto px-6 py-12">
             {/* Breadcrumb */}
-            <nav className="text-xs text-[--color-muted] mb-8 flex items-center gap-1">
-              <span className="hover:text-[--color-text] cursor-default">
+            <nav className="text-xs text-(--color-muted) mb-8 flex items-center gap-1">
+              <span className="hover:text-(--color-text) cursor-default">
                 Home
               </span>
               <span className="mx-1">›</span>
-              <span className="hover:text-[--color-text] cursor-default">
+              <span className="hover:text-(--color-text) cursor-default">
                 Articles
               </span>
               <span className="mx-1">›</span>
-              <span className="text-[--color-text]">
+              <span className="text-(--color-text)">
                 {t.title || "Untitled"}
               </span>
             </nav>
@@ -302,14 +302,14 @@ function ArticleForm({
             )}
 
             {/* Title */}
-            <h1 className="text-4xl font-extrabold text-[--color-text] leading-tight mb-4">
+            <h1 className="text-4xl font-extrabold text-(--color-text) leading-tight mb-4">
               {t.title || (
-                <span className="text-[--color-muted]">(no title)</span>
+                <span className="text-(--color-muted)">(no title)</span>
               )}
             </h1>
 
             {/* Meta row */}
-            <div className="flex items-center gap-4 text-sm text-[--color-muted] mb-10 border-b border-[--color-border] pb-6">
+            <div className="flex items-center gap-4 text-sm text-(--color-muted) mb-10 border-b border-(--color-border) pb-6">
               {publishedAt ? (
                 <time>
                   {new Date(publishedAt).toLocaleDateString(activeLang, {
@@ -346,8 +346,8 @@ function ArticleForm({
         </main>
 
         {/* ── Simulated footer ── */}
-        <footer className="border-t border-[--color-border] bg-[--color-bg-surface]">
-          <div className="max-w-5xl mx-auto px-6 py-8 text-center text-xs text-[--color-muted]">
+        <footer className="border-t border-(--color-border) bg-(--color-bg-surface)">
+          <div className="max-w-5xl mx-auto px-6 py-8 text-center text-xs text-(--color-muted)">
             Site footer
           </div>
         </footer>
@@ -358,11 +358,11 @@ function ArticleForm({
   // ── Edit form ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col min-h-screen bg-[--color-bg]">
+    <div className="flex flex-col min-h-screen bg-(--color-bg)">
       {/* Sticky header */}
-      <header className="sticky top-0 z-10 bg-[--color-bg-surface] border-b border-[--color-border] px-8 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-10 bg-(--color-bg-surface) border-b border-(--color-border) px-8 py-4 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-[--color-text]">
+          <h1 className="text-xl font-semibold text-(--color-text)">
             {isNew ? "New Article" : `Edit: ${t.title || t.slug || "Untitled"}`}
           </h1>
           {/* Language tabs */}
@@ -373,8 +373,8 @@ function ArticleForm({
                 onClick={() => setActiveLang(l.code)}
                 className={`text-sm pb-0.5 border-b-2 transition-colors ${
                   activeLang === l.code
-                    ? "border-[--color-accent] text-accent font-medium"
-                    : "border-transparent text-[--color-muted]"
+                    ? "border-(--color-accent) text-accent font-medium"
+                    : "border-transparent text-(--color-muted)"
                 }`}
               >
                 {l.label}
@@ -391,13 +391,13 @@ function ArticleForm({
           )}
           <button
             onClick={() => setPreview(true)}
-            className="px-4 py-2 border border-[--color-border] rounded text-sm text-[--color-muted] hover:bg-[--color-bg]"
+            className="px-4 py-2 border border-(--color-border) rounded text-sm text-(--color-muted) hover:bg-(--color-bg)"
           >
             Preview
           </button>
           <button
             onClick={onCancel}
-            className="px-4 py-2 border border-[--color-border] rounded text-[--color-muted] text-sm hover:bg-[--color-bg]"
+            className="px-4 py-2 border border-(--color-border) rounded text-(--color-muted) text-sm hover:bg-(--color-bg)"
           >
             Cancel
           </button>
@@ -412,19 +412,19 @@ function ArticleForm({
       </header>
 
       {/* Body: writing + settings */}
-      <div className="flex flex-1 min-h-0 divide-x divide-[--color-border]">
+      <div className="flex flex-1 min-h-0 divide-x divide-(--color-border)">
         {/* Writing panel */}
         <div className="flex-1 overflow-y-auto p-8 space-y-6">
           {/* Title */}
           <div className="relative pb-5">
-            <label className="block text-sm font-medium text-[--color-muted] mb-1">
+            <label className="block text-sm font-medium text-(--color-muted) mb-1">
               Title *
             </label>
             <input
               type="text"
               value={t.title}
               onChange={(e) => handleTitleChange(activeLang, e.target.value)}
-              className={`border border-[--color-border] rounded px-3 py-2 w-full bg-[--color-bg] text-[--color-text] focus:outline-none focus:ring-2 focus:ring-[--color-accent] ${langErrors.title ? "border-red-500" : ""}`}
+              className={`border border-(--color-border) rounded px-3 py-2 w-full bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-accent) ${langErrors.title ? "border-red-500" : ""}`}
               placeholder="Article title"
             />
             {langErrors.title && (
@@ -436,7 +436,7 @@ function ArticleForm({
 
           {/* Slug */}
           <div className="relative pb-5">
-            <label className="block text-sm font-medium text-[--color-muted] mb-1">
+            <label className="block text-sm font-medium text-(--color-muted) mb-1">
               Slug *
             </label>
             <input
@@ -449,7 +449,7 @@ function ArticleForm({
                   e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
                 )
               }
-              className={`border border-[--color-border] rounded px-3 py-2 w-full font-mono text-sm bg-[--color-bg] text-[--color-text] focus:outline-none focus:ring-2 focus:ring-[--color-accent] ${langErrors.slug ? "border-red-500" : ""}`}
+              className={`border border-(--color-border) rounded px-3 py-2 w-full font-mono text-sm bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-accent) ${langErrors.slug ? "border-red-500" : ""}`}
               placeholder="my-article-slug"
             />
             {langErrors.slug && (
@@ -461,7 +461,7 @@ function ArticleForm({
 
           {/* Excerpt */}
           <div className="relative pb-5">
-            <label className="block text-sm font-medium text-[--color-muted] mb-1">
+            <label className="block text-sm font-medium text-(--color-muted) mb-1">
               Summary / Excerpt *
             </label>
             <textarea
@@ -470,7 +470,7 @@ function ArticleForm({
                 updateTranslation(activeLang, "excerpt", e.target.value)
               }
               rows={3}
-              className={`border border-[--color-border] rounded px-3 py-2 w-full bg-[--color-bg] text-[--color-text] focus:outline-none focus:ring-2 focus:ring-[--color-accent] ${langErrors.excerpt ? "border-red-500" : ""}`}
+              className={`border border-(--color-border) rounded px-3 py-2 w-full bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-accent) ${langErrors.excerpt ? "border-red-500" : ""}`}
               placeholder="Short summary shown in article listings"
             />
             {langErrors.excerpt && (
@@ -482,21 +482,21 @@ function ArticleForm({
 
           {/* Body */}
           <div>
-            <label className="block text-sm font-medium text-[--color-muted] mb-1">
+            <label className="block text-sm font-medium text-(--color-muted) mb-1">
               Body
             </label>
             <RichTextEditor
-              content={t.body}
+              value={t.body}
               onChange={(html) => updateTranslation(activeLang, "body", html)}
             />
           </div>
         </div>
 
         {/* Settings panel */}
-        <div className="w-80 shrink-0 overflow-y-auto p-6 space-y-6 bg-[--color-bg-surface]">
+        <div className="w-80 shrink-0 overflow-y-auto p-6 space-y-6 bg-(--color-bg-surface)">
           {/* Publish */}
           <div>
-            <p className="text-sm font-semibold text-[--color-text] mb-2">
+            <p className="text-sm font-semibold text-(--color-text) mb-2">
               Publish Status
             </p>
             <label className="flex items-center gap-3 cursor-pointer">
@@ -508,7 +508,7 @@ function ArticleForm({
                     e.target.checked ? new Date().toISOString() : null,
                   )
                 }
-                className="h-4 w-4 rounded border-[--color-border] accent-[--color-accent]"
+                className="h-4 w-4 rounded border-(--color-border) accent-(--color-accent)"
               />
               <span className="text-sm">
                 {publishedAt
@@ -520,7 +520,7 @@ function ArticleForm({
 
           {/* Featured */}
           <div>
-            <p className="text-sm font-semibold text-[--color-text] mb-2">
+            <p className="text-sm font-semibold text-(--color-text) mb-2">
               Featured
             </p>
             <label className="flex items-center gap-3 cursor-pointer">
@@ -528,7 +528,7 @@ function ArticleForm({
                 type="checkbox"
                 checked={isFeatured}
                 onChange={(e) => setIsFeatured(e.target.checked)}
-                className="h-4 w-4 rounded border-[--color-border] accent-[--color-accent]"
+                className="h-4 w-4 rounded border-(--color-border) accent-(--color-accent)"
               />
               <span className="text-sm">Show as featured article</span>
             </label>
@@ -582,7 +582,7 @@ function ArticleForm({
 
           {/* Tag */}
           <div>
-            <p className="text-sm font-semibold text-[--color-text] mb-2">
+            <p className="text-sm font-semibold text-(--color-text) mb-2">
               Tag / Category
             </p>
             <select
@@ -590,7 +590,7 @@ function ArticleForm({
               onChange={(e) =>
                 updateTranslation(activeLang, "tag", e.target.value)
               }
-              className="border border-[--color-border] rounded px-3 py-2 w-full text-sm bg-[--color-bg] text-[--color-text] focus:outline-none focus:ring-2 focus:ring-[--color-accent]"
+              className="border border-(--color-border) rounded px-3 py-2 w-full text-sm bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
             >
               <option value="">— None —</option>
               {tags.map((tag) => (
@@ -603,11 +603,11 @@ function ArticleForm({
 
           {/* SEO */}
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-[--color-text]">
+            <p className="text-sm font-semibold text-(--color-text)">
               SEO ({activeLang.toUpperCase()})
             </p>
             <div>
-              <label className="block text-xs text-[--color-muted] mb-1">
+              <label className="block text-xs text-(--color-muted) mb-1">
                 Meta title{" "}
                 <span
                   className={t.meta_title.length > 60 ? "text-amber-500" : ""}
@@ -621,12 +621,12 @@ function ArticleForm({
                 onChange={(e) =>
                   updateTranslation(activeLang, "meta_title", e.target.value)
                 }
-                className="border border-[--color-border] rounded px-3 py-2 w-full text-sm bg-[--color-bg] text-[--color-text] focus:outline-none focus:ring-2 focus:ring-[--color-accent]"
+                className="border border-(--color-border) rounded px-3 py-2 w-full text-sm bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
                 placeholder="Leave blank to use article title"
               />
             </div>
             <div>
-              <label className="block text-xs text-[--color-muted] mb-1">
+              <label className="block text-xs text-(--color-muted) mb-1">
                 Meta description{" "}
                 <span
                   className={
@@ -646,7 +646,7 @@ function ArticleForm({
                   )
                 }
                 rows={3}
-                className="border border-[--color-border] rounded px-3 py-2 w-full text-sm bg-[--color-bg] text-[--color-text] focus:outline-none focus:ring-2 focus:ring-[--color-accent]"
+                className="border border-(--color-border) rounded px-3 py-2 w-full text-sm bg-(--color-bg) text-(--color-text) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
                 placeholder="Leave blank to use excerpt"
               />
             </div>

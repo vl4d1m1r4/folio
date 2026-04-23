@@ -11,57 +11,52 @@ permalink: "/{{ lang.code }}/contact/index.html"
 {% set dir = lang.dir %}
 {% set lang = langCode %}
 
-{% block title %}Contact · {{ site.name }}{% endblock %}
+{% block title %}{{ i18n[lang].contact_title }} · {{ site.name }}{% endblock %}
 {% block description %}Get in touch with {{ site.name }}.{% endblock %}
 
 {% block cta_band %}{% endblock %}
 
 {% block content %}
 <div class="max-w-xl mx-auto px-6 py-16">
-  <h1 class="text-4xl font-extrabold mb-3" style="color: var(--color-text);">Contact</h1>
-  <p class="mb-10" style="color: var(--color-muted);">Fill in the form below and we'll get back to you.</p>
+  <h1 class="text-4xl font-extrabold mb-3" style="color: var(--color-text);">{{ i18n[lang].contact_title }}</h1>
+  <p class="mb-10" style="color: var(--color-muted);">{{ i18n[lang].contact_intro }}</p>
 
-  <div id="contact-success" class="hidden mb-6 rounded-lg px-5 py-4 text-sm" style="background: color-mix(in srgb, var(--color-accent) 10%, transparent); border: 1px solid var(--color-accent); color: var(--color-accent);">
-    Thank you for your message — we'll be in touch soon!
-  </div>
+  <div id="contact-success" class="hidden mb-6 rounded-lg px-5 py-4 text-sm" style="background: color-mix(in srgb, var(--color-accent) 10%, transparent); border: 1px solid var(--color-accent); color: var(--color-accent);">{{ i18n[lang].contact_success }}</div>
 
   <p class="mb-6 text-xs" style="color: var(--color-muted);"><span style="color: var(--color-accent);">*</span> Required</p>
 
-  <form id="contact-form" class="space-y-5" novalidate>
+  <form id="contact-form" class="space-y-5" novalidate
+        data-error="{{ i18n[lang].contact_error }}">
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">First name <span style="color: var(--color-accent);">*</span></label>
+        <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">{{ i18n[lang].contact_first_name }} <span style="color: var(--color-accent);">*</span></label>
         <input type="text" name="first_name" required class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border: 1px solid var(--color-border); background: var(--color-bg-surface); color: var(--color-text);" />
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">Last name</label>
+        <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">{{ i18n[lang].contact_last_name }}</label>
         <input type="text" name="last_name" class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border: 1px solid var(--color-border); background: var(--color-bg-surface); color: var(--color-text);" />
       </div>
     </div>
     <div>
-      <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">Company</label>
+      <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">{{ i18n[lang].contact_company }}</label>
       <input type="text" name="company" class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border: 1px solid var(--color-border); background: var(--color-bg-surface); color: var(--color-text);" />
     </div>
     <div>
-      <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">Email <span style="color: var(--color-accent);">*</span></label>
+      <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">{{ i18n[lang].contact_email }} <span style="color: var(--color-accent);">*</span></label>
       <input type="email" name="email" required class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border: 1px solid var(--color-border); background: var(--color-bg-surface); color: var(--color-text);" />
     </div>
     <div>
-      <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">Phone</label>
+      <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">{{ i18n[lang].contact_phone }}</label>
       <input type="tel" name="phone" class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border: 1px solid var(--color-border); background: var(--color-bg-surface); color: var(--color-text);" />
     </div>
     <div>
-      <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">Message <span style="color: var(--color-accent);">*</span></label>
+      <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">{{ i18n[lang].contact_message }} <span style="color: var(--color-accent);">*</span></label>
       <textarea name="message" required rows="5" class="rounded px-3 py-2 w-full focus:outline-none text-sm resize-y" style="border: 1px solid var(--color-border); background: var(--color-bg-surface); color: var(--color-text);"></textarea>
     </div>
     <div id="contact-error" class="hidden text-sm" style="color: var(--color-destructive, #e02424);"></div>
     <button type="submit" class="w-full py-3 font-semibold transition-colors text-sm text-white" style="background: var(--color-accent); border-radius: var(--radius-button);">
-      Send message
+      {{ i18n[lang].contact_submit }}
     </button>
   </form>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script src="/site-assets/forms.js" defer></script>
 {% endblock %}

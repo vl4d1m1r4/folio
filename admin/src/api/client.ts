@@ -2,10 +2,13 @@ import type {
   Article,
   Language,
   MediaFile,
+  Page,
   PaginatedArticles,
   PaginatedMediaFiles,
   PaginatedContacts,
   PaginatedSubscribers,
+  PaginatedPages,
+  AllSettings,
 } from "./types";
 
 const BASE_URL = "/api/v1";
@@ -95,12 +98,6 @@ export const adminApi = {
 
   getTags: () => request<string[]>("/admin/tags", { auth: true }),
 
-  triggerRebuild: () =>
-    request<{ status: string }>("/admin/rebuild", {
-      method: "POST",
-      auth: true,
-    }),
-
   // Media
   listMedia: (page = 1) =>
     request<PaginatedMediaFiles>(`/admin/media?page=${page}`, { auth: true }),
@@ -124,6 +121,42 @@ export const adminApi = {
   // Newsletter
   listSubscribers: (page = 1) =>
     request<PaginatedSubscribers>(`/admin/newsletter?page=${page}`, {
+      auth: true,
+    }),
+
+  // Settings
+  getSettings: () => request<AllSettings>("/admin/settings", { auth: true }),
+  saveSettings: (data: Partial<AllSettings>) =>
+    request<{ message: string }>("/admin/settings", {
+      method: "PUT",
+      body: JSON.stringify(data),
+      auth: true,
+    }),
+
+  // Pages
+  listPages: (page = 1, limit = 20) =>
+    request<PaginatedPages>(`/admin/pages?page=${page}&limit=${limit}`, {
+      auth: true,
+    }),
+  getPage: (id: number) => request<Page>(`/admin/pages/${id}`, { auth: true }),
+  createPage: (data: Omit<Page, "id" | "created_at" | "updated_at">) =>
+    request<Page>("/admin/pages", {
+      method: "POST",
+      body: JSON.stringify(data),
+      auth: true,
+    }),
+  updatePage: (id: number, data: Partial<Page>) =>
+    request<Page>(`/admin/pages/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+      auth: true,
+    }),
+  deletePage: (id: number) =>
+    request<void>(`/admin/pages/${id}`, { method: "DELETE", auth: true }),
+
+  triggerRebuild: () =>
+    request<{ status: string }>("/admin/rebuild", {
+      method: "POST",
       auth: true,
     }),
 };

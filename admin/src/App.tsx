@@ -18,6 +18,10 @@ const ArticleEdit = lazy(() => import("./pages/admin/ArticleEditPage"));
 const MediaPage = lazy(() => import("./pages/admin/MediaPage"));
 const ContactsPage = lazy(() => import("./pages/admin/ContactsPage"));
 const NewsletterPage = lazy(() => import("./pages/admin/NewsletterPage"));
+const PagesPage = lazy(() => import("./pages/admin/PagesPage"));
+const PageEditPage = lazy(() => import("./pages/admin/PageEditPage"));
+const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
+const HomeBuilderPage = lazy(() => import("./pages/admin/HomeBuilderPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 60_000 } },
@@ -25,7 +29,7 @@ const queryClient = new QueryClient({
 
 function Loading() {
   return (
-    <div className="min-h-screen flex items-center justify-center text-[--color-muted]">
+    <div className="min-h-screen flex items-center justify-center text-(--color-muted)">
       Loading…
     </div>
   );
@@ -38,15 +42,15 @@ function RouteError() {
   const message =
     error instanceof Error ? error.message : "An unexpected error occurred.";
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[--color-bg]">
-      <div className="max-w-md w-full mx-4 p-8 bg-[--color-bg-surface] rounded-lg shadow text-center space-y-4 border border-[--color-border]">
+    <div className="min-h-screen flex items-center justify-center bg-(--color-bg)">
+      <div className="max-w-md w-full mx-4 p-8 bg-(--color-bg-surface) rounded-lg shadow text-center space-y-4 border border-(--color-border)">
         <h1 className="text-2xl font-semibold">Something went wrong</h1>
-        <p className="text-sm text-[--color-muted] font-mono break-all">
+        <p className="text-sm text-(--color-muted) font-mono break-all">
           {message}
         </p>
         <button
           onClick={() => window.location.assign("/")}
-          className="px-4 py-2 bg-[--color-accent] text-white text-sm rounded hover:bg-[--color-accent-hover]"
+          className="px-4 py-2 bg-(--color-accent) text-white text-sm rounded hover:bg-(--color-accent-hover)"
         >
           Go home
         </button>
@@ -111,6 +115,38 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<Loading />}>
             <NewsletterPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "pages",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <PagesPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "pages/:id",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <PageEditPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "settings",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <SettingsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "home-builder",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HomeBuilderPage />
           </Suspense>
         ),
       },

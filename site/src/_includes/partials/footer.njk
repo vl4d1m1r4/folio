@@ -9,26 +9,28 @@
 
     <div>
       <p class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--color-muted);">Links</p>
-      <ul class="space-y-2 text-sm" style="color: var(--color-muted);">
-        <li><a href="/{{ lang }}/" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">Home</a></li>
-        <li><a href="/{{ lang }}/articles/" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">Articles</a></li>
-        <li><a href="/{{ lang }}/contact/" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">Contact</a></li>
+      <ul class="space-y-2 text-sm">
+        {% for link in footer.byLang[lang] %}
+          <li>
+            {% if link.type === 'builtin' or link.type === 'page' %}
+              <a href="/{{ lang }}{{ link.url }}" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">{{ link.label }}</a>
+            {% else %}
+              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">{{ link.label }}</a>
+            {% endif %}
+          </li>
+        {% endfor %}
       </ul>
     </div>
 
     <div>
-      {% if site.social %}
+      {% if social | length %}
         <p class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--color-muted);">Social</p>
         <ul class="space-y-2 text-sm">
-          {% if site.social.twitter %}
-            <li><a href="{{ site.social.twitter }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">Twitter / X</a></li>
-          {% endif %}
-          {% if site.social.linkedin %}
-            <li><a href="{{ site.social.linkedin }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">LinkedIn</a></li>
-          {% endif %}
-          {% if site.social.github %}
-            <li><a href="{{ site.social.github }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">GitHub</a></li>
-          {% endif %}
+          {% for s in social %}
+            {% if s.url %}
+              <li><a href="{{ s.url }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">{{ s.platform }}</a></li>
+            {% endif %}
+          {% endfor %}
         </ul>
       {% endif %}
     </div>

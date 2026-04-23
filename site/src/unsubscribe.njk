@@ -1,0 +1,44 @@
+---
+pagination:
+  data: config.languages
+  size: 1
+  alias: lang
+permalink: "/{{ lang.code }}/unsubscribe/index.html"
+---
+{% extends "layouts/base.njk" %}
+
+{% set langCode = lang.code %}
+{% set dir = lang.dir %}
+{% set lang = langCode %}
+
+{% block title %}{{ i18n[lang].unsubscribe_title }} · {{ site.name }}{% endblock %}
+{% block description %}Unsubscribe from the {{ site.name }} newsletter.{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-6 py-20 text-center">
+  <h1 class="text-3xl font-extrabold mb-3" style="color: var(--color-text);">{{ i18n[lang].unsubscribe_title }}</h1>
+  <p class="mb-8 text-sm" style="color: var(--color-muted);">{{ i18n[lang].unsubscribe_intro }}</p>
+
+  <form id="unsubscribe-form" class="space-y-4" novalidate
+        data-success="{{ i18n[lang].unsubscribe_success }}">
+    <input
+      type="email"
+      name="email"
+      required
+      placeholder="{{ i18n[lang].unsubscribe_email_placeholder }}"
+      class="w-full px-4 py-3 rounded text-sm border focus:outline-none focus:ring-2"
+      style="border-color: var(--color-border); background: var(--color-bg); color: var(--color-text); border-radius: var(--radius-input); --tw-ring-color: var(--color-accent);"
+    />
+    <button
+      type="submit"
+      class="w-full px-6 py-3 text-sm font-semibold text-white transition-colors"
+      style="background: var(--color-destructive); border-radius: var(--radius-button);"
+    >
+      {{ i18n[lang].unsubscribe_submit }}
+    </button>
+  </form>
+
+  <p id="unsubscribe-success" class="hidden mt-6 text-sm" style="color: var(--color-success);"></p>
+  <p id="unsubscribe-error" class="hidden mt-6 text-sm" style="color: var(--color-destructive);"></p>
+</div>
+{% endblock %}

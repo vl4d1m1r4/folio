@@ -48,4 +48,4 @@ tags:
 # ── Contact form ───────────────────────────────────
 # Email address that receives contact form submissions.
 # Actual sending requires SMTP or MS Graph credentials in .env
-contactEmail: "vladimir.trajkovski@protonmail.com"
+contactEmail: ""

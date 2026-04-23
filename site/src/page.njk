@@ -1,0 +1,59 @@
+---
+pagination:
+  data: pages.items
+  size: 1
+  alias: item
+permalink: "/{{ item.lang.code }}/{{ item.page.slug }}/index.html"
+---
+{% extends "layouts/base.njk" %}
+
+{% set dir = item.lang.dir %}
+{% set langCode = item.lang.code %}
+{% set lang = langCode %}
+{% set page = item.page %}
+
+{% block title %}{{ page.meta_title | default(page.title) }} — {{ site.name }}{% endblock %}
+{% block description %}{{ page.meta_description | default(site.tagline) }}{% endblock %}
+
+{% block content %}
+{# Render the block builder sections if any exist, otherwise fall back to body HTML #}
+{% if page.sections and page.sections.length %}
+  <div class="max-w-5xl mx-auto px-6">
+    <header class="py-12">
+      <h1 class="text-4xl font-extrabold tracking-tight" style="color: var(--color-text);">{{ page.title }}</h1>
+    </header>
+  </div>
+  {% for block in page.sections %}
+    {% if block.visible !== false %}
+      {% set b = block %}
+      {% if block.type === "hero" %}
+        {% include "partials/blocks/hero.njk" %}
+      {% elif block.type === "featured-articles" %}
+        {% include "partials/blocks/featured-articles.njk" %}
+      {% elif block.type === "latest-articles" %}
+        {% include "partials/blocks/latest-articles.njk" %}
+      {% elif block.type === "cta-band" %}
+        {% include "partials/blocks/cta-band.njk" %}
+      {% elif block.type === "rich-text" %}
+        {% include "partials/blocks/rich-text.njk" %}
+      {% elif block.type === "image-text" %}
+        {% include "partials/blocks/image-text.njk" %}
+      {% elif block.type === "testimonials" %}
+        {% include "partials/blocks/testimonials.njk" %}
+      {% elif block.type === "newsletter" %}
+        {% include "partials/blocks/newsletter.njk" %}
+      {% elif block.type === "container" %}
+        {% include "partials/blocks/container.njk" %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% elif page.body %}
+  <article class="max-w-3xl mx-auto px-6 py-16">
+    <h1 class="text-4xl font-extrabold tracking-tight mb-8" style="color: var(--color-text);">{{ page.title }}</h1>
+    <div class="prose prose-neutral max-w-none" style="color: var(--color-text);">
+      {{ page.body | safe }}
+    </div>
+  </article>
+{% endif %}
+{% endblock %}
+

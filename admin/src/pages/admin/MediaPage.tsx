@@ -44,7 +44,7 @@ export default function MediaPage() {
   }
 
   if (isLoading)
-    return <div className="p-6 text-[--color-muted]">Loading…</div>;
+    return <div className="p-6 text-(--color-muted)">Loading…</div>;
 
   return (
     <div>
@@ -52,7 +52,7 @@ export default function MediaPage() {
         <h1 className="text-2xl font-bold">Media Library</h1>
         <div className="flex gap-3 items-center">
           {uploadMutation.isPending && (
-            <span className="text-xs text-[--color-muted] animate-pulse">
+            <span className="text-xs text-(--color-muted) animate-pulse">
               Uploading…
             </span>
           )}
@@ -75,7 +75,7 @@ export default function MediaPage() {
 
       {/* Drop zone (visual hint, actual click handled by button) */}
       <div
-        className="border-2 border-dashed border-[--color-border] rounded-lg p-8 text-center mb-6 text-[--color-muted] text-sm hover:border-[--color-accent] transition-colors cursor-pointer"
+        className="border-2 border-dashed border-(--color-border) rounded-lg p-8 text-center mb-6 text-(--color-muted) text-sm hover:border-(--color-accent) transition-colors cursor-pointer"
         onClick={() => fileRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
@@ -88,7 +88,7 @@ export default function MediaPage() {
 
       {/* Grid */}
       {files.length === 0 ? (
-        <div className="text-center text-[--color-muted] text-sm py-12">
+        <div className="text-center text-(--color-muted) text-sm py-12">
           No media files yet.
         </div>
       ) : (
@@ -99,9 +99,9 @@ export default function MediaPage() {
             return (
               <div
                 key={file.id}
-                className="group bg-[--color-bg-surface] rounded-lg shadow overflow-hidden flex flex-col border border-[--color-border]"
+                className="group bg-(--color-bg-surface) rounded-lg shadow overflow-hidden flex flex-col border border-(--color-border)"
               >
-                <div className="h-36 bg-[--color-bg] flex items-center justify-center overflow-hidden">
+                <div className="h-36 bg-(--color-bg) flex items-center justify-center overflow-hidden">
                   {isImage ? (
                     <img
                       src={url}
@@ -114,19 +114,19 @@ export default function MediaPage() {
                 </div>
                 <div className="p-2 flex-1 flex flex-col justify-between">
                   <p
-                    className="text-xs text-[--color-text] truncate"
+                    className="text-xs text-(--color-text) truncate"
                     title={file.original_name}
                   >
                     {file.original_name}
                   </p>
-                  <p className="text-xs text-[--color-muted]">
+                  <p className="text-xs text-(--color-muted)">
                     {formatBytes(file.size_bytes)}
                   </p>
                 </div>
-                <div className="border-t border-[--color-border] flex divide-x divide-[--color-border]">
+                <div className="border-t border-(--color-border) flex divide-x divide-(--color-border)">
                   <button
                     onClick={() => copyPath(file.id, file.filename)}
-                    className="flex-1 text-xs py-1.5 text-center text-accent hover:bg-[--color-bg] transition-colors"
+                    className="flex-1 text-xs py-1.5 text-center text-accent hover:bg-(--color-bg) transition-colors"
                   >
                     {copied === file.id ? "✓ Copied" : "Copy path"}
                   </button>
@@ -155,7 +155,7 @@ export default function MediaPage() {
           >
             ← Prev
           </button>
-          <span className="text-sm text-[--color-muted]">
+          <span className="text-sm text-(--color-muted)">
             Page {page} of {totalPages}
           </span>
           <button
