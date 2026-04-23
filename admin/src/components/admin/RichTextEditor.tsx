@@ -30,7 +30,9 @@ function ToolbarButton({
       }}
       title={title}
       className={`px-2 py-1 rounded text-sm transition-colors ${
-        active ? "bg-gray-700 text-white" : "hover:bg-gray-100 text-gray-700"
+        active
+          ? "bg-[--color-accent] text-white"
+          : "hover:bg-[--color-bg] text-[--color-text]"
       }`}
     >
       {children}
@@ -92,9 +94,9 @@ export function RichTextEditor({ content, onChange }: Props) {
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
+    <div className="border border-[--color-border] rounded-lg overflow-hidden bg-[--color-bg]">
       {/* Toolbar */}
-      <div className="flex flex-wrap gap-1 px-2 py-1.5 border-b bg-gray-50">
+      <div className="flex flex-wrap gap-1 px-2 py-1.5 border-b border-[--color-border] bg-[--color-bg-surface]">
         <ToolbarButton
           active={editor.isActive("bold")}
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -127,7 +129,7 @@ export function RichTextEditor({ content, onChange }: Props) {
         >
           H3
         </ToolbarButton>
-        <span className="w-px bg-gray-200 mx-1 self-stretch" />
+        <span className="w-px bg-[--color-border] mx-1 self-stretch" />
         <ToolbarButton
           active={editor.isActive("bulletList")}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -156,7 +158,7 @@ export function RichTextEditor({ content, onChange }: Props) {
         >
           {"<>"}
         </ToolbarButton>
-        <span className="w-px bg-gray-200 mx-1 self-stretch" />
+        <span className="w-px bg-[--color-border] mx-1 self-stretch" />
         <ToolbarButton
           active={editor.isActive("link")}
           onClick={openLinkInput}
@@ -170,7 +172,7 @@ export function RichTextEditor({ content, onChange }: Props) {
         >
           🖼 Image
         </ToolbarButton>
-        <span className="w-px bg-gray-200 mx-1 self-stretch" />
+        <span className="w-px bg-[--color-border] mx-1 self-stretch" />
         <ToolbarButton
           onClick={() => editor.chain().focus().undo().run()}
           title="Undo"
@@ -187,14 +189,14 @@ export function RichTextEditor({ content, onChange }: Props) {
 
       {/* Link input bar */}
       {showLinkInput && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border-b">
-          <span className="text-xs text-gray-500 shrink-0">URL:</span>
+        <div className="flex items-center gap-2 px-3 py-2 bg-[--color-bg-surface] border-b border-[--color-border]">
+          <span className="text-xs text-[--color-muted] shrink-0">URL:</span>
           <input
             type="url"
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             placeholder="https://example.com"
-            className="flex-1 text-sm border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 text-sm border border-[--color-border] rounded px-2 py-1 bg-[--color-bg] text-[--color-text] focus:outline-none focus:ring-2 focus:ring-[--color-accent]"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -221,14 +223,14 @@ export function RichTextEditor({ content, onChange }: Props) {
           <button
             type="button"
             onClick={applyLink}
-            className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 shrink-0"
+            className="text-sm px-3 py-1 btn-accent rounded shrink-0"
           >
             Apply
           </button>
           <button
             type="button"
             onClick={() => setShowLinkInput(false)}
-            className="text-sm text-gray-400 hover:text-gray-600"
+            className="text-sm text-[--color-muted] hover:text-[--color-text]"
           >
             ✕
           </button>
@@ -241,12 +243,12 @@ export function RichTextEditor({ content, onChange }: Props) {
         tippyOptions={{ duration: 150, placement: "bottom" }}
         shouldShow={({ editor }) => editor.isActive("link")}
       >
-        <div className="flex items-center gap-1 bg-white border shadow-lg rounded px-2 py-1.5">
+        <div className="flex items-center gap-1 bg-[--color-bg-surface] border border-[--color-border] shadow-lg rounded px-2 py-1.5">
           <a
             href={editor.getAttributes("link").href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-blue-600 hover:underline max-w-[180px] truncate"
+            className="text-xs text-[--color-accent] hover:underline max-w-[180px] truncate"
           >
             {editor.getAttributes("link").href}
           </a>
@@ -256,7 +258,7 @@ export function RichTextEditor({ content, onChange }: Props) {
               setLinkUrl(editor.getAttributes("link").href ?? "");
               setShowLinkInput(true);
             }}
-            className="text-xs text-gray-500 hover:text-gray-800 px-1 border-l ml-1 pl-2"
+            className="text-xs text-[--color-muted] hover:text-[--color-text] px-1 border-l border-[--color-border] ml-1 pl-2"
             title="Edit link"
           >
             ✏ Edit

@@ -25,7 +25,7 @@ const queryClient = new QueryClient({
 
 function Loading() {
   return (
-    <div className="min-h-screen flex items-center justify-center text-gray-400">
+    <div className="min-h-screen flex items-center justify-center text-[--color-muted]">
       Loading…
     </div>
   );
@@ -38,13 +38,15 @@ function RouteError() {
   const message =
     error instanceof Error ? error.message : "An unexpected error occurred.";
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full mx-4 p-8 bg-white rounded-lg shadow text-center space-y-4">
+    <div className="min-h-screen flex items-center justify-center bg-[--color-bg]">
+      <div className="max-w-md w-full mx-4 p-8 bg-[--color-bg-surface] rounded-lg shadow text-center space-y-4 border border-[--color-border]">
         <h1 className="text-2xl font-semibold">Something went wrong</h1>
-        <p className="text-sm text-gray-500 font-mono break-all">{message}</p>
+        <p className="text-sm text-[--color-muted] font-mono break-all">
+          {message}
+        </p>
         <button
           onClick={() => window.location.assign("/")}
-          className="px-4 py-2 bg-gray-900 text-white text-sm rounded"
+          className="px-4 py-2 bg-[--color-accent] text-white text-sm rounded hover:bg-[--color-accent-hover]"
         >
           Go home
         </button>

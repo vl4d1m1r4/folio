@@ -20,8 +20,11 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-56 bg-gray-900 text-white flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-4 border-b border-gray-700">
+      <aside
+        className="w-56 text-white flex flex-col shrink-0"
+        style={{ background: "var(--color-nav-from)" }}
+      >
+        <div className="h-16 flex items-center px-4 border-b border-white/10">
           <Link to="/admin" className="font-bold text-lg tracking-tight">
             Blog Admin
           </Link>
@@ -33,7 +36,7 @@ export default function AdminLayout() {
               return (
                 <p
                   key={i}
-                  className="px-2 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                  className="px-2 pt-4 pb-1 text-xs font-semibold text-white/40 uppercase tracking-wider"
                 >
                   {item.label}
                 </p>
@@ -47,8 +50,8 @@ export default function AdminLayout() {
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded text-sm transition-colors ${
                     isActive
-                      ? "bg-gray-700 text-white font-medium"
-                      : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                      ? "bg-white/20 text-white font-medium"
+                      : "text-white/70 hover:bg-white/10 hover:text-white"
                   }`
                 }
               >
@@ -58,17 +61,17 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-white/10">
           <button
             onClick={logout}
-            className="w-full px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white rounded text-left transition-colors"
+            className="w-full px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white rounded text-left transition-colors"
           >
             Logout
           </button>
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 bg-gray-50">
+      <div className="flex-1 flex flex-col min-w-0 bg-[--color-bg]">
         <main className="flex-1 p-6 overflow-auto">
           <Outlet />
         </main>

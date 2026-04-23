@@ -25,32 +25,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white rounded-lg shadow p-8 w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-[--color-bg]">
+      <div className="bg-[--color-bg-surface] rounded-lg shadow p-8 w-full max-w-sm border border-[--color-border]">
         <h1 className="text-2xl font-bold mb-6 text-center">Blog Admin</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[--color-muted] mb-1">
               Username
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-[--color-border] rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[--color-accent] bg-[--color-bg] text-[--color-text]"
               required
               autoComplete="username"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[--color-muted] mb-1">
               Password
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="border rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-[--color-border] rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-[--color-accent] bg-[--color-bg] text-[--color-text]"
               required
               autoComplete="current-password"
             />
@@ -59,7 +59,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="w-full btn-accent px-4 py-2 rounded disabled:opacity-50 transition-colors"
           >
             {loading ? "Signing in…" : "Sign in"}
           </button>

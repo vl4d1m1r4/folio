@@ -1,22 +1,22 @@
 {
-  "preset": "dark",
+  "preset": "default",
   "colors": {
-    "accent": "#10b981",
-    "accent-hover": "#059669",
-    "accent-dark": "#047857",
-    "cta": "#6366f1",
-    "cta-hover": "#4f46e5",
-    "nav-from": "#1e1e2e",
-    "nav-to": "#181825",
-    "bg": "#0f0f1a",
-    "bg-surface": "#1e1e2e",
-    "text": "#e2e8f0",
-    "muted": "#94a3b8",
-    "border": "#2d2d44",
-    "success": "#10b981",
-    "warning": "#f59e0b",
-    "destructive": "#f43f5e"
+    "accent": "#1a56db",
+    "accent-hover": "#1747c4",
+    "accent-dark": "#1345b7",
+    "cta": "#7e3af2",
+    "cta-hover": "#6c2bd9",
+    "nav-from": "#1a56db",
+    "nav-to": "#1747c4",
+    "bg": "#ffffff",
+    "bg-surface": "#f9fafb",
+    "text": "#111827",
+    "muted": "#6b7280",
+    "border": "#e5e7eb",
+    "success": "#0e9f6e",
+    "warning": "#ff9800",
+    "destructive": "#e02424"
   },
   "fonts": { "body": "Inter", "fallback": "system-ui, sans-serif" },
-  "radius": { "button": "6px", "card": "10px", "input": "4px" }
+  "radius": { "button": "8px", "card": "12px", "input": "6px" }
 }

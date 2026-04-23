@@ -2,21 +2,27 @@
 
 /* Design tokens are injected from theme.json by the Vite plugin at build/dev
  * time as a <style id="openblog-theme"> tag in index.html.
- * The values below are fallbacks only, used if theme.json is absent. */
-:root {
-  --color-accent: #1a56db;
-  --color-accent-hover: #1747c4;
-  --color-accent-dark: #1345b7;
-  --color-bg: #ffffff;
-  --color-bg-surface: #f9fafb;
-  --color-text: #111827;
-  --color-muted: #6b7280;
-  --color-border: #e5e7eb;
-  --font-body: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-  --font-fallback: system-ui, sans-serif;
-  --radius-button: 8px;
-  --radius-card: 12px;
-  --radius-input: 6px;
+ * The values below are fallbacks only, used if theme.json is absent.
+ * Wrapped in @layer so un-layered theme injection always wins regardless of
+ * CSS insertion order (Vite HMR injects index.css after the HTML style tag). */
+@layer openblog-defaults {
+  :root {
+    --color-accent: #1a56db;
+    --color-accent-hover: #1747c4;
+    --color-accent-dark: #1345b7;
+    --color-bg: #ffffff;
+    --color-bg-surface: #f9fafb;
+    --color-text: #111827;
+    --color-muted: #6b7280;
+    --color-border: #e5e7eb;
+    --color-nav-from: #1e293b;
+    --color-nav-to: #0f172a;
+    --font-body: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-fallback: system-ui, sans-serif;
+    --radius-button: 8px;
+    --radius-card: 12px;
+    --radius-input: 6px;
+  }
 }
 
 /* Apply theme background + text to the page root */
@@ -24,6 +30,42 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body, var(--font-fallback, system-ui));
+}
+
+/* ── Form controls — follow the theme ───────────────────────────────────── */
+select,
+input,
+textarea {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  border-color: var(--color-border);
+  color-scheme: light dark;
+}
+
+select option {
+  background-color: var(--color-bg-surface);
+  color: var(--color-text);
+}
+
+/* ── Accent button — unlayered so it wins over Tailwind utilities ─────────── *
+ * Using CSS directly because Tailwind's bg-[--color-*] arbitrary syntax does  *
+ * not reliably generate var() in all v4 configurations.                       */
+.btn-accent {
+  background-color: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn-accent:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+}
+
+/* ── Accent-colored text links ───────────────────────────────────────────── */
+.text-accent {
+  color: var(--color-accent);
+}
+
+.text-accent:hover {
+  color: var(--color-accent-hover);
 }
 
 /* ── Prose — shared between TipTap editor and article preview ────────────── *
@@ -78,15 +120,16 @@ body {
 
 .prose code {
   font-size: 0.875em;
-  background: #f3f4f6;
+  background: var(--color-bg-surface);
   border-radius: 4px;
   padding: 0.15em 0.4em;
   font-family: "Fira Code", "Cascadia Code", monospace;
 }
 
 .prose pre {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: var(--color-bg-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   padding: 1rem 1.25rem;
   border-radius: var(--radius-card);
   overflow-x: auto;

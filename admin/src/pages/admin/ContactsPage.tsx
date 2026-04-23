@@ -11,20 +11,21 @@ export default function ContactsPage() {
   const contacts = data?.items ?? [];
   const totalPages = Math.ceil((data?.total ?? 0) / (data?.limit ?? 20));
 
-  if (isLoading) return <div className="p-6 text-gray-400">Loading…</div>;
+  if (isLoading)
+    return <div className="p-6 text-[--color-muted]">Loading…</div>;
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Contact Submissions</h1>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-[--color-bg-surface] rounded-lg shadow overflow-hidden border border-[--color-border]">
+        <table className="min-w-full divide-y divide-[--color-border]">
+          <thead className="bg-[--color-bg]">
             <tr>
               {["Name", "Company", "Email", "Phone", "Date", "Message"].map(
                 (h) => (
                   <th
                     key={h}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                    className="px-4 py-3 text-left text-xs font-medium text-[--color-muted] uppercase"
                   >
                     {h}
                   </th>
@@ -32,41 +33,41 @@ export default function ContactsPage() {
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-[--color-border]">
             {contacts.length === 0 && (
               <tr>
                 <td
                   colSpan={6}
-                  className="px-4 py-8 text-center text-gray-400 text-sm"
+                  className="px-4 py-8 text-center text-[--color-muted] text-sm"
                 >
                   No contact submissions yet.
                 </td>
               </tr>
             )}
             {contacts.map((c) => (
-              <tr key={c.id} className="hover:bg-gray-50">
+              <tr key={c.id} className="hover:bg-[--color-bg]">
                 <td className="px-4 py-3 text-sm">
                   {c.first_name} {c.last_name}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500">
+                <td className="px-4 py-3 text-sm text-[--color-muted]">
                   {c.company || "—"}
                 </td>
                 <td className="px-4 py-3 text-sm">
                   <a
                     href={`mailto:${c.email}`}
-                    className="text-blue-600 hover:underline"
+                    className="text-accent hover:underline"
                   >
                     {c.email}
                   </a>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500">
+                <td className="px-4 py-3 text-sm text-[--color-muted]">
                   {c.phone || "—"}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500">
+                <td className="px-4 py-3 text-sm text-[--color-muted]">
                   {new Date(c.created_at).toLocaleDateString()}
                 </td>
                 <td
-                  className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate"
+                  className="px-4 py-3 text-sm text-[--color-text] max-w-xs truncate"
                   title={c.message}
                 >
                   {c.message}
@@ -86,7 +87,7 @@ export default function ContactsPage() {
           >
             ← Prev
           </button>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-[--color-muted]">
             Page {page} of {totalPages}
           </span>
           <button

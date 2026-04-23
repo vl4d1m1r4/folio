@@ -84,7 +84,7 @@ export default function ArticlesPage() {
         return (
           <span
             title={otherSlugs || undefined}
-            className="text-gray-500 text-xs font-mono"
+            className="text-[--color-muted] text-xs font-mono"
           >
             {t?.slug ?? "—"}
           </span>
@@ -108,7 +108,7 @@ export default function ArticlesPage() {
             className={`text-xs px-2 py-1 rounded cursor-pointer select-none transition-colors ${
               val
                 ? "bg-green-100 text-green-700 hover:bg-green-200"
-                : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                : "bg-[--color-bg] text-[--color-muted] hover:bg-[--color-border]"
             }`}
           >
             {val ? "● Live" : "○ Draft"}
@@ -128,7 +128,7 @@ export default function ArticlesPage() {
       cell: ({ row }) => (
         <div className="flex gap-3">
           <button
-            className="text-blue-600 hover:text-blue-800 text-sm"
+            className="text-accent hover:underline text-sm"
             onClick={() => navigate(`/admin/articles/${row.original.id}`)}
           >
             Edit
@@ -153,7 +153,8 @@ export default function ArticlesPage() {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  if (isLoading) return <div className="p-6 text-gray-400">Loading…</div>;
+  if (isLoading)
+    return <div className="p-6 text-[--color-muted]">Loading…</div>;
 
   return (
     <div>
@@ -199,28 +200,28 @@ export default function ArticlesPage() {
               }
             }}
             disabled={rebuildStatus === "pending"}
-            className="px-4 py-2 border rounded text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+            className="px-4 py-2 border border-[--color-border] rounded text-sm text-[--color-muted] hover:bg-[--color-bg-surface] disabled:opacity-50"
           >
             {rebuildStatus === "pending" ? "Rebuilding…" : "↺ Regenerate Site"}
           </button>
           <button
             onClick={() => navigate("/admin/articles/new")}
-            className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+            className="btn-accent px-4 py-2 rounded text-sm"
           >
             + New
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="bg-[--color-bg-surface] rounded-lg shadow overflow-hidden border border-[--color-border]">
+        <table className="min-w-full divide-y divide-[--color-border]">
+          <thead className="bg-[--color-bg]">
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id}>
                 {hg.headers.map((h) => (
                   <th
                     key={h.id}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                    className="px-4 py-3 text-left text-xs font-medium text-[--color-muted] uppercase"
                   >
                     {flexRender(h.column.columnDef.header, h.getContext())}
                   </th>
@@ -228,23 +229,23 @@ export default function ArticlesPage() {
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-[--color-border]">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-8 text-center text-gray-400 text-sm"
+                  className="px-4 py-8 text-center text-[--color-muted] text-sm"
                 >
                   No articles yet. Click "+ New" to create one.
                 </td>
               </tr>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50">
+                <tr key={row.id} className="hover:bg-[--color-bg]">
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-4 py-3 text-sm text-gray-700"
+                      className="px-4 py-3 text-sm text-[--color-text]"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -268,7 +269,7 @@ export default function ArticlesPage() {
           >
             ← Prev
           </button>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-[--color-muted]">
             Page {page} of {totalPages}
           </span>
           <button
