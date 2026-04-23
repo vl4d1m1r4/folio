@@ -4,6 +4,8 @@
     "lib": ["ES2023"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",

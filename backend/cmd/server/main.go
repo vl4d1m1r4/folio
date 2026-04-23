@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -29,8 +31,16 @@ func main() {
 	_ = godotenv.Load()
 
 	// 2. Load config.yaml
-	// Look for config.yaml one directory above the binary (repo root).
-	cfg, err := config.Load(filepath.Join("..", "config.yaml"))
+	// CONFIG_PATH env var wins; otherwise auto-detect (Docker: ./config.yaml, dev: ../config.yaml).
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		if _, statErr := os.Stat("config.yaml"); statErr == nil {
+			configPath = "config.yaml"
+		} else {
+			configPath = filepath.Join("..", "config.yaml")
+		}
+	}
+	cfg, err := config.Load(configPath)
 	if err != nil {
 		log.Fatalf("failed to load config.yaml: %v", err)
 	}
@@ -44,6 +54,8 @@ func main() {
 	dbPath := getEnv("DB_PATH", "./blog.db")
 	port := getEnv("PORT", "8080")
 	uploadDir := getEnv("UPLOAD_DIR", "./uploads")
+	adminDistDir := getEnv("ADMIN_DIST", "./admin/dist")
+	siteDistDir := getEnv("SITE_DIST", "./site/dist")
 	contactEmail := getEnv("CONTACT_EMAIL", cfg.ContactEmail)
 
 	tenantID := os.Getenv("MS_GRAPH_TENANT_ID")
@@ -83,8 +95,30 @@ func main() {
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 	}))
 
-	// 8. Static uploads (proxied by nginx/caddy in production)
+	// 8. Health check — required by ONCE for zero-downtime deploys
+	e.GET("/up", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
+	})
+
+	// Static uploads
 	e.Static("/uploads", uploadDir)
+
+	// Admin UI — React SPA served from /admin/* with index.html fallback
+	adminHandler := func(c echo.Context) error {
+		subPath := filepath.Clean("/" + c.Param("*"))
+		target := filepath.Join(adminDistDir, subPath)
+		// Prevent path traversal outside adminDistDir
+		rel, relErr := filepath.Rel(adminDistDir, target)
+		if relErr != nil || strings.HasPrefix(rel, "..") {
+			return echo.ErrForbidden
+		}
+		if info, statErr := os.Stat(target); statErr == nil && !info.IsDir() {
+			return c.File(target)
+		}
+		return c.File(filepath.Join(adminDistDir, "index.html"))
+	}
+	e.GET("/admin", adminHandler)
+	e.GET("/admin/*", adminHandler)
 
 	// 9. Routes
 	api := e.Group("/api/v1")
@@ -123,6 +157,9 @@ func main() {
 
 	admin.GET("/contacts", adminH.ListContacts)
 	admin.GET("/newsletter", adminH.ListNewsletter)
+
+	// Public site — Eleventy static output, catch-all (must be registered last)
+	e.Static("/", siteDistDir)
 
 	// 10. Start
 	e.Logger.Fatal(e.Start(":" + port))

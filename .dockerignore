@@ -1,0 +1,10 @@
+**/.git
+**/.gitignore
+**/node_modules
+**/dist
+**/.env
+**/data
+backend/openblog-server
+README.md
+deploy/
+Makefile

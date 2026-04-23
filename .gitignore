@@ -4,6 +4,7 @@ site/.cache/
 site/node_modules/
 admin/dist/
 admin/node_modules/
+*.tsbuildinfo
 backend/openblog
 backend/blog.db
 backend/blog.db-shm

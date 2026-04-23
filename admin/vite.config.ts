@@ -49,6 +49,9 @@ function themeInjectPlugin() {
 }
 
 export default defineConfig({
+  // base must match the path the admin is served from in production (/admin/)
+  // so all asset references (JS, CSS) are prefixed correctly.
+  base: "/admin/",
   plugins: [react(), tailwindcss(), themeInjectPlugin()],
   server: {
     proxy: {
