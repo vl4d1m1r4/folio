@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"openblog/internal/models"
-	"openblog/internal/services"
+	"folio/internal/models"
+	"folio/internal/services"
 
 	"github.com/labstack/echo/v4"
 )

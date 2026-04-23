@@ -16,7 +16,7 @@ export default async function () {
     const langRes = await fetch(`${BACKEND_URL}/api/v1/config/languages`);
     if (langRes.ok) languages = await langRes.json();
   } catch {
-    console.warn("[openblog] Could not fetch languages for footer data");
+    console.warn("[folio] Could not fetch languages for footer data");
   }
 
   const byLang = {};
@@ -35,7 +35,7 @@ export default async function () {
       }
     } catch {
       console.warn(
-        `[openblog] Could not fetch footer links for lang ${lang.code}`,
+        `[folio] Could not fetch footer links for lang ${lang.code}`,
       );
       byLang[lang.code] = FALLBACK;
     }

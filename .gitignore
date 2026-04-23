@@ -5,7 +5,7 @@ site/node_modules/
 admin/dist/
 admin/node_modules/
 *.tsbuildinfo
-backend/openblog
+backend/folio
 backend/blog.db
 backend/blog.db-shm
 backend/blog.db-wal

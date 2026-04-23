@@ -1,4 +1,4 @@
-# openblog
+# folio
 
 A self-hostable, multilingual blog platform you can deploy in minutes.
 
@@ -133,12 +133,12 @@ The `docker-compose.yml` wires together:
 
 [ONCE](https://github.com/basecamp/once) is an open-source app server by 37signals that lets you run multiple
 self-hosted web apps on a single machine via a simple terminal UI — no DevOps
-knowledge required. openblog is built to run on it out of the box.
+knowledge required. folio is built to run on it out of the box.
 
 ### How it works
 
 Install the ONCE CLI on any Linux server with one command, then point it at the
-openblog Docker image. ONCE handles:
+folio Docker image. ONCE handles:
 
 - Automatic TLS certificates (via Kamal Proxy)
 - Zero-downtime updates
@@ -173,13 +173,13 @@ curl -fsSL https://get.docker.com | sh
 curl https://get.once.com | sh
 ```
 
-### 1. Push the openblog image
+### 1. Push the folio image
 
 Build and push to any public Docker registry (Docker Hub, GitHub Container Registry, etc.):
 
 ```bash
-docker build -t youruser/openblog:latest .
-docker push youruser/openblog:latest
+docker build -t youruser/folio:latest .
+docker push youruser/folio:latest
 ```
 
 ### 2. Install via ONCE
@@ -187,7 +187,7 @@ docker push youruser/openblog:latest
 Run `once` on your server, choose **Custom Docker image**, and enter:
 
 ```
-Image URL:  youruser/openblog:latest
+Image URL:  youruser/folio:latest
 Hostname:   blog.example.com
 ```
 

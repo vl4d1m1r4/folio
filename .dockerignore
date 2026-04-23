@@ -4,7 +4,7 @@
 **/dist
 **/.env
 **/data
-backend/openblog-server
+backend/folio-server
 README.md
 deploy/
 Makefile

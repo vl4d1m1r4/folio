@@ -849,14 +849,14 @@ function ThemeTab({
     onChange({ ...theme, colors: { ...theme.colors, [key]: value } });
   }
 
-  // Live preview: update the global #openblog-theme tag so the whole admin reflects changes
+  // Live preview: update the global #folio-theme tag so the whole admin reflects changes
   useEffect(() => {
     let el = document.getElementById(
-      "openblog-theme",
+      "folio-theme",
     ) as HTMLStyleElement | null;
     if (!el) {
       el = document.createElement("style");
-      el.id = "openblog-theme";
+      el.id = "folio-theme";
       document.head.appendChild(el);
     }
     const vars = [

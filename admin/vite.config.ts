@@ -35,11 +35,11 @@ function themeInjectPlugin() {
       }
     }
     if (!lines.length) return "";
-    return `<style id="openblog-theme">:root {\n${lines.join("\n")}\n}</style>`;
+    return `<style id="folio-theme">:root {\n${lines.join("\n")}\n}</style>`;
   }
 
   return {
-    name: "openblog-theme-inject",
+    name: "folio-theme-inject",
     transformIndexHtml(html: string) {
       const tag = buildStyleTag();
       if (!tag) return html;

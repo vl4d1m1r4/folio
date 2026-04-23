@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"openblog/internal/models"
+	"folio/internal/models"
 
 	"github.com/labstack/echo/v4"
 )

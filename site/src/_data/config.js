@@ -12,7 +12,7 @@ export default async function () {
     if (res.ok) languages = await res.json();
   } catch {
     console.warn(
-      "[openblog] Could not reach backend for language config — using fallback: en",
+      "[folio] Could not reach backend for language config — using fallback: en",
     );
   }
 

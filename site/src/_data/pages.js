@@ -13,7 +13,7 @@ export default async function () {
     const langRes = await fetch(`${BACKEND_URL}/api/v1/config/languages`);
     if (langRes.ok) languages = await langRes.json();
   } catch {
-    console.warn("[openblog] Could not fetch language config for pages data");
+    console.warn("[folio] Could not fetch language config for pages data");
   }
 
   const byLang = {};
@@ -25,7 +25,7 @@ export default async function () {
       const res = await fetch(`${BACKEND_URL}/api/v1/pages?lang=${lang.code}`);
       if (res.ok) pages = await res.json();
     } catch {
-      console.warn(`[openblog] Could not fetch pages for lang ${lang.code}`);
+      console.warn(`[folio] Could not fetch pages for lang ${lang.code}`);
     }
     byLang[lang.code] = pages;
     for (const page of pages) {

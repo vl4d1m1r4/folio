@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"openblog/internal/middleware"
-	"openblog/internal/models"
+	"folio/internal/middleware"
+	"folio/internal/models"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"

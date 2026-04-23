@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 /* Design tokens are injected from theme.json by the Vite plugin at build/dev
- * time as a <style id="openblog-theme"> tag in index.html.
+ * time as a <style id="folio-theme"> tag in index.html.
  * The values below are fallbacks only, used if theme.json is absent.
  * Wrapped in @layer so un-layered theme injection always wins regardless of
  * CSS insertion order (Vite HMR injects index.css after the HTML style tag). */
-@layer openblog-defaults {
+@layer folio-defaults {
   :root {
     --color-accent: #1a56db;
     --color-accent-hover: #1747c4;

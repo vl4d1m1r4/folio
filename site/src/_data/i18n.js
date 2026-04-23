@@ -42,7 +42,7 @@ export default async function () {
       if (data && typeof data === "object") stored = data;
     }
   } catch {
-    console.warn("[openblog] Could not fetch ui-strings — using defaults.");
+    console.warn("[folio] Could not fetch ui-strings — using defaults.");
   }
 
   // Merge each lang on top of EN_DEFAULTS, and ensure "en" always has all defaults

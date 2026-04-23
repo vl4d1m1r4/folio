@@ -16,7 +16,7 @@ export default async function () {
     if (langRes.ok) languages = await langRes.json();
   } catch {
     console.warn(
-      "[openblog] Could not fetch language config for articles data",
+      "[folio] Could not fetch language config for articles data",
     );
   }
 
@@ -40,7 +40,7 @@ export default async function () {
       }
     } catch {
       console.warn(
-        `[openblog] Could not fetch articles for lang: ${lang.code}`,
+        `[folio] Could not fetch articles for lang: ${lang.code}`,
       );
     }
 

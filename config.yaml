@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────
-#  OpenBlog — Main Configuration
+#  Folio — Main Configuration
 #  Edit this file to configure your blog.
 #  Then run: make build  (or docker compose up)
 # ─────────────────────────────────────────────────

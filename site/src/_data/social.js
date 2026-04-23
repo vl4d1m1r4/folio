@@ -12,7 +12,7 @@ export default async function () {
       return Array.isArray(links) ? links : [];
     }
   } catch {
-    console.warn("[openblog] Could not fetch social links — using fallback.");
+    console.warn("[folio] Could not fetch social links — using fallback.");
   }
   return [];
 }

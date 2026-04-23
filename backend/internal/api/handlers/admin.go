@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"time"
 
-	"openblog/internal/config"
-	"openblog/internal/models"
+	"folio/internal/config"
+	"folio/internal/models"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"

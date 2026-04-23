@@ -1,4 +1,4 @@
-module openblog
+module folio
 
 go 1.25.0
 

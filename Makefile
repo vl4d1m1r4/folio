@@ -23,7 +23,7 @@ dev:
 # ── Build: compile Go binary + build site ──────────────────────────────────────
 build:
 	@echo "→ Building Go binary…"
-	cd backend && go build -o ../dist/openblog-server ./cmd/server/main.go
+	cd backend && go build -o ../dist/folio-server ./cmd/server/main.go
 	@echo "→ Building admin UI…"
 	cd admin && npm run build
 	@echo "→ Building site…"

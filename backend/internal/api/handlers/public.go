@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"openblog/internal/config"
-	"openblog/internal/models"
+	"folio/internal/config"
+	"folio/internal/models"
 
 	"github.com/labstack/echo/v4"
 )

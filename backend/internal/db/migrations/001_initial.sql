@@ -1,4 +1,4 @@
--- OpenBlog — initial schema (clean multilang design)
+-- Folio — initial schema (clean multilang design)
 -- All article content lives in article_translations (one row per language).
 
 -- ── Admin users ─────────────────────────────────────────────────────────────
@@ -73,10 +73,10 @@ INSERT INTO articles (is_featured, published_at) VALUES (1, CURRENT_TIMESTAMP);
 INSERT INTO article_translations
     (article_id, lang_code, slug, title, excerpt, body, tag, meta_title, meta_description)
 VALUES (
-    1, 'en', 'welcome-to-openblog',
-    'Welcome to OpenBlog',
+    1, 'en', 'welcome-to-folio',
+    'Welcome to Folio',
     'This is your first blog post. Edit or delete it, then start writing!',
-    '<p>Welcome to <strong>OpenBlog</strong> — your self-hosted, multilingual blog platform.</p>
+    '<p>Welcome to <strong>Folio</strong> — your self-hosted, multilingual blog platform.</p>
 <p>This post was created automatically as an example. You can edit it in the admin panel, or delete it and start fresh.</p>
 <h2>What to do next</h2>
 <ul>
@@ -85,8 +85,8 @@ VALUES (
   <li>Add your own articles in the Admin panel.</li>
 </ul>',
     'Getting Started',
-    'Welcome to OpenBlog',
-    'Get started with OpenBlog — your self-hosted, multilingual blog platform.'
+    'Welcome to Folio',
+    'Get started with Folio — your self-hosted, multilingual blog platform.'
 );
 
 INSERT INTO articles (is_featured, published_at) VALUES (0, CURRENT_TIMESTAMP);
@@ -95,7 +95,7 @@ INSERT INTO article_translations
 VALUES (
     2, 'en', 'getting-started-guide',
     'Getting Started Guide',
-    'Everything you need to know to configure and customise your OpenBlog installation.',
+    'Everything you need to know to configure and customise your Folio installation.',
     '<p>This guide walks you through the main configuration options.</p>
 <h2>config.yaml</h2>
 <p>Set your <code>site.name</code>, <code>site.url</code>, and configure as many languages as you need in the <code>languages</code> list.</p>
@@ -104,6 +104,6 @@ VALUES (
 <h2>NJK overrides</h2>
 <p>Drop any <code>.njk</code> file into <code>site/src/user-theme/</code> to override the matching core partial without touching the original files.</p>',
     'Getting Started',
-    'Getting Started Guide | OpenBlog',
-    'A complete guide to setting up and customising your OpenBlog installation.'
+    'Getting Started Guide | Folio',
+    'A complete guide to setting up and customising your Folio installation.'
 );

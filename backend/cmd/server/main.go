@@ -13,12 +13,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"openblog/internal/api/handlers"
-	"openblog/internal/config"
-	"openblog/internal/db"
-	jwtMiddleware "openblog/internal/middleware"
-	"openblog/internal/models"
-	"openblog/internal/services"
+	"folio/internal/api/handlers"
+	"folio/internal/config"
+	"folio/internal/db"
+	jwtMiddleware "folio/internal/middleware"
+	"folio/internal/models"
+	"folio/internal/services"
 )
 
 func getEnv(key, def string) string {

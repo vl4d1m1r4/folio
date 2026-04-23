@@ -3,7 +3,7 @@ import { Navigate, Outlet, Link, NavLink } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { adminApi } from "../api/client";
 
-/** Fetches the saved theme from the DB and writes it to the #openblog-theme
+/** Fetches the saved theme from the DB and writes it to the #folio-theme
  * style tag so the whole admin reflects the user's chosen theme. */
 function useThemeSync() {
   useEffect(() => {
@@ -13,11 +13,11 @@ function useThemeSync() {
         const theme = settings?.theme;
         if (!theme?.colors) return;
         let el = document.getElementById(
-          "openblog-theme",
+          "folio-theme",
         ) as HTMLStyleElement | null;
         if (!el) {
           el = document.createElement("style");
-          el.id = "openblog-theme";
+          el.id = "folio-theme";
           document.head.appendChild(el);
         }
         const vars = [

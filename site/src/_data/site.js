@@ -10,7 +10,7 @@ export default async function () {
     if (res.ok) return await res.json();
   } catch {
     console.warn(
-      "[openblog] Could not reach backend for site config — using fallback.",
+      "[folio] Could not reach backend for site config — using fallback.",
     );
   }
 

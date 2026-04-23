@@ -97,7 +97,7 @@ export default function (eleventyConfig) {
       const vars = lines.join("\n");
       if (!vars) return content;
 
-      const tag = `<style id="openblog-theme">:root {\n${vars}\n}</style>`;
+      const tag = `<style id="folio-theme">:root {\n${vars}\n}</style>`;
       return content.replace("</head>", `${tag}\n</head>`);
     },
   );
