@@ -3,6 +3,51 @@ import fs from "node:fs";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 
+// System font stacks that don't need to be loaded from Google Fonts.
+const SYSTEM_FONTS = new Set([
+  "system-ui",
+  "-apple-system",
+  "blinkmacsystemfont",
+  "segoe ui",
+  "helvetica",
+  "arial",
+  "sans-serif",
+  "serif",
+  "monospace",
+  "inherit",
+  "initial",
+  "unset",
+  "georgia",
+  "times new roman",
+  "times",
+  "courier new",
+  "courier",
+  "verdana",
+  "trebuchet ms",
+  "impact",
+  "comic sans ms",
+]);
+
+/**
+ * Given a list of font family names from the theme, return a Google Fonts
+ * stylesheet URL for those that aren't system fonts, or null if none needed.
+ */
+function buildGoogleFontsUrl(fontNames) {
+  const toLoad = [...new Set(fontNames)]
+    .map((f) => f.trim())
+    .filter((f) => f && !SYSTEM_FONTS.has(f.toLowerCase()));
+
+  if (toLoad.length === 0) return null;
+
+  const families = toLoad
+    .map(
+      (f) =>
+        `family=${encodeURIComponent(f)}:ital,wght@0,400;0,600;0,700;1,400`,
+    )
+    .join("&");
+  return `https://fonts.googleapis.com/css2?${families}&display=swap`;
+}
+
 /** Fetch theme JSON from the backend settings API (falls back to theme.json on disk). */
 async function loadTheme() {
   try {
@@ -97,8 +142,22 @@ export default function (eleventyConfig) {
       const vars = lines.join("\n");
       if (!vars) return content;
 
+      // Build Google Fonts link tags for non-system fonts.
+      const fontNames = Object.values(theme.fonts ?? {}).filter(
+        (v) => typeof v === "string" && !v.includes(","),
+      );
+      const googleFontsUrl = buildGoogleFontsUrl(fontNames);
+      const fontLinks = googleFontsUrl
+        ? [
+            `<link rel="preconnect" href="https://fonts.googleapis.com">`,
+            `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`,
+            `<link rel="stylesheet" href="${googleFontsUrl}">`,
+          ].join("\n")
+        : "";
+
       const tag = `<style id="folio-theme">:root {\n${vars}\n}</style>`;
-      return content.replace("</head>", `${tag}\n</head>`);
+      const injection = fontLinks ? `${fontLinks}\n${tag}` : tag;
+      return content.replace("</head>", `${injection}\n</head>`);
     },
   );
 

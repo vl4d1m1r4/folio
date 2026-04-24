@@ -14,6 +14,119 @@ import type {
 // ── Preset themes (must match backend themes/ folder names) ──────────────────
 const PRESETS = ["default", "dark", "minimal", "warm"] as const;
 
+// ── Google Fonts curated list ─────────────────────────────────────────────────
+const GOOGLE_FONTS = [
+  "Inter",
+  "Roboto",
+  "Open Sans",
+  "Lato",
+  "Poppins",
+  "Montserrat",
+  "Nunito",
+  "Raleway",
+  "DM Sans",
+  "Geist",
+  "Source Sans 3",
+  "Playfair Display",
+  "Merriweather",
+  "Lora",
+  "EB Garamond",
+] as const;
+
+const SYSTEM_FONTS = new Set([
+  "system-ui",
+  "-apple-system",
+  "blinkmacsystemfont",
+  "segoe ui",
+  "helvetica",
+  "arial",
+  "sans-serif",
+  "serif",
+  "monospace",
+  "inherit",
+  "initial",
+  "unset",
+  "georgia",
+  "times new roman",
+  "times",
+  "courier new",
+  "courier",
+  "verdana",
+  "trebuchet ms",
+  "impact",
+  "comic sans ms",
+]);
+
+function buildGoogleFontsUrl(fontNames: string[]): string | null {
+  const toLoad = [...new Set(fontNames)]
+    .map((f) => f.trim())
+    .filter((f) => f && !SYSTEM_FONTS.has(f.toLowerCase()));
+  if (toLoad.length === 0) return null;
+  const families = toLoad
+    .map(
+      (f) =>
+        `family=${encodeURIComponent(f)}:ital,wght@0,400;0,600;0,700;1,400`,
+    )
+    .join("&");
+  return `https://fonts.googleapis.com/css2?${families}&display=swap`;
+}
+
+/** Dropdown + optional free-text override for a single font setting. */
+function FontPicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const isCustom = !GOOGLE_FONTS.includes(
+    value as (typeof GOOGLE_FONTS)[number],
+  );
+  const [custom, setCustom] = useState(isCustom ? value : "");
+
+  function handleSelect(v: string) {
+    if (v === "__custom__") {
+      onChange(custom || "");
+    } else {
+      onChange(v);
+    }
+  }
+
+  const selectVal = isCustom ? "__custom__" : value;
+
+  return (
+    <div>
+      <label className="block text-xs font-medium mb-1">{label}</label>
+      <select
+        value={selectVal}
+        onChange={(e) => handleSelect(e.target.value)}
+        className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
+      >
+        {GOOGLE_FONTS.map((f) => (
+          <option key={f} value={f}>
+            {f}
+          </option>
+        ))}
+        <option value="__custom__">Custom…</option>
+      </select>
+      {isCustom && (
+        <input
+          type="text"
+          placeholder="e.g. Georgia or 'My Font'"
+          value={custom}
+          onChange={(e) => {
+            setCustom(e.target.value);
+            onChange(e.target.value);
+          }}
+          className="mt-1 w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono"
+        />
+      )}
+    </div>
+  );
+}
+
 const PRESET_DATA: Record<string, ThemeSettings> = {
   default: {
     preset: "default",
@@ -34,7 +147,11 @@ const PRESET_DATA: Record<string, ThemeSettings> = {
       warning: "#ff9800",
       destructive: "#e02424",
     },
-    fonts: { body: "Inter", fallback: "system-ui, sans-serif" },
+    fonts: {
+      body: "Inter",
+      heading: "Inter",
+      fallback: "system-ui, sans-serif",
+    },
     radius: { button: "8px", card: "12px", input: "6px" },
   },
   dark: {
@@ -56,7 +173,11 @@ const PRESET_DATA: Record<string, ThemeSettings> = {
       warning: "#f59e0b",
       destructive: "#f43f5e",
     },
-    fonts: { body: "Inter", fallback: "system-ui, sans-serif" },
+    fonts: {
+      body: "Inter",
+      heading: "Inter",
+      fallback: "system-ui, sans-serif",
+    },
     radius: { button: "6px", card: "10px", input: "4px" },
   },
   minimal: {
@@ -78,7 +199,7 @@ const PRESET_DATA: Record<string, ThemeSettings> = {
       warning: "#d97706",
       destructive: "#dc2626",
     },
-    fonts: { body: "Georgia", fallback: "serif" },
+    fonts: { body: "Georgia", heading: "Playfair Display", fallback: "serif" },
     radius: { button: "2px", card: "2px", input: "2px" },
   },
   warm: {
@@ -100,7 +221,11 @@ const PRESET_DATA: Record<string, ThemeSettings> = {
       warning: "#d97706",
       destructive: "#b91c1c",
     },
-    fonts: { body: "Merriweather", fallback: "Georgia, serif" },
+    fonts: {
+      body: "Merriweather",
+      heading: "Playfair Display",
+      fallback: "Georgia, serif",
+    },
     radius: { button: "12px", card: "16px", input: "8px" },
   },
 };
@@ -1188,6 +1313,7 @@ function ThemeTab({
 
   // Live preview: update the global #folio-theme tag so the whole admin reflects changes
   useEffect(() => {
+    // Inject / update CSS variables
     let el = document.getElementById("folio-theme") as HTMLStyleElement | null;
     if (!el) {
       el = document.createElement("style");
@@ -1197,12 +1323,33 @@ function ThemeTab({
     const vars = [
       ...Object.entries(theme.colors).map(([k, v]) => `  --color-${k}: ${v};`),
       `  --font-body: ${theme.fonts?.body ?? "Inter"};`,
+      `  --font-heading: ${theme.fonts?.heading ?? theme.fonts?.body ?? "Inter"};`,
       `  --font-fallback: ${theme.fonts?.fallback ?? "system-ui, sans-serif"};`,
       `  --radius-button: ${theme.radius?.button ?? "8px"};`,
       `  --radius-card: ${theme.radius?.card ?? "12px"};`,
       `  --radius-input: ${theme.radius?.input ?? "6px"};`,
     ].join("\n");
     el.textContent = `:root {\n${vars}\n}`;
+
+    // Inject / update Google Fonts link for the selected fonts
+    const fontNames = [theme.fonts?.body, theme.fonts?.heading].filter(
+      (f): f is string => Boolean(f),
+    );
+    const googleFontsUrl = buildGoogleFontsUrl(fontNames);
+    let linkEl = document.getElementById(
+      "folio-fonts",
+    ) as HTMLLinkElement | null;
+    if (googleFontsUrl) {
+      if (!linkEl) {
+        linkEl = document.createElement("link");
+        linkEl.id = "folio-fonts";
+        linkEl.rel = "stylesheet";
+        document.head.appendChild(linkEl);
+      }
+      linkEl.href = googleFontsUrl;
+    } else if (linkEl) {
+      linkEl.remove();
+    }
   }, [theme]);
 
   return (
@@ -1268,24 +1415,29 @@ function ThemeTab({
 
       {/* Fonts */}
       <div>
-        <h2 className="font-semibold mb-3">Font</h2>
+        <h2 className="font-semibold mb-3">Fonts</h2>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium mb-1">Body font</label>
-            <input
-              type="text"
-              value={theme.fonts.body}
-              onChange={(e) =>
-                onChange({
-                  ...theme,
-                  fonts: { ...theme.fonts, body: e.target.value },
-                })
-              }
-              className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1">Fallback</label>
+          <FontPicker
+            label="Body font"
+            value={theme.fonts.body}
+            onChange={(v) =>
+              onChange({ ...theme, fonts: { ...theme.fonts, body: v } })
+            }
+          />
+          <FontPicker
+            label="Heading font"
+            value={theme.fonts.heading ?? theme.fonts.body}
+            onChange={(v) =>
+              onChange({ ...theme, fonts: { ...theme.fonts, heading: v } })
+            }
+          />
+          <div className="col-span-2">
+            <label className="block text-xs font-medium mb-1">
+              Fallback stack{" "}
+              <span className="font-normal text-(--color-muted)">
+                (CSS font stack used when the above fonts are unavailable)
+              </span>
+            </label>
             <input
               type="text"
               value={theme.fonts.fallback}
@@ -1295,7 +1447,7 @@ function ThemeTab({
                   fonts: { ...theme.fonts, fallback: e.target.value },
                 })
               }
-              className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
+              className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono"
             />
           </div>
         </div>

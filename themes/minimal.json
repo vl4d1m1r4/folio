@@ -17,6 +17,10 @@
     "warning": "#d97706",
     "destructive": "#dc2626"
   },
-  "fonts": { "body": "Georgia", "fallback": "serif" },
+  "fonts": {
+    "body": "Georgia",
+    "heading": "Playfair Display",
+    "fallback": "serif"
+  },
   "radius": { "button": "2px", "card": "2px", "input": "2px" }
 }

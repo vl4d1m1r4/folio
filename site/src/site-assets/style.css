@@ -11,6 +11,7 @@
     --color-muted: #6b7280;
     --color-border: #e5e7eb;
     --font-body: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    --font-heading: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
     --font-fallback: system-ui, sans-serif;
     --radius-button: 8px;
     --radius-card: 12px;
@@ -38,6 +39,15 @@ body {
     color: var(--color-text, #111827);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading, var(--font-body, var(--font-fallback, system-ui)));
 }
 
 a {

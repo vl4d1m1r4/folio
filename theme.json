@@ -17,6 +17,10 @@
     "warning": "#ff9800",
     "destructive": "#e02424"
   },
-  "fonts": { "body": "Inter", "fallback": "system-ui, sans-serif" },
+  "fonts": {
+    "body": "Inter",
+    "heading": "Inter",
+    "fallback": "system-ui, sans-serif"
+  },
   "radius": { "button": "8px", "card": "12px", "input": "6px" }
 }
