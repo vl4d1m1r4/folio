@@ -104,7 +104,7 @@ func seedSettings(repo *models.Repository, cfg *config.Config, themePath string)
 	// Seed default home_sections matching the existing layout.
 	if _, ok := all["home_sections"]; !ok {
 		defaultSections := `[
-			{"id":"hero","type":"hero","visible":true,"order":0,"config":{},"translations":{"en":{"headline":"","subheadline":"","cta_label":"Book a free call","cta_url":""}}},
+			{"id":"hero","type":"hero","visible":true,"order":0,"config":{},"translations":{"en":{"headline":"My Blog","subheadline":"","cta_label":"Book a free call","cta_url":""}}},
 			{"id":"featured","type":"featured-articles","visible":true,"order":1,"config":{"max_count":4},"translations":{"en":{"title":"Featured"}}},
 			{"id":"latest","type":"latest-articles","visible":true,"order":2,"config":{"max_count":6},"translations":{"en":{"title":"Latest Articles"}}},
 			{"id":"cta","type":"cta-band","visible":true,"order":3,"config":{},"translations":{"en":{"headline":"Ready to get started?","body":"","cta_label":"Book a call","cta_url":""}}}
