@@ -71,26 +71,132 @@ function buildGoogleFontsUrl(fontNames: string[]): string | null {
   return `https://fonts.googleapis.com/css2?${families}&display=swap`;
 }
 
-/** Dropdown + optional free-text override for a single font setting. */
+/**
+ * Apply a ThemeSettings object to the current document:
+ * - Injects/updates CSS custom properties in #folio-theme <style>
+ * - Injects/updates @font-face rules in #folio-fonts-face <style> for uploaded files
+ * - Injects/updates a Google Fonts <link> for non-system, non-uploaded fonts
+ */
+function applyThemeToDocument(theme: ThemeSettings) {
+  const fonts = theme.fonts;
+
+  // ── CSS variables ───────────────────────────────────────────────────────────
+  let styleEl = document.getElementById(
+    "folio-theme",
+  ) as HTMLStyleElement | null;
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = "folio-theme";
+    document.head.appendChild(styleEl);
+  }
+  const vars = [
+    ...Object.entries(theme.colors).map(([k, v]) => `  --color-${k}: ${v};`),
+    `  --font-body: ${fonts?.body ?? "Inter"};`,
+    `  --font-heading: ${fonts?.heading ?? fonts?.body ?? "Inter"};`,
+    `  --font-fallback: ${fonts?.fallback ?? "system-ui, sans-serif"};`,
+    `  --radius-button: ${theme.radius?.button ?? "8px"};`,
+    `  --radius-card: ${theme.radius?.card ?? "12px"};`,
+    `  --radius-input: ${theme.radius?.input ?? "6px"};`,
+  ].join("\n");
+  styleEl.textContent = `:root {\n${vars}\n}`;
+
+  // ── @font-face for uploaded font files ─────────────────────────────────────
+  const fontFaceRules: string[] = [];
+  if (fonts?.body_url) {
+    fontFaceRules.push(
+      `@font-face { font-family: '${fonts.body}'; src: url('${fonts.body_url}') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }`,
+    );
+  }
+  if (fonts?.heading_url && fonts.heading_url !== fonts.body_url) {
+    fontFaceRules.push(
+      `@font-face { font-family: '${fonts.heading}'; src: url('${fonts.heading_url}') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }`,
+    );
+  }
+  let faceEl = document.getElementById(
+    "folio-fonts-face",
+  ) as HTMLStyleElement | null;
+  if (fontFaceRules.length > 0) {
+    if (!faceEl) {
+      faceEl = document.createElement("style");
+      faceEl.id = "folio-fonts-face";
+      document.head.appendChild(faceEl);
+    }
+    faceEl.textContent = fontFaceRules.join("\n");
+  } else if (faceEl) {
+    faceEl.remove();
+  }
+
+  // ── Google Fonts link for non-uploaded fonts ───────────────────────────────
+  // Skip a font from Google Fonts if it already has a self-hosted URL.
+  const fontsNeedingGoogle = [
+    fonts?.body_url ? null : fonts?.body,
+    fonts?.heading_url ? null : fonts?.heading,
+  ].filter((f): f is string => Boolean(f));
+
+  const googleFontsUrl = buildGoogleFontsUrl(fontsNeedingGoogle);
+  let linkEl = document.getElementById("folio-fonts") as HTMLLinkElement | null;
+  if (googleFontsUrl) {
+    if (!linkEl) {
+      linkEl = document.createElement("link");
+      linkEl.id = "folio-fonts";
+      linkEl.rel = "stylesheet";
+      document.head.appendChild(linkEl);
+    }
+    linkEl.href = googleFontsUrl;
+  } else if (linkEl) {
+    linkEl.remove();
+  }
+}
+
+/** Dropdown + optional free-text override + font file upload for a single font setting. */
 function FontPicker({
   label,
   value,
+  fontUrl,
   onChange,
 }: {
   label: string;
   value: string;
-  onChange: (v: string) => void;
+  /** Existing uploaded font file URL, e.g. /uploads/myfont.woff2 */
+  fontUrl?: string;
+  onChange: (name: string, url?: string) => void;
 }) {
   const isCustom = !GOOGLE_FONTS.includes(
     value as (typeof GOOGLE_FONTS)[number],
   );
   const [custom, setCustom] = useState(isCustom ? value : "");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleSelect(v: string) {
     if (v === "__custom__") {
       onChange(custom || "");
     } else {
-      onChange(v);
+      // Switching to a Google Font clears any uploaded file
+      onChange(v, undefined);
+    }
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const result = await adminApi.uploadMedia(file);
+      const url = `/uploads/${result.filename}`;
+      // Derive a font family name from the file name if not already set
+      const derivedName =
+        custom || file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " ");
+      setCustom(derivedName);
+      onChange(derivedName, url);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+      // Reset so re-selecting the same file fires the event again
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -112,16 +218,66 @@ function FontPicker({
         <option value="__custom__">Custom…</option>
       </select>
       {isCustom && (
-        <input
-          type="text"
-          placeholder="e.g. Georgia or 'My Font'"
-          value={custom}
-          onChange={(e) => {
-            setCustom(e.target.value);
-            onChange(e.target.value);
-          }}
-          className="mt-1 w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono"
-        />
+        <div className="mt-1 space-y-1">
+          <input
+            type="text"
+            placeholder="Font family name (e.g. MyFont)"
+            value={custom}
+            onChange={(e) => {
+              setCustom(e.target.value);
+              onChange(e.target.value, fontUrl);
+            }}
+            className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono"
+          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="px-2 py-1 text-xs border border-(--color-border) rounded hover:bg-(--color-bg-surface) disabled:opacity-50"
+            >
+              {uploading
+                ? "Uploading…"
+                : fontUrl
+                  ? "Replace file"
+                  : "Upload font file"}
+            </button>
+            {fontUrl && (
+              <>
+                <span
+                  className="text-xs text-(--color-muted) truncate max-w-36"
+                  title={fontUrl}
+                >
+                  {fontUrl.split("/").pop()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onChange(custom, undefined)}
+                  className="text-xs text-(--color-destructive) hover:opacity-70"
+                  title="Remove uploaded file"
+                >
+                  ✕
+                </button>
+              </>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".woff2,.woff,.ttf,.otf"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+          {!fontUrl && (
+            <p className="text-xs text-(--color-muted)">
+              Accepts .woff2, .woff, .ttf, .otf — or leave blank to use the name
+              as-is (system font).
+            </p>
+          )}
+          {uploadError && (
+            <p className="text-xs text-(--color-destructive)">{uploadError}</p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -327,6 +483,13 @@ export default function SettingsPage() {
     if (settings.languages) setLangs(settings.languages);
     if (settings.ui_strings) setUiStrings(settings.ui_strings);
   }, [settings]);
+
+  // Apply theme CSS variables and load Google Fonts as soon as theme is available,
+  // not just when the Theme tab is opened.
+  useEffect(() => {
+    if (!theme) return;
+    applyThemeToDocument(theme);
+  }, [theme]);
 
   function handleSave() {
     setServerError(null);
@@ -1322,43 +1485,7 @@ function ThemeTab({
 
   // Live preview: update the global #folio-theme tag so the whole admin reflects changes
   useEffect(() => {
-    // Inject / update CSS variables
-    let el = document.getElementById("folio-theme") as HTMLStyleElement | null;
-    if (!el) {
-      el = document.createElement("style");
-      el.id = "folio-theme";
-      document.head.appendChild(el);
-    }
-    const vars = [
-      ...Object.entries(theme.colors).map(([k, v]) => `  --color-${k}: ${v};`),
-      `  --font-body: ${theme.fonts?.body ?? "Inter"};`,
-      `  --font-heading: ${theme.fonts?.heading ?? theme.fonts?.body ?? "Inter"};`,
-      `  --font-fallback: ${theme.fonts?.fallback ?? "system-ui, sans-serif"};`,
-      `  --radius-button: ${theme.radius?.button ?? "8px"};`,
-      `  --radius-card: ${theme.radius?.card ?? "12px"};`,
-      `  --radius-input: ${theme.radius?.input ?? "6px"};`,
-    ].join("\n");
-    el.textContent = `:root {\n${vars}\n}`;
-
-    // Inject / update Google Fonts link for the selected fonts
-    const fontNames = [theme.fonts?.body, theme.fonts?.heading].filter(
-      (f): f is string => Boolean(f),
-    );
-    const googleFontsUrl = buildGoogleFontsUrl(fontNames);
-    let linkEl = document.getElementById(
-      "folio-fonts",
-    ) as HTMLLinkElement | null;
-    if (googleFontsUrl) {
-      if (!linkEl) {
-        linkEl = document.createElement("link");
-        linkEl.id = "folio-fonts";
-        linkEl.rel = "stylesheet";
-        document.head.appendChild(linkEl);
-      }
-      linkEl.href = googleFontsUrl;
-    } else if (linkEl) {
-      linkEl.remove();
-    }
+    applyThemeToDocument(theme);
   }, [theme]);
 
   return (
@@ -1429,15 +1556,23 @@ function ThemeTab({
           <FontPicker
             label="Body font"
             value={theme.fonts.body}
-            onChange={(v) =>
-              onChange({ ...theme, fonts: { ...theme.fonts, body: v } })
+            fontUrl={theme.fonts.body_url}
+            onChange={(name, url) =>
+              onChange({
+                ...theme,
+                fonts: { ...theme.fonts, body: name, body_url: url },
+              })
             }
           />
           <FontPicker
             label="Heading font"
             value={theme.fonts.heading ?? theme.fonts.body}
-            onChange={(v) =>
-              onChange({ ...theme, fonts: { ...theme.fonts, heading: v } })
+            fontUrl={theme.fonts.heading_url}
+            onChange={(name, url) =>
+              onChange({
+                ...theme,
+                fonts: { ...theme.fonts, heading: name, heading_url: url },
+              })
             }
           />
           <div className="col-span-2">
@@ -1837,7 +1972,8 @@ function EmailTab({
           className="w-full px-3 py-2 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
         />
         <p className="mt-1 text-xs text-(--color-muted)">
-          Recipient for contact form notification emails. Save &amp; Rebuild to apply.
+          Recipient for contact form notification emails. Save &amp; Rebuild to
+          apply.
         </p>
       </div>
 

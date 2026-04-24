@@ -166,7 +166,13 @@ export interface ThemeColors {
 export interface ThemeSettings {
   preset: string;
   colors: ThemeColors;
-  fonts: { body: string; heading: string; fallback: string };
+  fonts: {
+    body: string;
+    heading: string;
+    fallback: string;
+    body_url?: string;
+    heading_url?: string;
+  };
   radius: { button: string; card: string; input: string };
 }
 

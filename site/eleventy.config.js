@@ -142,11 +142,12 @@ export default function (eleventyConfig) {
       const vars = lines.join("\n");
       if (!vars) return content;
 
-      // Build Google Fonts link tags for non-system fonts.
-      const fontNames = Object.values(theme.fonts ?? {}).filter(
-        (v) => typeof v === "string" && !v.includes(","),
-      );
-      const googleFontsUrl = buildGoogleFontsUrl(fontNames);
+      // Build Google Fonts link tags for non-system fonts that aren't self-hosted.
+      const fontsNeedingGoogle = [
+        theme.fonts?.body_url ? null : theme.fonts?.body,
+        theme.fonts?.heading_url ? null : theme.fonts?.heading,
+      ].filter((v) => typeof v === "string" && !v.includes(","));
+      const googleFontsUrl = buildGoogleFontsUrl(fontsNeedingGoogle);
       const fontLinks = googleFontsUrl
         ? [
             `<link rel="preconnect" href="https://fonts.googleapis.com">`,
@@ -155,9 +156,29 @@ export default function (eleventyConfig) {
           ].join("\n")
         : "";
 
+      // Build @font-face rules for self-hosted uploaded fonts.
+      const fontFaceRules = [];
+      if (theme.fonts?.body_url) {
+        fontFaceRules.push(
+          `@font-face { font-family: '${theme.fonts.body}'; src: url('${theme.fonts.body_url}') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }`,
+        );
+      }
+      if (
+        theme.fonts?.heading_url &&
+        theme.fonts.heading_url !== theme.fonts.body_url
+      ) {
+        fontFaceRules.push(
+          `@font-face { font-family: '${theme.fonts.heading}'; src: url('${theme.fonts.heading_url}') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }`,
+        );
+      }
+      const fontFaceTag =
+        fontFaceRules.length > 0
+          ? `<style id="folio-fonts-face">${fontFaceRules.join(" ")}</style>`
+          : "";
+
       const tag = `<style id="folio-theme">:root {\n${vars}\n}</style>`;
-      const injection = fontLinks ? `${fontLinks}\n${tag}` : tag;
-      return content.replace("</head>", `${injection}\n</head>`);
+      const parts = [fontLinks, fontFaceTag, tag].filter(Boolean);
+      return content.replace("</head>", `${parts.join("\n")}\n</head>`);
     },
   );
 
