@@ -33,5 +33,24 @@ export default async function () {
     }
   }
 
+  // Fallback: for non-default languages, include pages that have no
+  // translation in that language, using the default language's content.
+  const defaultLang = languages.find((l) => l.default) ?? languages[0];
+  const defaultPages = byLang[defaultLang.code] ?? [];
+
+  for (const lang of languages) {
+    if (lang.code === defaultLang.code) continue;
+    const existingIds = new Set((byLang[lang.code] ?? []).map((p) => p.id));
+    const fallbacks = defaultPages.filter((p) => !existingIds.has(p.id));
+    if (fallbacks.length === 0) continue;
+    console.log(
+      `[folio] Falling back ${fallbacks.length} page(s) to "${defaultLang.code}" for lang "${lang.code}"`,
+    );
+    byLang[lang.code] = [...(byLang[lang.code] ?? []), ...fallbacks];
+    for (const page of fallbacks) {
+      items.push({ lang, page });
+    }
+  }
+
   return { byLang, items };
 }
