@@ -317,5 +317,5 @@ These files are gitignored so your customizations survive updates.
 
 ## License
 
-MIT
+AGPL-3.0 license
 
