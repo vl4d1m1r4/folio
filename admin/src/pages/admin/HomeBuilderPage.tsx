@@ -1,24 +1,16 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { adminApi } from "../../api/client";
 import type { HomeBlock, BlockType, Language } from "../../api/types";
 import { RichTextEditor } from "../../components/admin/RichTextEditor";
 import { MediaPickerModal } from "../../components/admin/MediaPickerModal";
-
-// ── Block metadata ────────────────────────────────────────────────────────────
-
-const BLOCK_LABELS: Record<BlockType, string> = {
-  hero: "Hero",
-  "featured-articles": "Featured Articles",
-  "latest-articles": "Latest Articles",
-  "cta-band": "CTA Band",
-  "rich-text": "Rich Text",
-  "image-text": "Image + Text",
-  testimonials: "Testimonials",
-  newsletter: "Newsletter Subscribe",
-  container: "Container",
-};
+import {
+  BLOCK_LABELS,
+  applyContainerDefaults,
+  ContainerConfigPopover,
+  AddBlockModal,
+  Field,
+} from "../../components/admin/blockShared";
 
 function makeBlock(type: BlockType, order: number): HomeBlock {
   const id = `${type}-${Date.now()}`;
@@ -26,7 +18,7 @@ function makeBlock(type: BlockType, order: number): HomeBlock {
   if (type === "featured-articles" || type === "latest-articles")
     config.max_count = 6;
   if (type === "image-text") config.image_position = "left";
-  if (type === "container") config.direction = "row";
+  if (type === "container") applyContainerDefaults(config);
   return {
     id,
     type,
@@ -48,6 +40,7 @@ export default function HomeBuilderPage() {
   const [addParentId, setAddParentId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [activeLang, setActiveLang] = useState("en");
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["admin", "settings"],
@@ -62,6 +55,13 @@ export default function HomeBuilderPage() {
   useEffect(() => {
     if (settings?.home_sections) setBlocks(settings.home_sections);
   }, [settings]);
+
+  useEffect(() => {
+    if (languages.length > 0)
+      setActiveLang(
+        languages.find((l) => l.default)?.code ?? languages[0].code,
+      );
+  }, [languages]);
 
   const saveMutation = useMutation({
     mutationFn: (home_sections: HomeBlock[]) =>
@@ -148,6 +148,24 @@ export default function HomeBuilderPage() {
         </div>
       )}
 
+      {languages.length > 1 && (
+        <div className="flex gap-1 mb-4">
+          {languages.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => setActiveLang(l.code)}
+              className={`px-3 py-1 text-xs rounded font-medium border ${
+                activeLang === l.code
+                  ? "bg-(--color-accent) text-white border-(--color-accent)"
+                  : "border-(--color-border) text-(--color-muted) hover:text-(--color-text)"
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="space-y-3">
         {blocks.map((block, idx) => (
           <BlockCard
@@ -159,6 +177,7 @@ export default function HomeBuilderPage() {
             onUpdate={(patch) => updateBlock(block.id, patch)}
             onRemove={() => removeBlock(block.id)}
             onMove={(dir) => moveBlock(block.id, dir)}
+            activeLang={activeLang}
             onAddChild={() => {
               setAddParentId(block.id);
               setAddModalOpen(true);
@@ -208,6 +227,7 @@ function BlockCard({
   idx,
   total,
   languages,
+  activeLang,
   onUpdate,
   onRemove,
   onMove,
@@ -222,6 +242,7 @@ function BlockCard({
   idx: number;
   total: number;
   languages: Language[];
+  activeLang: string;
   onUpdate: (patch: Partial<HomeBlock>) => void;
   onRemove: () => void;
   onMove: (dir: "up" | "down") => void;
@@ -233,9 +254,23 @@ function BlockCard({
   onDragEnd: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const [activeLang, setActiveLang] = useState(
-    languages.find((l) => l.default)?.code ?? languages[0]?.code ?? "en",
-  );
+  const [addChildModal, setAddChildModal] = useState<string | null>(null);
+  const [childDragId, setChildDragId] = useState<string | null>(null);
+  const [childDragOverId, setChildDragOverId] = useState<string | null>(null);
+
+  function dropChild(targetId: string) {
+    if (!childDragId || childDragId === targetId) return;
+    const children = block.children ?? [];
+    const from = children.findIndex((c) => c.id === childDragId);
+    const to = children.findIndex((c) => c.id === targetId);
+    if (from === -1 || to === -1) return;
+    const next = [...children];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onUpdate({ children: next.map((c, i) => ({ ...c, order: i })) });
+    setChildDragId(null);
+    setChildDragOverId(null);
+  }
 
   const trans = block.translations[activeLang] ?? {};
 
@@ -304,6 +339,10 @@ function BlockCard({
           {BLOCK_LABELS[block.type]}
         </span>
 
+        {block.type === "container" && (
+          <ContainerConfigPopover config={block.config} setConfig={setConfig} />
+        )}
+
         <button
           onClick={() => setExpanded((v) => !v)}
           className="text-xs text-(--color-accent) hover:underline"
@@ -323,36 +362,18 @@ function BlockCard({
       {/* Body */}
       {expanded && (
         <div className="px-3 pb-3 border-t border-(--color-border) pt-3">
-          {/* Language tabs */}
-          {languages.length > 1 && (
-            <div className="flex gap-1 mb-3">
-              {languages.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => setActiveLang(l.code)}
-                  className={`px-3 py-1 text-xs rounded font-medium border ${
-                    activeLang === l.code
-                      ? "bg-(--color-accent) text-white border-(--color-accent)"
-                      : "border-(--color-border) text-(--color-muted) hover:text-(--color-text)"
-                  }`}
-                >
-                  {l.label}
-                </button>
-              ))}
-            </div>
+          {block.type !== "container" && (
+            <BlockFields
+              block={block}
+              trans={trans}
+              setTrans={setTrans}
+              setConfig={setConfig}
+            />
           )}
-
-          <BlockFields
-            block={block}
-            trans={trans}
-            setTrans={setTrans}
-            setConfig={setConfig}
-            onAddChild={onAddChild}
-          />
 
           {/* Container children */}
           {block.type === "container" && (block.children ?? []).length > 0 && (
-            <div className="mt-3 pl-4 border-l-2 border-(--color-border) space-y-2">
+            <div className="pl-4 border-l-2 border-(--color-border) space-y-2">
               {(block.children ?? []).map((child, ci) => (
                 <BlockCard
                   key={child.id}
@@ -360,6 +381,7 @@ function BlockCard({
                   idx={ci}
                   total={(block.children ?? []).length}
                   languages={languages}
+                  activeLang={activeLang}
                   onUpdate={(patch) => {
                     const next = (block.children ?? []).map((c, i) =>
                       i === ci ? { ...c, ...patch } : c,
@@ -380,10 +402,50 @@ function BlockCard({
                     [arr[ci], arr[ni]] = [arr[ni], arr[ci]];
                     onUpdate({ children: arr });
                   }}
-                  onAddChild={() => {}}
+                  onAddChild={() => setAddChildModal(child.id)}
+                  isDragOver={childDragOverId === child.id}
+                  onDragStart={() => setChildDragId(child.id)}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setChildDragOverId(child.id);
+                  }}
+                  onDrop={() => dropChild(child.id)}
+                  onDragEnd={() => {
+                    setChildDragId(null);
+                    setChildDragOverId(null);
+                  }}
                 />
               ))}
             </div>
+          )}
+          {block.type === "container" && (
+            <button
+              type="button"
+              onClick={onAddChild}
+              className="mt-3 text-sm text-(--color-accent) hover:underline"
+            >
+              + Add child block
+            </button>
+          )}
+          {addChildModal && (
+            <AddBlockModal
+              onSelect={(type) => {
+                const target = (block.children ?? []).find(
+                  (c) => c.id === addChildModal,
+                );
+                if (!target) return;
+                const newChild = makeBlock(type, target.children?.length ?? 0);
+                const next = (block.children ?? []).map((c) =>
+                  c.id === addChildModal
+                    ? { ...c, children: [...(c.children ?? []), newChild] }
+                    : c,
+                );
+                onUpdate({ children: next });
+                setAddChildModal(null);
+              }}
+              onClose={() => setAddChildModal(null)}
+            />
           )}
         </div>
       )}
@@ -398,13 +460,11 @@ function BlockFields({
   trans,
   setTrans,
   setConfig,
-  onAddChild,
 }: {
   block: HomeBlock;
   trans: Record<string, string>;
   setTrans: (key: string, value: string) => void;
   setConfig: (key: string, value: unknown) => void;
-  onAddChild: () => void;
 }) {
   const [mediaPicker, setMediaPicker] = useState<boolean | "bg_image">(false);
 
@@ -630,49 +690,7 @@ function BlockFields({
       );
 
     case "container":
-      return (
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium mb-1">Direction</label>
-            <select
-              value={(block.config.direction as string) ?? "row"}
-              onChange={(e) => setConfig("direction", e.target.value)}
-              className="px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
-            >
-              <option value="row">Row (horizontal)</option>
-              <option value="col">Column (vertical)</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1">Alignment</label>
-            <select
-              value={(block.config.align as string) ?? "start"}
-              onChange={(e) => setConfig("align", e.target.value)}
-              className="px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
-            >
-              <option value="start">Start</option>
-              <option value="center">Center</option>
-              <option value="end">End</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1">Padding</label>
-            <input
-              type="text"
-              placeholder="e.g. py-10 px-6"
-              value={(block.config.padding as string) ?? ""}
-              onChange={(e) => setConfig("padding", e.target.value)}
-              className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono"
-            />
-          </div>
-          <button
-            onClick={onAddChild}
-            className="text-sm text-(--color-accent) hover:underline"
-          >
-            + Add child block
-          </button>
-        </div>
-      );
+      return null;
 
     default:
       return null;
@@ -766,67 +784,6 @@ function TestimonialsFields({
       >
         + Add testimonial
       </button>
-    </div>
-  );
-}
-
-// ── Add-block modal ───────────────────────────────────────────────────────────
-
-function AddBlockModal({
-  onSelect,
-  onClose,
-}: {
-  onSelect: (type: BlockType) => void;
-  onClose: () => void;
-}) {
-  const types = Object.keys(BLOCK_LABELS) as BlockType[];
-  return createPortal(
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-(--color-bg) rounded-xl shadow-xl w-full max-w-sm p-6">
-        <h2 className="text-lg font-bold mb-4">Add block</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {types.map((t) => (
-            <button
-              key={t}
-              onClick={() => onSelect(t)}
-              className="px-3 py-2 rounded border border-(--color-border) text-sm text-left hover:bg-(--color-bg-surface) transition-colors"
-            >
-              {BLOCK_LABELS[t]}
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={onClose}
-          className="mt-4 text-sm text-(--color-muted) hover:text-(--color-text)"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>,
-    document.body,
-  );
-}
-
-// ── Simple field component ────────────────────────────────────────────────────
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <label className="block text-xs font-medium mb-1">{label}</label>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
-      />
     </div>
   );
 }

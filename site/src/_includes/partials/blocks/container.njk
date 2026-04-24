@@ -1,24 +1,68 @@
-{%- set containerConfig = b.config -%}
+{%- set cc = b.config -%}
 {%- set containerChildren = b.children -%}
-<section class="max-w-5xl mx-auto px-6 py-10">
-  <div class="flex {{ 'flex-col' if containerConfig.direction === 'col' else 'flex-row flex-wrap' }} {{ containerConfig.padding | default('') }}"
-       style="align-items: {{ containerConfig.align | default('flex-start') }}; gap: 1.5rem;">
-    {% for child in containerChildren %}
-      {% if child.visible !== false %}
-        {% set b = child %}
-        <div class="flex-1 min-w-0">
-          {% if child.type === "hero" %}{% include "partials/blocks/hero.njk" %}
-          {% elif child.type === "featured-articles" %}{% include "partials/blocks/featured-articles.njk" %}
-          {% elif child.type === "latest-articles" %}{% include "partials/blocks/latest-articles.njk" %}
-          {% elif child.type === "cta-band" %}{% include "partials/blocks/cta-band.njk" %}
-          {% elif child.type === "rich-text" %}{% include "partials/blocks/rich-text.njk" %}
-          {% elif child.type === "image-text" %}{% include "partials/blocks/image-text.njk" %}
-          {% elif child.type === "testimonials" %}{% include "partials/blocks/testimonials.njk" %}
-          {% elif child.type === "newsletter" %}{% include "partials/blocks/newsletter.njk" %}
-          {% elif child.type === "container" %}{% include "partials/blocks/container.njk" %}
-          {% endif %}
-        </div>
-      {% endif %}
-    {% endfor %}
-  </div>
-</section>
+
+{%- set _dir = "flex-row" if cc.direction !== "col" else "flex-col" -%}
+{%- set _wrap = " flex-wrap" if cc.wrap === "wrap" else "" -%}
+{%- set _w = "max-w-5xl mx-auto" if cc.width === "w-page" else (cc.width if cc.width else "w-full") -%}
+{%- set _h = (" " + cc.height) if cc.height and cc.height !== "h-auto" else "" -%}
+
+{%- set _jus = "justify-start" -%}
+{%- if cc.justify === "center" %}{%- set _jus = "justify-center" -%}
+{%- elif cc.justify === "end" %}{%- set _jus = "justify-end" -%}
+{%- elif cc.justify === "between" %}{%- set _jus = "justify-between" -%}
+{%- endif -%}
+
+{%- set _ali = "items-start" -%}
+{%- if cc.align === "center" %}{%- set _ali = "items-center" -%}
+{%- elif cc.align === "end" %}{%- set _ali = "items-end" -%}
+{%- elif cc.align === "stretch" %}{%- set _ali = "items-stretch" -%}
+{%- endif -%}
+
+{%- set _gx = cc.gapX if cc.gapX else 4 -%}
+{%- set _gy = cc.gapY if cc.gapY else 4 -%}
+{%- set _gap = ("gap-" + _gx) if _gx === _gy else ("gap-x-" + _gx + " gap-y-" + _gy) -%}
+
+{%- set _pt = cc.paddingTop if cc.paddingTop else 6 -%}
+{%- set _pb = cc.paddingBottom if cc.paddingBottom else 6 -%}
+{%- set _pl = cc.paddingLeft if cc.paddingLeft else 6 -%}
+{%- set _pr = cc.paddingRight if cc.paddingRight else 6 -%}
+{%- if _pt === _pb and _pl === _pr and _pt === _pl -%}
+  {%- set _pad = "p-" + _pt -%}
+{%- elif _pt === _pb and _pl === _pr -%}
+  {%- set _pad = "py-" + _pt + " px-" + _pl -%}
+{%- else -%}
+  {%- set _pad = "pt-" + _pt + " pb-" + _pb + " pl-" + _pl + " pr-" + _pr -%}
+{%- endif -%}
+
+{%- set _mt = cc.marginTop if cc.marginTop else 0 -%}
+{%- set _mb = cc.marginBottom if cc.marginBottom else 0 -%}
+{%- set _ml = cc.marginLeft if cc.marginLeft else 0 -%}
+{%- set _mr = cc.marginRight if cc.marginRight else 0 -%}
+{%- if _mt === _mb and _ml === _mr and _mt === _ml -%}
+  {%- set _mar = ("m-" + _mt) if _mt > 0 else "" -%}
+{%- elif _mt === _mb and _ml === _mr -%}
+  {%- set _mar = ("my-" + _mt + " mx-" + _ml) -%}
+{%- else -%}
+  {%- set _mar = ("mt-" + _mt + " mb-" + _mb + " ml-" + _ml + " mr-" + _mr) -%}
+{%- endif -%}
+
+{%- set _bgStyle = ('background-color:' + cc.backgroundColor + ';') if cc.backgroundColor else "" -%}
+
+<div class="flex {{ _dir }}{{ _wrap }} {{ _w }}{{ _h }} {{ _jus }} {{ _ali }} {{ _gap }} {{ _pad }} {{ _mar }}"
+     {% if _bgStyle %}style="{{ _bgStyle }}"{% endif %}>
+  {%- for child in containerChildren %}
+    {%- if child.visible !== false %}
+      {%- set b = child %}
+      {%- if child.type === "hero" %}{%- include "partials/blocks/hero.njk" %}
+      {%- elif child.type === "featured-articles" %}{%- include "partials/blocks/featured-articles.njk" %}
+      {%- elif child.type === "latest-articles" %}{%- include "partials/blocks/latest-articles.njk" %}
+      {%- elif child.type === "cta-band" %}{%- include "partials/blocks/cta-band.njk" %}
+      {%- elif child.type === "rich-text" %}{%- include "partials/blocks/rich-text.njk" %}
+      {%- elif child.type === "image-text" %}{%- include "partials/blocks/image-text.njk" %}
+      {%- elif child.type === "testimonials" %}{%- include "partials/blocks/testimonials.njk" %}
+      {%- elif child.type === "newsletter" %}{%- include "partials/blocks/newsletter.njk" %}
+      {%- elif child.type === "container" %}{%- include "partials/blocks/container.njk" %}
+      {%- endif %}
+    {%- endif %}
+  {%- endfor %}
+</div>
