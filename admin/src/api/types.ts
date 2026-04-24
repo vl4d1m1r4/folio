@@ -229,4 +229,5 @@ export interface AllSettings {
   home_sections: HomeBlock[] | null;
   languages: Language[] | null;
   ui_strings: Record<string, Record<string, string>> | null;
+  email_status: { provider: string; configured: boolean } | null;
 }

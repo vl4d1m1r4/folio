@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../api/client";
@@ -256,6 +256,7 @@ const TABS = [
   "Theme",
   "Languages",
   "Translations",
+  "Email",
 ] as const;
 type Tab = (typeof TABS)[number];
 
@@ -422,6 +423,14 @@ export default function SettingsPage() {
           onChange={setUiStrings}
         />
       )}
+      {activeTab === "Email" && site && (
+        <EmailTab
+          emailStatus={settings?.email_status ?? null}
+          site={site}
+          onChange={setSite}
+          savedContactEmail={settings?.site?.contactEmail ?? ""}
+        />
+      )}
     </div>
   );
 }
@@ -468,7 +477,7 @@ function GeneralTab({
       {field("tagline")}
       {field("url")}
       {field("bookingUrl")}
-      {field("contactEmail")}
+
       <div>
         <label className="block text-sm font-medium mb-1">
           Tags (one per line)
@@ -1768,6 +1777,142 @@ function TranslationsTab({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── Email tab ─────────────────────────────────────────────────────────────────
+
+function EmailTab({
+  emailStatus,
+  site,
+  onChange,
+  savedContactEmail,
+}: {
+  emailStatus: AllSettings["email_status"];
+  site: NonNullable<AllSettings["site"]>;
+  onChange: (s: NonNullable<AllSettings["site"]>) => void;
+  savedContactEmail: string;
+}) {
+  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(
+    null,
+  );
+  const [sending, setSending] = useState(false);
+
+  const providerConfigured = emailStatus?.configured ?? false;
+  const contactEmail = site.contactEmail ?? "";
+  const savedEmailValid = savedContactEmail.includes("@");
+  const configured = providerConfigured && savedEmailValid;
+  const provider = emailStatus?.provider ?? "unknown";
+
+  async function handleSend() {
+    setSending(true);
+    setResult(null);
+    try {
+      const res = await adminApi.sendTestEmail(savedContactEmail);
+      setResult({ ok: true, message: res.message });
+    } catch (err) {
+      setResult({ ok: false, message: (err as Error).message });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-(--color-muted)">
+        Email is used to notify you when the contact form is submitted.
+        Configuration is done via environment variables — changes require a
+        server restart.
+      </p>
+
+      {/* Contact email recipient */}
+      <div>
+        <label className="block text-sm font-medium mb-1">Contact email</label>
+        <input
+          type="email"
+          placeholder="you@example.com"
+          value={contactEmail}
+          onChange={(e) => onChange({ ...site, contactEmail: e.target.value })}
+          className="w-full px-3 py-2 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
+        />
+        <p className="mt-1 text-xs text-(--color-muted)">
+          Recipient for contact form notification emails. Save &amp; Rebuild to apply.
+        </p>
+      </div>
+
+      {/* Status card */}
+      <div className="p-4 rounded border border-(--color-border) bg-(--color-bg-surface) space-y-3">
+        <h2 className="text-sm font-semibold">Delivery status</h2>
+        <div className="flex items-center gap-3">
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{
+              background: configured
+                ? "var(--color-success)"
+                : "var(--color-muted)",
+            }}
+          />
+          <div>
+            <span className="font-mono text-xs uppercase tracking-wide text-(--color-muted) mr-2">
+              {provider}
+            </span>
+            <span
+              className={
+                configured
+                  ? "text-sm text-(--color-text)"
+                  : "text-sm text-(--color-muted)"
+              }
+            >
+              {!providerConfigured
+                ? "Not configured — emails will be skipped"
+                : !savedEmailValid
+                  ? "Provider ready — save a contact email above to enable"
+                  : "Configured and ready"}
+            </span>
+          </div>
+        </div>
+        <p className="text-xs text-(--color-muted)">
+          Set <code className="text-xs">EMAIL_PROVIDER=smtp</code> (or{" "}
+          <code className="text-xs">msgraph</code>) and the corresponding
+          credentials in your environment file, then restart the server.
+        </p>
+      </div>
+
+      {/* Test email — only shown when fully configured */}
+      {configured && (
+        <div className="p-4 rounded border border-(--color-border) space-y-3">
+          <h2 className="text-sm font-semibold">Send a test email</h2>
+          <p className="text-sm text-(--color-muted)">
+            Sends a test message to <strong>{savedContactEmail}</strong>.
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={sending}
+              className="px-4 py-2 text-sm text-white rounded disabled:opacity-50"
+              style={{ background: "var(--color-accent)" }}
+            >
+              {sending ? "Sending…" : "Send test"}
+            </button>
+          </div>
+
+          {result && (
+            <p
+              className="text-sm"
+              style={{
+                color: result.ok
+                  ? "var(--color-success)"
+                  : "var(--color-destructive)",
+              }}
+            >
+              {result.ok ? "✓ " : "✗ "}
+              {result.message}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -166,6 +166,14 @@ func main() {
 	clientSecret := os.Getenv("MS_GRAPH_CLIENT_SECRET")
 	sender := os.Getenv("MS_GRAPH_SENDER")
 
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := getEnv("SMTP_PORT", "587")
+	smtpUser := os.Getenv("SMTP_USER")
+	smtpPass := os.Getenv("SMTP_PASS")
+	smtpSender := os.Getenv("SMTP_SENDER")
+
+	emailProvider := strings.ToLower(getEnv("EMAIL_PROVIDER", "msgraph"))
+
 	// 4. Ensure upload directory exists
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		log.Fatalf("failed to create upload dir: %v", err)
@@ -184,13 +192,22 @@ func main() {
 	// Seed DB from config.yaml + theme.json on first boot.
 	seedSettings(repo, cfg, themePath)
 
-	emailSvc := services.NewEmailService(tenantID, clientID, clientSecret, sender)
+	var emailSvc services.EmailSender
+	var emailConfigured bool
+	switch emailProvider {
+	case "smtp":
+		emailSvc = services.NewSMTPEmailService(smtpHost, smtpPort, smtpUser, smtpPass, smtpSender)
+		emailConfigured = smtpHost != ""
+	default:
+		emailSvc = services.NewMSGraphEmailService(tenantID, clientID, clientSecret, sender)
+		emailConfigured = tenantID != "" && clientID != ""
+	}
 	authH := handlers.NewAuthHandler(repo, jwtSecret)
 	publicH := handlers.NewPublicHandler(repo, cfg)
 	adminH := handlers.NewAdminHandler(repo, cfg, uploadDir)
 	contactH := handlers.NewContactHandler(repo, emailSvc, contactEmail)
 	newsletterH := handlers.NewNewsletterHandler(repo)
-	settingsH := handlers.NewSettingsHandler(repo)
+	settingsH := handlers.NewSettingsHandler(repo, emailProvider, emailConfigured, emailSvc)
 	pagesH := handlers.NewPagesHandler(repo)
 
 	// 7. Echo setup
@@ -279,6 +296,7 @@ func main() {
 
 	admin.GET("/settings", settingsH.GetSettings)
 	admin.PUT("/settings", settingsH.PutSettings)
+	admin.POST("/settings/test-email", settingsH.SendTestEmail)
 
 	admin.GET("/pages", pagesH.ListPages)
 	admin.POST("/pages", pagesH.CreatePage)

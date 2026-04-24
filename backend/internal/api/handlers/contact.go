@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,11 +15,11 @@ import (
 
 type ContactHandler struct {
 	repo         *models.Repository
-	emailSvc     *services.EmailService
+	emailSvc     services.EmailSender
 	contactEmail string
 }
 
-func NewContactHandler(repo *models.Repository, emailSvc *services.EmailService, contactEmail string) *ContactHandler {
+func NewContactHandler(repo *models.Repository, emailSvc services.EmailSender, contactEmail string) *ContactHandler {
 	return &ContactHandler{repo: repo, emailSvc: emailSvc, contactEmail: contactEmail}
 }
 
@@ -70,6 +71,18 @@ func (h *ContactHandler) SubmitContact(c echo.Context) error {
 	}
 	cs.ID = id
 
+	// Resolve the contact recipient from the DB site settings (updated via admin UI),
+	// falling back to the value set at startup via env / config.yaml.
+	contactEmail := h.contactEmail
+	if siteJSON, err := h.repo.GetSetting(c.Request().Context(), "site"); err == nil && siteJSON != "" {
+		var site struct {
+			ContactEmail string `json:"contactEmail"`
+		}
+		if json.Unmarshal([]byte(siteJSON), &site) == nil && site.ContactEmail != "" {
+			contactEmail = site.ContactEmail
+		}
+	}
+
 	fullName := strings.TrimSpace(req.FirstName + " " + req.LastName)
 	subject := fmt.Sprintf("New contact from %s", fullName)
 	htmlBody := fmt.Sprintf(`<table border="1" cellpadding="6" cellspacing="0">
@@ -80,7 +93,7 @@ func (h *ContactHandler) SubmitContact(c echo.Context) error {
 <tr><th>Message</th><td>%s</td></tr>
 </table>`, fullName, req.Email, req.Company, req.Phone, req.Message)
 
-	if err := h.emailSvc.SendEmail(c.Request().Context(), h.contactEmail, subject, htmlBody); err != nil {
+	if err := h.emailSvc.SendEmail(c.Request().Context(), contactEmail, subject, htmlBody); err != nil {
 		log.Printf("[contact] email notification failed: %v", err)
 	}
 

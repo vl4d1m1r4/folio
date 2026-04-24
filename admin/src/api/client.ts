@@ -159,4 +159,11 @@ export const adminApi = {
       method: "POST",
       auth: true,
     }),
+
+  sendTestEmail: (to: string) =>
+    request<{ message: string }>("/admin/settings/test-email", {
+      method: "POST",
+      body: JSON.stringify({ to }),
+      auth: true,
+    }),
 };

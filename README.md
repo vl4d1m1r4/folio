@@ -294,8 +294,69 @@ Or edit `theme.json` directly, or use Settings → Theme in the admin. Key token
 | `DB_PATH` | `./blog.db` | SQLite database path |
 | `PORT` | `8080` | Backend listen port |
 | `UPLOAD_DIR` | `./uploads` | Uploaded media directory |
-| `MS_GRAPH_*` | — | Email via Microsoft Graph (contact form delivery) |
+| `EMAIL_PROVIDER` | `msgraph` | Email transport: `smtp` or `msgraph` |
+| `SMTP_HOST` | — | SMTP server hostname (e.g. `smtp.gmail.com`) |
+| `SMTP_PORT` | `587` | SMTP port (`587` for STARTTLS, `465` for implicit TLS) |
+| `SMTP_USER` | — | SMTP auth username |
+| `SMTP_PASS` | — | SMTP auth password (use an app password for Gmail) |
+| `SMTP_SENDER` | — | From address for outgoing email |
+| `MS_GRAPH_TENANT_ID` | — | Azure AD tenant ID (MS Graph provider) |
+| `MS_GRAPH_CLIENT_ID` | — | Azure AD app client ID (MS Graph provider) |
+| `MS_GRAPH_CLIENT_SECRET` | — | Azure AD app client secret (MS Graph provider) |
+| `MS_GRAPH_SENDER` | — | Sender mailbox UPN (MS Graph provider) |
 | `GOATCOUNTER_URL` | — | GoatCounter analytics endpoint injected into pages |
+
+---
+
+## Email configuration
+
+Email is used to notify you when someone submits the contact form. Configure one provider via `EMAIL_PROVIDER`. When no provider is configured emails are silently skipped (useful during development).
+
+The current provider status is shown read-only in **Admin → Settings → General → Email delivery**.
+
+### SMTP (recommended for most setups)
+
+```env
+EMAIL_PROVIDER=smtp
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=you@gmail.com
+SMTP_PASS=xxxx xxxx xxxx xxxx
+SMTP_SENDER=you@gmail.com
+```
+
+Works with any standard SMTP relay. Port `587` uses STARTTLS; port `465` uses implicit TLS.
+
+#### Gmail app password
+
+Gmail requires an **app password** instead of your account password when 2-Step Verification is enabled:
+
+1. Go to **Google Account → Security → 2-Step Verification → App passwords**
+2. Create a new app password (name it anything, e.g. *folio*)
+3. Copy the 16-character password (spaces are optional) into `SMTP_PASS`
+
+Other common providers:
+
+| Provider | `SMTP_HOST` | `SMTP_PORT` |
+|---|---|---|
+| Gmail | `smtp.gmail.com` | `587` |
+| Outlook / Hotmail | `smtp.office365.com` | `587` |
+| Brevo (Sendinblue) | `smtp-relay.brevo.com` | `587` |
+| Mailgun | `smtp.mailgun.org` | `587` |
+| Amazon SES | `email-smtp.<region>.amazonaws.com` | `587` |
+| Postmark | `smtp.postmarkapp.com` | `587` |
+
+### Microsoft Graph (Azure AD)
+
+```env
+EMAIL_PROVIDER=msgraph
+MS_GRAPH_TENANT_ID=<your-tenant-id>
+MS_GRAPH_CLIENT_ID=<your-client-id>
+MS_GRAPH_CLIENT_SECRET=<your-client-secret>
+MS_GRAPH_SENDER=notifications@yourcompany.com
+```
+
+Requires an Azure AD app registration with the `Mail.Send` application permission granted and admin-consented.
 
 ---
 
