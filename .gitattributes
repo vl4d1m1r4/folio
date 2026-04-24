@@ -1,0 +1,5 @@
+# Force LF for shell scripts so they stay executable on Linux/Docker
+*.sh text eol=lf
+
+# Normalise everything else
+* text=auto
