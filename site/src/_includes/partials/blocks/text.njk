@@ -5,44 +5,74 @@
   {%- set tag = cc.tag -%}
 {%- endif -%}
 
+{# Build Tailwind class list #}
+{%- set _cls = [] -%}
+
+{# Font size #}
+{%- set _cls = (_cls.push("text-[" + (cc.fontSize if cc.fontSize else 16) + "px]"), _cls) -%}
+
 {# Font weight #}
-{%- set _fw = "700" if cc.fontWeight === "bold" else ("600" if cc.fontWeight === "semibold" else ("500" if cc.fontWeight === "medium" else "400")) -%}
+{%- if cc.fontWeight === "bold" -%}{%- set _cls = (_cls.push("font-bold"), _cls) -%}
+{%- elif cc.fontWeight === "semibold" -%}{%- set _cls = (_cls.push("font-semibold"), _cls) -%}
+{%- elif cc.fontWeight === "medium" -%}{%- set _cls = (_cls.push("font-medium"), _cls) -%}
+{%- else -%}{%- set _cls = (_cls.push("font-normal"), _cls) -%}
+{%- endif -%}
 
-{# letter-spacing is stored as hundredths of an em (e.g. 50 → 0.5em) #}
+{# Text align #}
+{%- if cc.textAlign === "center" -%}{%- set _cls = (_cls.push("text-center"), _cls) -%}
+{%- elif cc.textAlign === "right" -%}{%- set _cls = (_cls.push("text-right"), _cls) -%}
+{%- elif cc.textAlign === "justify" -%}{%- set _cls = (_cls.push("text-justify"), _cls) -%}
+{%- else -%}{%- set _cls = (_cls.push("text-left"), _cls) -%}
+{%- endif -%}
+
+{# Italic #}
+{%- if cc.italic -%}{%- set _cls = (_cls.push("italic"), _cls) -%}{%- endif -%}
+
+{# Text color #}
+{%- if cc.color -%}{%- set _cls = (_cls.push("text-[" + cc.color + "]"), _cls) -%}{%- endif -%}
+
+{# Letter spacing — stored as hundredths of em (e.g. 50 → 0.5em) #}
 {%- set _lts = cc.letterSpacing if cc.letterSpacing else 0 -%}
+{%- if _lts -%}{%- set _cls = (_cls.push("tracking-[" + (_lts / 100) + "em]"), _cls) -%}{%- endif -%}
 
-{# Build inline style as an array, then join with ";" #}
-{%- set _parts = [] -%}
-{%- set _parts = (_parts.push("font-size:" + (cc.fontSize if cc.fontSize else 16) + "px"), _parts) -%}
-{%- set _parts = (_parts.push("font-weight:" + _fw), _parts) -%}
-{%- set _parts = (_parts.push("text-align:" + (cc.textAlign if cc.textAlign else "left")), _parts) -%}
-{%- set _parts = (_parts.push("margin:0"), _parts) -%}
-{%- if cc.italic %}{%- set _parts = (_parts.push("font-style:italic"), _parts) -%}{%- endif -%}
-{%- if cc.color %}{%- set _parts = (_parts.push("color:" + cc.color), _parts) -%}{%- endif -%}
-{%- if _lts %}{%- set _parts = (_parts.push("letter-spacing:" + (_lts / 100) + "em"), _parts) -%}{%- endif -%}
-{%- if cc.lineHeight %}{%- set _parts = (_parts.push("line-height:" + cc.lineHeight), _parts) -%}{%- endif -%}
-{%- if cc.textTransform and cc.textTransform !== "none" %}{%- set _parts = (_parts.push("text-transform:" + cc.textTransform), _parts) -%}{%- endif -%}
-{%- if cc.textDecoration and cc.textDecoration !== "none" %}{%- set _parts = (_parts.push("text-decoration:" + cc.textDecoration), _parts) -%}{%- endif -%}
-{%- if cc.bgColor %}{%- set _parts = (_parts.push("background-color:" + cc.bgColor), _parts) -%}{%- endif -%}
+{# Line height #}
+{%- if cc.lineHeight -%}{%- set _cls = (_cls.push("leading-[" + cc.lineHeight + "]"), _cls) -%}{%- endif -%}
 
-{# Spacing — decoded via spToPx filter (integer Tailwind unit × 4, or [Npx] string) #}
-{%- set _pt = cc.paddingTop | spToPx -%}
-{%- set _pb = cc.paddingBottom | spToPx -%}
-{%- set _pl = cc.paddingLeft | spToPx -%}
-{%- set _pr = cc.paddingRight | spToPx -%}
-{%- set _mt = cc.marginTop | spToPx -%}
-{%- set _mb = cc.marginBottom | spToPx -%}
-{%- set _ml = cc.marginLeft | spToPx -%}
-{%- set _mr = cc.marginRight | spToPx -%}
-{%- if _pt %}{%- set _parts = (_parts.push("padding-top:" + _pt + "px"), _parts) -%}{%- endif -%}
-{%- if _pb %}{%- set _parts = (_parts.push("padding-bottom:" + _pb + "px"), _parts) -%}{%- endif -%}
-{%- if _pl %}{%- set _parts = (_parts.push("padding-left:" + _pl + "px"), _parts) -%}{%- endif -%}
-{%- if _pr %}{%- set _parts = (_parts.push("padding-right:" + _pr + "px"), _parts) -%}{%- endif -%}
-{%- if _mt %}{%- set _parts = (_parts.push("margin-top:" + _mt + "px"), _parts) -%}{%- endif -%}
-{%- if _mb %}{%- set _parts = (_parts.push("margin-bottom:" + _mb + "px"), _parts) -%}{%- endif -%}
-{%- if _ml %}{%- set _parts = (_parts.push("margin-left:" + _ml + "px"), _parts) -%}{%- endif -%}
-{%- if _mr %}{%- set _parts = (_parts.push("margin-right:" + _mr + "px"), _parts) -%}{%- endif -%}
-{%- if cc.maxWidth %}{%- set _parts = (_parts.push("max-width:" + cc.maxWidth), _parts) -%}{%- endif -%}
-{%- if cc.customStyle %}{%- set _parts = (_parts.push(cc.customStyle), _parts) -%}{%- endif -%}
+{# Text transform #}
+{%- if cc.textTransform === "uppercase" -%}{%- set _cls = (_cls.push("uppercase"), _cls) -%}
+{%- elif cc.textTransform === "lowercase" -%}{%- set _cls = (_cls.push("lowercase"), _cls) -%}
+{%- elif cc.textTransform === "capitalize" -%}{%- set _cls = (_cls.push("capitalize"), _cls) -%}
+{%- endif -%}
 
-<{{ tag }}{% if cc.elementId %} id="{{ cc.elementId }}"{% endif %} style="{{ _parts | join(';') }}">{{ cc.content | safe }}</{{ tag }}>
+{# Text decoration #}
+{%- if cc.textDecoration === "underline" -%}{%- set _cls = (_cls.push("underline"), _cls) -%}
+{%- elif cc.textDecoration === "line-through" -%}{%- set _cls = (_cls.push("line-through"), _cls) -%}
+{%- endif -%}
+
+{# Background color #}
+{%- if cc.bgColor -%}{%- set _cls = (_cls.push("bg-[" + cc.bgColor + "]"), _cls) -%}{%- endif -%}
+
+{# Max width — stored as CSS value (e.g. "480px"), wrap in arbitrary bracket #}
+{%- if cc.maxWidth -%}{%- set _cls = (_cls.push("max-w-[" + cc.maxWidth + "]"), _cls) -%}{%- endif -%}
+
+{# Padding (always >= 0) — concatenate with stored value directly #}
+{%- set _cls = (_cls.push("pt-" + (cc.paddingTop if cc.paddingTop else 0)), _cls) -%}
+{%- set _cls = (_cls.push("pb-" + (cc.paddingBottom if cc.paddingBottom else 0)), _cls) -%}
+{%- set _cls = (_cls.push("pl-" + (cc.paddingLeft if cc.paddingLeft else 0)), _cls) -%}
+{%- set _cls = (_cls.push("pr-" + (cc.paddingRight if cc.paddingRight else 0)), _cls) -%}
+
+{# Margin — may be negative; negative integers require the "-mt-N" prefix form #}
+{%- set _mt = cc.marginTop if cc.marginTop else 0 -%}
+{%- if _mt is number and _mt < 0 -%}{%- set _cls = (_cls.push("-mt-" + (_mt | abs)), _cls) -%}
+{%- else -%}{%- set _cls = (_cls.push("mt-" + _mt), _cls) -%}{%- endif -%}
+{%- set _mb = cc.marginBottom if cc.marginBottom else 0 -%}
+{%- if _mb is number and _mb < 0 -%}{%- set _cls = (_cls.push("-mb-" + (_mb | abs)), _cls) -%}
+{%- else -%}{%- set _cls = (_cls.push("mb-" + _mb), _cls) -%}{%- endif -%}
+{%- set _ml = cc.marginLeft if cc.marginLeft else 0 -%}
+{%- if _ml is number and _ml < 0 -%}{%- set _cls = (_cls.push("-ml-" + (_ml | abs)), _cls) -%}
+{%- else -%}{%- set _cls = (_cls.push("ml-" + _ml), _cls) -%}{%- endif -%}
+{%- set _mr = cc.marginRight if cc.marginRight else 0 -%}
+{%- if _mr is number and _mr < 0 -%}{%- set _cls = (_cls.push("-mr-" + (_mr | abs)), _cls) -%}
+{%- else -%}{%- set _cls = (_cls.push("mr-" + _mr), _cls) -%}{%- endif -%}
+
+<{{ tag }}{% if cc.elementId %} id="{{ cc.elementId }}"{% endif %} class="{{ _cls | join(' ') }}"{% if cc.customStyle %} style="{{ cc.customStyle }}"{% endif %}>{{ cc.content | safe }}</{{ tag }}>

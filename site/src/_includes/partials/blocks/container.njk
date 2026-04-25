@@ -46,15 +46,30 @@
   {%- set _mar = ("mt-" + _mt + " mb-" + _mb + " ml-" + _ml + " mr-" + _mr) -%}
 {%- endif -%}
 
-{%- set _bgParts = [] -%}
-{%- if cc.backgroundColor %}{%- set _bgParts = (_bgParts.push("background-color:" + cc.backgroundColor), _bgParts) -%}{%- endif -%}
-{%- if cc.backgroundImage %}{%- set _bgParts = (_bgParts.push("background-image:url('" + cc.backgroundImage + "')"), _bgParts) -%}{%- set _bgParts = (_bgParts.push("background-size:" + (cc.backgroundSize if cc.backgroundSize else "cover")), _bgParts) -%}{%- set _bgParts = (_bgParts.push("background-position:" + (cc.backgroundPosition if cc.backgroundPosition else "center")), _bgParts) -%}{%- set _bgParts = (_bgParts.push("background-repeat:no-repeat"), _bgParts) -%}{%- endif -%}
-{%- if cc.borderRadius and cc.borderRadius > 0 %}{%- set _bgParts = (_bgParts.push("border-radius:" + cc.borderRadius + "px"), _bgParts) -%}{%- endif -%}
-{%- if cc.textColor %}{%- set _bgParts = (_bgParts.push("color:" + cc.textColor), _bgParts) -%}{%- endif -%}
-{%- if cc.customStyle %}{%- set _bgParts = (_bgParts.push(cc.customStyle), _bgParts) -%}{%- endif -%}
-{%- set _bgStyle = _bgParts | join(";") -%}
+{# Extra Tailwind classes for visual properties #}
+{%- set _xCls = [] -%}
+{%- if cc.backgroundColor %}{%- set _xCls = (_xCls.push("bg-[" + cc.backgroundColor + "]"), _xCls) -%}{%- endif -%}
+{%- if cc.backgroundImage -%}
+  {%- set _xCls = (_xCls.push("bg-[url('" + cc.backgroundImage + "')]"), _xCls) -%}
+  {%- set _bgSize = cc.backgroundSize if cc.backgroundSize else "cover" -%}
+  {%- if _bgSize === "cover" %}{%- set _xCls = (_xCls.push("bg-cover"), _xCls) -%}
+  {%- elif _bgSize === "contain" %}{%- set _xCls = (_xCls.push("bg-contain"), _xCls) -%}
+  {%- elif _bgSize === "auto" %}{%- set _xCls = (_xCls.push("bg-auto"), _xCls) -%}
+  {%- else %}{%- set _xCls = (_xCls.push("bg-[size:" + _bgSize + "]"), _xCls) -%}{%- endif -%}
+  {%- set _bgPos = cc.backgroundPosition if cc.backgroundPosition else "center" -%}
+  {%- if _bgPos === "center" %}{%- set _xCls = (_xCls.push("bg-center"), _xCls) -%}
+  {%- elif _bgPos === "top" %}{%- set _xCls = (_xCls.push("bg-top"), _xCls) -%}
+  {%- elif _bgPos === "bottom" %}{%- set _xCls = (_xCls.push("bg-bottom"), _xCls) -%}
+  {%- elif _bgPos === "left" %}{%- set _xCls = (_xCls.push("bg-left"), _xCls) -%}
+  {%- elif _bgPos === "right" %}{%- set _xCls = (_xCls.push("bg-right"), _xCls) -%}
+  {%- else %}{%- set _xCls = (_xCls.push("bg-[position:" + _bgPos + "]"), _xCls) -%}{%- endif -%}
+  {%- set _xCls = (_xCls.push("bg-no-repeat"), _xCls) -%}
+{%- endif -%}
+{%- if cc.borderRadius and cc.borderRadius > 0 %}{%- set _xCls = (_xCls.push("rounded-[" + cc.borderRadius + "px]"), _xCls) -%}{%- endif -%}
+{%- if cc.textColor %}{%- set _xCls = (_xCls.push("text-[" + cc.textColor + "]"), _xCls) -%}{%- endif -%}
+{%- set _bgStyle = cc.customStyle if cc.customStyle else "" -%}
 
-<div {% if cc.elementId %}id="{{ cc.elementId }}"{% endif %} class="relative flex {{ _dir }}{{ _wrap }} {{ _w }}{{ _h }} {{ _jus }} {{ _ali }} {{ _gap }} {{ _pad }} {{ _mar }}"
+<div {% if cc.elementId %}id="{{ cc.elementId }}"{% endif %} class="relative flex {{ _dir }}{{ _wrap }} {{ _w }}{{ _h }} {{ _jus }} {{ _ali }} {{ _gap }} {{ _pad }} {{ _mar }} {{ _xCls | join(' ') }}"
      {% if _bgStyle %}style="{{ _bgStyle }}"{% endif %}>
   {%- if cc.backgroundImage and cc.backgroundOverlay %}
     <div class="absolute inset-0 pointer-events-none" style="background:{{ cc.backgroundOverlay }};{% if cc.borderRadius and cc.borderRadius > 0 %}border-radius:{{ cc.borderRadius }}px;{% endif %}" aria-hidden="true"></div>

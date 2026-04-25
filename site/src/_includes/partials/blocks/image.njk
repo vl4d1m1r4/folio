@@ -2,45 +2,47 @@
 
 {%- if cc.src -%}
 
-{# Width class #}
-{%- set _widthCls = "w-full" -%}
-{%- if cc.width === "w-1/2" %}{%- set _widthCls = "w-1/2" -%}
-{%- elif cc.width === "w-1/3" %}{%- set _widthCls = "w-1/3" -%}
-{%- elif cc.width === "w-auto" %}{%- set _widthCls = "w-auto" -%}
+{# Width class — stored as Tailwind class directly #}
+{%- set _widthCls = cc.width if cc.width else "w-full" -%}
+
+{# Object fit → Tailwind class #}
+{%- set _fitCls = "object-cover" -%}
+{%- if cc.objectFit === "contain" %}{%- set _fitCls = "object-contain" -%}
+{%- elif cc.objectFit === "fill" %}{%- set _fitCls = "object-fill" -%}
+{%- elif cc.objectFit === "none" %}{%- set _fitCls = "object-none" -%}
 {%- endif -%}
 
-{# Image inline style #}
-{%- set _imgParts = [] -%}
-{%- set _imgParts = (_imgParts.push("object-fit:" + (cc.objectFit if cc.objectFit else "cover")), _imgParts) -%}
-{%- set _imgParts = (_imgParts.push("display:block"), _imgParts) -%}
-{%- if cc.borderRadius %}{%- set _imgParts = (_imgParts.push("border-radius:" + cc.borderRadius + "px"), _imgParts) -%}{%- endif -%}
-{%- if cc.customStyle %}{%- set _imgParts = (_imgParts.push(cc.customStyle), _imgParts) -%}{%- endif -%}
+{# Border radius #}
+{%- set _br = cc.borderRadius if cc.borderRadius else 0 -%}
 
-{# Wrapper spacing #}
-{%- set _pt = cc.paddingTop | spToPx -%}
-{%- set _pb = cc.paddingBottom | spToPx -%}
-{%- set _pl = cc.paddingLeft | spToPx -%}
-{%- set _pr = cc.paddingRight | spToPx -%}
-{%- set _mt = cc.marginTop | spToPx -%}
-{%- set _mb = cc.marginBottom | spToPx -%}
-{%- set _ml = cc.marginLeft | spToPx -%}
-{%- set _mr = cc.marginRight | spToPx -%}
-{%- set _wrapParts = [] -%}
-{%- if _pt %}{%- set _wrapParts = (_wrapParts.push("padding-top:" + _pt + "px"), _wrapParts) -%}{%- endif -%}
-{%- if _pb %}{%- set _wrapParts = (_wrapParts.push("padding-bottom:" + _pb + "px"), _wrapParts) -%}{%- endif -%}
-{%- if _pl %}{%- set _wrapParts = (_wrapParts.push("padding-left:" + _pl + "px"), _wrapParts) -%}{%- endif -%}
-{%- if _pr %}{%- set _wrapParts = (_wrapParts.push("padding-right:" + _pr + "px"), _wrapParts) -%}{%- endif -%}
-{%- if _mt %}{%- set _wrapParts = (_wrapParts.push("margin-top:" + _mt + "px"), _wrapParts) -%}{%- endif -%}
-{%- if _mb %}{%- set _wrapParts = (_wrapParts.push("margin-bottom:" + _mb + "px"), _wrapParts) -%}{%- endif -%}
-{%- if _ml %}{%- set _wrapParts = (_wrapParts.push("margin-left:" + _ml + "px"), _wrapParts) -%}{%- endif -%}
-{%- if _mr %}{%- set _wrapParts = (_wrapParts.push("margin-right:" + _mr + "px"), _wrapParts) -%}{%- endif -%}
+{# Image classes #}
+{%- set _imgCls = ["w-full", "block", _fitCls] -%}
+{%- if _br -%}{%- set _imgCls = (_imgCls.push("rounded-[" + _br + "px]"), _imgCls) -%}{%- endif -%}
 
-<div class="{{ _widthCls }}"{% if _wrapParts.length %} style="{{ _wrapParts | join(';') }}"{% endif %}>
+{# Wrapper classes — width + spacing #}
+{%- set _wCls = [_widthCls] -%}
+{%- set _wCls = (_wCls.push("pt-" + (cc.paddingTop if cc.paddingTop else 0)), _wCls) -%}
+{%- set _wCls = (_wCls.push("pb-" + (cc.paddingBottom if cc.paddingBottom else 0)), _wCls) -%}
+{%- set _wCls = (_wCls.push("pl-" + (cc.paddingLeft if cc.paddingLeft else 0)), _wCls) -%}
+{%- set _wCls = (_wCls.push("pr-" + (cc.paddingRight if cc.paddingRight else 0)), _wCls) -%}
+{%- set _mt = cc.marginTop if cc.marginTop else 0 -%}
+{%- if _mt is number and _mt < 0 -%}{%- set _wCls = (_wCls.push("-mt-" + (_mt | abs)), _wCls) -%}
+{%- else -%}{%- set _wCls = (_wCls.push("mt-" + _mt), _wCls) -%}{%- endif -%}
+{%- set _mb = cc.marginBottom if cc.marginBottom else 0 -%}
+{%- if _mb is number and _mb < 0 -%}{%- set _wCls = (_wCls.push("-mb-" + (_mb | abs)), _wCls) -%}
+{%- else -%}{%- set _wCls = (_wCls.push("mb-" + _mb), _wCls) -%}{%- endif -%}
+{%- set _ml = cc.marginLeft if cc.marginLeft else 0 -%}
+{%- if _ml is number and _ml < 0 -%}{%- set _wCls = (_wCls.push("-ml-" + (_ml | abs)), _wCls) -%}
+{%- else -%}{%- set _wCls = (_wCls.push("ml-" + _ml), _wCls) -%}{%- endif -%}
+{%- set _mr = cc.marginRight if cc.marginRight else 0 -%}
+{%- if _mr is number and _mr < 0 -%}{%- set _wCls = (_wCls.push("-mr-" + (_mr | abs)), _wCls) -%}
+{%- else -%}{%- set _wCls = (_wCls.push("mr-" + _mr), _wCls) -%}{%- endif -%}
+
+<div class="{{ _wCls | join(' ') }}">
   <img{% if cc.elementId %} id="{{ cc.elementId }}"{% endif %}
        src="{{ cc.src }}"
        alt="{{ cc.alt if cc.alt else '' }}"
-       class="w-full"
-       style="{{ _imgParts | join(';') }}" />
+       class="{{ _imgCls | join(' ') }}"{% if cc.customStyle %} style="{{ cc.customStyle }}"{% endif %} />
 </div>
 
 {%- endif -%}

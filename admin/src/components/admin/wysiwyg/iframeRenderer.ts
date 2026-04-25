@@ -4,16 +4,18 @@
  */
 import type { BlockType } from "../../../api/types";
 
-// ── Spacing value decoder ─────────────────────────────────────────────────────
-// Stored as: integer Tailwind unit (×4 = px)  OR  "[Npx]" arbitrary string.
-
-function sp(val: unknown, def = 0): number {
-  if (typeof val === "number") return val * 4;
-  if (typeof val === "string") {
-    const m = val.match(/^\[(\d+(?:\.\d+)?)px\]$/);
-    if (m) return parseFloat(m[1]);
-  }
-  return def;
+// ── Spacing class helper ──────────────────────────────────────────────────────
+// Converts a stored spacing value to a Tailwind class string.
+// Integer → "pt-4", "[10px]" string → "pt-[10px]"
+function spClass(
+  val: unknown,
+  prefix: string,
+  def: number | string = 0,
+): string {
+  if (typeof val === "number") return `${prefix}-${val}`;
+  if (typeof val === "string" && /^\[\d+(?:\.\d+)?px\]$/.test(val))
+    return `${prefix}-${val}`;
+  return `${prefix}-${def}`;
 }
 
 // ── Loose block interface for rendering (both HomeBlock + PageBlock) ────────────
@@ -125,9 +127,11 @@ function containerToHtml(
   mode: "home" | "page",
 ): string {
   const c = block.config;
-  const cls = containerClassNames(c);
-  const style = containerInlineStyle(c);
-  const styleAttr = style ? ` style="${escAttr(style)}"` : "";
+  const baseCls = containerClassNames(c);
+  const extraCls = containerExtraClasses(c);
+  const cls = extraCls ? `${baseCls} ${extraCls}` : baseCls;
+  const customStyle = (c.customStyle as string) || "";
+  const styleAttr = customStyle ? ` style="${escAttr(customStyle)}"` : "";
   const label = `<span class="wysiwyg-label">▣ Container</span>`;
 
   const hasOverlay = !!(c.backgroundOverlay && c.backgroundImage);
@@ -146,7 +150,13 @@ function containerToHtml(
     const bgImg = c.backgroundImage as string;
     const bgSize = (c.backgroundSize as string) ?? "cover";
     const bgPos = (c.backgroundPosition as string) ?? "center";
-    return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="container" class="${escAttr(cls)}"${styleAttr} style="background-image:url('${escAttr(bgImg)}');background-size:${bgSize};background-position:${bgPos};${style}">
+    const overlayStyle = [
+      `background-image:url('${escAttr(bgImg)}')`,
+      `background-size:${bgSize}`,
+      `background-position:${bgPos}`,
+      ...(customStyle ? [customStyle] : []),
+    ].join(";");
+    return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="container" class="${escAttr(cls)}" style="${escAttr(overlayStyle)}">
 ${label}
   <div style="position:absolute;inset:0;background:${escAttr(overlayColor)};pointer-events:none;"></div>
   <div style="position:relative;z-index:1;width:100%;display:flex;flex-direction:inherit;flex-wrap:inherit;justify-content:inherit;align-items:inherit;gap:inherit;">${inner}</div>
@@ -237,21 +247,29 @@ function containerClassNames(c: Record<string, unknown>): string {
   return cls.join(" ");
 }
 
-function containerInlineStyle(c: Record<string, unknown>): string {
-  const parts: string[] = [];
-  if (c.backgroundColor) parts.push(`background-color:${c.backgroundColor}`);
+function containerExtraClasses(c: Record<string, unknown>): string {
+  const cls: string[] = [];
+  if (c.backgroundColor) cls.push(`bg-[${c.backgroundColor}]`);
   if (c.backgroundImage && !c.backgroundOverlay) {
+    cls.push(`bg-[url('${c.backgroundImage}')]`);
     const bgSize = (c.backgroundSize as string) ?? "cover";
+    if (bgSize === "cover") cls.push("bg-cover");
+    else if (bgSize === "contain") cls.push("bg-contain");
+    else if (bgSize === "auto") cls.push("bg-auto");
+    else cls.push(`bg-[size:${bgSize}]`);
     const bgPos = (c.backgroundPosition as string) ?? "center";
-    parts.push(`background-image:url('${c.backgroundImage}')`);
-    parts.push(`background-size:${bgSize}`);
-    parts.push(`background-position:${bgPos}`);
+    if (bgPos === "center") cls.push("bg-center");
+    else if (bgPos === "top") cls.push("bg-top");
+    else if (bgPos === "bottom") cls.push("bg-bottom");
+    else if (bgPos === "left") cls.push("bg-left");
+    else if (bgPos === "right") cls.push("bg-right");
+    else cls.push(`bg-[position:${bgPos}]`);
+    cls.push("bg-no-repeat");
   }
   if (c.borderRadius && (c.borderRadius as number) > 0)
-    parts.push(`border-radius:${c.borderRadius}px`);
-  if (c.textColor) parts.push(`color:${c.textColor}`);
-  if (c.customStyle) parts.push(c.customStyle as string);
-  return parts.join(";");
+    cls.push(`rounded-[${c.borderRadius}px]`);
+  if (c.textColor) cls.push(`text-[${c.textColor}]`);
+  return cls.join(" ");
 }
 
 // ── Text ──────────────────────────────────────────────────────────────────────
@@ -286,52 +304,63 @@ function textToHtml(
   const textTransform = (c.textTransform as string) || "none";
   const textDecoration = (c.textDecoration as string) || "none";
   const bgColor = (c.bgColor as string) || null;
-  // Spacing — stored as Tailwind unit OR "[Npx]" string
-  const paddingTop = sp(c.paddingTop);
-  const paddingBottom = sp(c.paddingBottom);
-  const paddingLeft = sp(c.paddingLeft);
-  const paddingRight = sp(c.paddingRight);
-  const marginTop = sp(c.marginTop);
-  const marginBottom = sp(c.marginBottom);
-  const marginLeft = sp(c.marginLeft);
-  const marginRight = sp(c.marginRight);
   const maxWidth = (c.maxWidth as string) || "";
   const elementId = (c.elementId as string) || "";
   const customStyle = (c.customStyle as string) || "";
 
-  const weightMap: Record<string, string> = {
-    normal: "400",
-    medium: "500",
-    semibold: "600",
-    bold: "700",
+  // ── Build Tailwind class list ──────────────────────────────────────────────
+  const cls: string[] = [];
+
+  cls.push(`text-[${fontSize}px]`);
+
+  const twWeight: Record<string, string> = {
+    normal: "font-normal",
+    medium: "font-medium",
+    semibold: "font-semibold",
+    bold: "font-bold",
   };
+  cls.push(twWeight[fontWeight] ?? "font-normal");
 
-  const styleProps = [
-    `font-size:${fontSize}px`,
-    `font-weight:${weightMap[fontWeight] ?? "400"}`,
-    `text-align:${textAlign}`,
-    "margin:0",
-  ];
-  if (italic) styleProps.push("font-style:italic");
-  if (color) styleProps.push(`color:${color}`);
-  if (letterSpacing) styleProps.push(`letter-spacing:${letterSpacing / 100}em`);
-  if (lineHeight) styleProps.push(`line-height:${lineHeight}`);
+  const twAlign: Record<string, string> = {
+    left: "text-left",
+    center: "text-center",
+    right: "text-right",
+    justify: "text-justify",
+  };
+  cls.push(twAlign[textAlign] ?? "text-left");
+
+  if (italic) cls.push("italic");
+  if (color) cls.push(`text-[${color}]`);
+  if (letterSpacing) cls.push(`tracking-[${letterSpacing / 100}em]`);
+  if (lineHeight) cls.push(`leading-[${lineHeight}]`);
+
+  const twTransform: Record<string, string> = {
+    uppercase: "uppercase",
+    lowercase: "lowercase",
+    capitalize: "capitalize",
+  };
   if (textTransform && textTransform !== "none")
-    styleProps.push(`text-transform:${textTransform}`);
-  if (textDecoration && textDecoration !== "none")
-    styleProps.push(`text-decoration:${textDecoration}`);
-  if (bgColor) styleProps.push(`background-color:${bgColor}`);
-  if (paddingTop) styleProps.push(`padding-top:${paddingTop}px`);
-  if (paddingBottom) styleProps.push(`padding-bottom:${paddingBottom}px`);
-  if (paddingLeft) styleProps.push(`padding-left:${paddingLeft}px`);
-  if (paddingRight) styleProps.push(`padding-right:${paddingRight}px`);
-  if (marginTop) styleProps.push(`margin-top:${marginTop}px`);
-  if (marginBottom) styleProps.push(`margin-bottom:${marginBottom}px`);
-  if (marginLeft) styleProps.push(`margin-left:${marginLeft}px`);
-  if (marginRight) styleProps.push(`margin-right:${marginRight}px`);
-  if (maxWidth) styleProps.push(`max-width:${maxWidth}`);
-  if (customStyle) styleProps.push(customStyle);
+    cls.push(twTransform[textTransform] ?? "");
 
+  if (textDecoration === "underline") cls.push("underline");
+  else if (textDecoration === "line-through") cls.push("line-through");
+
+  if (bgColor) cls.push(`bg-[${bgColor}]`);
+
+  // Always set all 4 padding/margin sides to prevent browser default margins
+  cls.push(spClass(c.paddingTop, "pt"));
+  cls.push(spClass(c.paddingBottom, "pb"));
+  cls.push(spClass(c.paddingLeft, "pl"));
+  cls.push(spClass(c.paddingRight, "pr"));
+  cls.push(spClass(c.marginTop, "mt"));
+  cls.push(spClass(c.marginBottom, "mb"));
+  cls.push(spClass(c.marginLeft, "ml"));
+  cls.push(spClass(c.marginRight, "mr"));
+
+  if (maxWidth) cls.push(`max-w-[${maxWidth}]`);
+
+  const classAttr = cls.filter(Boolean).join(" ");
+  const styleAttr = customStyle ? ` style="${escAttr(customStyle)}"` : "";
   const idAttr = elementId ? ` id="${escAttr(elementId)}"` : "";
 
   const placeholder =
@@ -340,7 +369,7 @@ function textToHtml(
       : `Click to edit ${safeTag.toUpperCase()}…`;
   const labelText = safeTag === "p" ? "T Text" : `T ${safeTag.toUpperCase()}`;
 
-  return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="text" style="position:relative"><span class="wysiwyg-label">${escHtml(labelText)}</span><${safeTag}${idAttr} contenteditable="true" data-wysiwyg-content-id="${escAttr(block.id)}" data-placeholder="${escAttr(placeholder)}" style="${escAttr(styleProps.join(";"))}">${content}</${safeTag}></div>`;
+  return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="text" style="position:relative"><span class="wysiwyg-label">${escHtml(labelText)}</span><${safeTag}${idAttr} contenteditable="true" data-wysiwyg-content-id="${escAttr(block.id)}" data-placeholder="${escAttr(placeholder)}" class="${escAttr(classAttr)}"${styleAttr}>${content}</${safeTag}></div>`;
 }
 
 // ── Button ─────────────────────────────────────────────────────────────────────
@@ -358,80 +387,78 @@ function buttonToHtml(block: RenderBlock): string {
   const borderColor = (c.borderColor as string) || null;
   const borderRadius = (c.borderRadius as number) ?? 6;
   const fontWeight = (c.fontWeight as string) || "semibold";
-  // Spacing — stored as Tailwind unit OR "[Npx]" string
-  const paddingTop = sp(c.paddingTop);
-  const paddingBottom = sp(c.paddingBottom);
-  const paddingLeft = sp(c.paddingLeft);
-  const paddingRight = sp(c.paddingRight);
-  const marginTop = sp(c.marginTop);
-  const marginBottom = sp(c.marginBottom);
-  const marginLeft = sp(c.marginLeft);
-  const marginRight = sp(c.marginRight);
   const btnElementId = (c.elementId as string) || "";
   const btnCustomStyle = (c.customStyle as string) || "";
 
-  const weightMap: Record<string, string> = {
-    normal: "400",
-    medium: "500",
-    semibold: "600",
-    bold: "700",
-  };
-  const sizeMap: Record<string, { padding: string; fontSize: string }> = {
-    sm: { padding: "6px 14px", fontSize: "13px" },
-    md: { padding: "10px 22px", fontSize: "15px" },
-    lg: { padding: "14px 32px", fontSize: "18px" },
+  // ── Button anchor classes ──────────────────────────────────────────────────
+  const sizeMap: Record<string, { py: string; px: string; text: string }> = {
+    sm: { py: "py-[6px]", px: "px-[14px]", text: "text-[13px]" },
+    md: { py: "py-[10px]", px: "px-[22px]", text: "text-[15px]" },
+    lg: { py: "py-[14px]", px: "px-[32px]", text: "text-[18px]" },
   };
   const sz = sizeMap[size] ?? sizeMap["md"];
 
-  const btnStyle: string[] = [
-    "display:inline-block",
-    `padding:${sz.padding}`,
-    `font-size:${sz.fontSize}`,
-    `font-weight:${weightMap[fontWeight] ?? "600"}`,
-    `border-radius:${borderRadius}px`,
-    "cursor:pointer",
-    "text-decoration:none",
-    "line-height:1.25",
-    "transition:opacity 0.15s",
-    "border-width:2px",
-    "border-style:solid",
+  const twWeight: Record<string, string> = {
+    normal: "font-normal",
+    medium: "font-medium",
+    semibold: "font-semibold",
+    bold: "font-bold",
+  };
+
+  const btnCls: string[] = [
+    "inline-block",
+    sz.py,
+    sz.px,
+    sz.text,
+    twWeight[fontWeight] ?? "font-semibold",
+    `rounded-[${borderRadius}px]`,
+    "cursor-pointer",
+    "no-underline",
+    "leading-[1.25]",
+    "transition-opacity",
+    "duration-150",
+    "border-2",
+    "border-solid",
   ];
 
+  const accent = "var(--color-accent,#3b82f6)";
   if (variant === "filled") {
-    btnStyle.push(`background:${bgColor ?? "var(--color-accent,#3b82f6)"}`);
-    btnStyle.push(`color:${textColor ?? "#fff"}`);
-    btnStyle.push("border-color:transparent");
+    btnCls.push(`bg-[${bgColor ?? accent}]`);
+    btnCls.push(`text-[${textColor ?? "#fff"}]`);
+    btnCls.push("border-transparent");
   } else if (variant === "outline") {
-    btnStyle.push("background:transparent");
-    btnStyle.push(
-      `color:${textColor ?? bgColor ?? "var(--color-accent,#3b82f6)"}`,
-    );
-    btnStyle.push(
-      `border-color:${borderColor ?? bgColor ?? "var(--color-accent,#3b82f6)"}`,
-    );
+    btnCls.push("bg-transparent");
+    btnCls.push(`text-[${textColor ?? bgColor ?? accent}]`);
+    btnCls.push(`border-[${borderColor ?? bgColor ?? accent}]`);
   } else {
     // ghost
-    btnStyle.push("background:transparent");
-    btnStyle.push(
-      `color:${textColor ?? bgColor ?? "var(--color-accent,#3b82f6)"}`,
-    );
-    btnStyle.push("border-color:transparent");
+    btnCls.push("bg-transparent");
+    btnCls.push(`text-[${textColor ?? bgColor ?? accent}]`);
+    btnCls.push("border-transparent");
   }
 
-  if (btnCustomStyle) btnStyle.push(btnCustomStyle);
-
+  const btnStyleAttr = btnCustomStyle
+    ? ` style="${escAttr(btnCustomStyle)}"`
+    : "";
   const btnIdAttr = btnElementId ? ` id="${escAttr(btnElementId)}"` : "";
-  const wrapParts = [`text-align:${align}`, "position:relative"];
-  if (paddingTop) wrapParts.push(`padding-top:${paddingTop}px`);
-  if (paddingBottom) wrapParts.push(`padding-bottom:${paddingBottom}px`);
-  if (paddingLeft) wrapParts.push(`padding-left:${paddingLeft}px`);
-  if (paddingRight) wrapParts.push(`padding-right:${paddingRight}px`);
-  if (marginTop) wrapParts.push(`margin-top:${marginTop}px`);
-  if (marginBottom) wrapParts.push(`margin-bottom:${marginBottom}px`);
-  if (marginLeft) wrapParts.push(`margin-left:${marginLeft}px`);
-  if (marginRight) wrapParts.push(`margin-right:${marginRight}px`);
 
-  return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="button" style="${escAttr(wrapParts.join(";"))}"><span class="wysiwyg-label">⬤ Button</span><a${btnIdAttr} href="${escAttr(href)}" target="${escAttr(target)}" style="${escAttr(btnStyle.join(";"))}">${escHtml(label)}</a></div>`;
+  // ── Wrapper classes ────────────────────────────────────────────────────────
+  const twAlign: Record<string, string> = {
+    left: "text-left",
+    center: "text-center",
+    right: "text-right",
+  };
+  const wrapCls: string[] = ["relative", twAlign[align] ?? "text-left"];
+  wrapCls.push(spClass(c.paddingTop, "pt"));
+  wrapCls.push(spClass(c.paddingBottom, "pb"));
+  wrapCls.push(spClass(c.paddingLeft, "pl"));
+  wrapCls.push(spClass(c.paddingRight, "pr"));
+  wrapCls.push(spClass(c.marginTop, "mt"));
+  wrapCls.push(spClass(c.marginBottom, "mb"));
+  wrapCls.push(spClass(c.marginLeft, "ml"));
+  wrapCls.push(spClass(c.marginRight, "mr"));
+
+  return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="button" class="${escAttr(wrapCls.join(" "))}"><span class="wysiwyg-label">⬤ Button</span><a${btnIdAttr} href="${escAttr(href)}" target="${escAttr(target)}" class="${escAttr(btnCls.join(" "))}"${btnStyleAttr}>${escHtml(label)}</a></div>`;
 }
 
 // ── Image ─────────────────────────────────────────────────────────────────────
@@ -443,43 +470,46 @@ function imageToHtml(block: RenderBlock): string {
   const objectFit = (c.objectFit as string) || "cover";
   const borderRadius = (c.borderRadius as number) || 0;
   const width = (c.width as string) || "w-full";
-  // Spacing — stored as Tailwind unit OR "[Npx]" string
-  const imgPaddingTop = sp(c.paddingTop);
-  const imgPaddingBottom = sp(c.paddingBottom);
-  const imgPaddingLeft = sp(c.paddingLeft);
-  const imgPaddingRight = sp(c.paddingRight);
-  const imgMarginTop = sp(c.marginTop);
-  const imgMarginBottom = sp(c.marginBottom);
-  const imgMarginLeft = sp(c.marginLeft);
-  const imgMarginRight = sp(c.marginRight);
   const imgElementId = (c.elementId as string) || "";
   const imgCustomStyle = (c.customStyle as string) || "";
 
-  let widthCls = "w-full";
-  if (width === "w-1/2") widthCls = "w-1/2";
-  else if (width === "w-1/3") widthCls = "w-1/3";
-  else if (width === "w-auto") widthCls = "w-auto";
+  // objectFit → Tailwind class
+  const twFit: Record<string, string> = {
+    cover: "object-cover",
+    contain: "object-contain",
+    fill: "object-fill",
+    none: "object-none",
+  };
 
-  const styleProps = [`object-fit:${objectFit}`, "display:block"];
-  if (borderRadius) styleProps.push(`border-radius:${borderRadius}px`);
-  if (imgCustomStyle) styleProps.push(imgCustomStyle);
+  // ── Img classes ────────────────────────────────────────────────────────────
+  const imgCls: string[] = [
+    "w-full",
+    "block",
+    twFit[objectFit] ?? "object-cover",
+    borderRadius ? `rounded-[${borderRadius}px]` : "",
+  ].filter(Boolean);
 
+  const imgStyleAttr = imgCustomStyle
+    ? ` style="${escAttr(imgCustomStyle)}"`
+    : "";
   const imgIdAttr = imgElementId ? ` id="${escAttr(imgElementId)}"` : "";
-  const wrapStyle: string[] = ["position:relative"];
-  if (imgPaddingTop) wrapStyle.push(`padding-top:${imgPaddingTop}px`);
-  if (imgPaddingBottom) wrapStyle.push(`padding-bottom:${imgPaddingBottom}px`);
-  if (imgPaddingLeft) wrapStyle.push(`padding-left:${imgPaddingLeft}px`);
-  if (imgPaddingRight) wrapStyle.push(`padding-right:${imgPaddingRight}px`);
-  if (imgMarginTop) wrapStyle.push(`margin-top:${imgMarginTop}px`);
-  if (imgMarginBottom) wrapStyle.push(`margin-bottom:${imgMarginBottom}px`);
-  if (imgMarginLeft) wrapStyle.push(`margin-left:${imgMarginLeft}px`);
-  if (imgMarginRight) wrapStyle.push(`margin-right:${imgMarginRight}px`);
+
+  // ── Wrapper classes ────────────────────────────────────────────────────────
+  const wrapCls: string[] = ["relative", width];
+  wrapCls.push(spClass(c.paddingTop, "pt"));
+  wrapCls.push(spClass(c.paddingBottom, "pb"));
+  wrapCls.push(spClass(c.paddingLeft, "pl"));
+  wrapCls.push(spClass(c.paddingRight, "pr"));
+  wrapCls.push(spClass(c.marginTop, "mt"));
+  wrapCls.push(spClass(c.marginBottom, "mb"));
+  wrapCls.push(spClass(c.marginLeft, "ml"));
+  wrapCls.push(spClass(c.marginRight, "mr"));
 
   if (!src) {
-    return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="image" class="block-placeholder ${widthCls}" style="${escAttr(wrapStyle.join(";"))}"><span class="wysiwyg-label">⬛ Image</span><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Select an image in the inspector</span></div>`;
+    return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="image" class="block-placeholder ${escAttr(wrapCls.join(" "))}"><span class="wysiwyg-label">⬛ Image</span><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Select an image in the inspector</span></div>`;
   }
 
-  return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="image" class="${widthCls}" style="${escAttr(wrapStyle.join(";"))}"><span class="wysiwyg-label">⬛ Image</span><img${imgIdAttr} src="${escAttr(src)}" alt="${alt}" class="w-full" style="${escAttr(styleProps.join(";"))}" /></div>`;
+  return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="image" class="${escAttr(wrapCls.join(" "))}"><span class="wysiwyg-label">⬛ Image</span><img${imgIdAttr} src="${escAttr(src)}" alt="${alt}" class="${escAttr(imgCls.join(" "))}"${imgStyleAttr} /></div>`;
 }
 
 // ── Template placeholders ─────────────────────────────────────────────────────
