@@ -17,50 +17,113 @@ export const numInput =
 
 // ── ColorRow ──────────────────────────────────────────────────────────────────
 
+// Semantic theme color tokens shown as swatches
+const THEME_SWATCH_KEYS = [
+  "accent",
+  "cta",
+  "bg",
+  "bg-surface",
+  "text",
+  "muted",
+  "border",
+  "success",
+  "warning",
+  "destructive",
+] as const;
+
 export function ColorRow({
   label,
   value,
   placeholder,
   onChange,
+  themeColors,
 }: {
   label: string;
   value: string | null;
   placeholder: string;
   onChange: (v: string | null) => void;
+  themeColors?: Record<string, string>;
 }) {
+  // Resolve the display color when value is a CSS var reference
+  const resolveColor = (v: string | null): string | undefined => {
+    if (!v) return undefined;
+    if (v.startsWith("var(--color-")) {
+      const key = v.slice(12, -1); // strip "var(--color-" and ")"
+      return themeColors?.[`--color-${key}`] ?? undefined;
+    }
+    return v;
+  };
+
+  const displayColor = resolveColor(value);
+  const isCssVar = !!value?.startsWith("var(");
+
   return (
     <div>
       <p className="text-[11px] text-(--color-muted) mb-1.5">{label}</p>
+
+      {/* Theme swatches row */}
+      {themeColors && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {THEME_SWATCH_KEYS.map((key) => {
+            const cssVar = `--color-${key}`;
+            const hex = themeColors[cssVar];
+            if (!hex) return null;
+            const varRef = `var(--color-${key})`;
+            const isActive = value === varRef;
+            return (
+              <button
+                key={key}
+                type="button"
+                title={key}
+                onClick={() => onChange(varRef)}
+                className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${
+                  isActive ? "border-(--color-accent) scale-110" : "border-transparent"
+                }`}
+                style={{ background: hex }}
+              />
+            );
+          })}
+        </div>
+      )}
+
       <div className="flex items-center border border-(--color-border) rounded bg-(--color-bg) px-2 h-9 gap-2">
         <div
           className="relative w-5 h-5 rounded shrink-0 overflow-hidden"
           style={{
             border: "1px solid rgba(0,0,0,0.1)",
-            background: value || undefined,
-            backgroundImage: !value
+            background: displayColor ?? undefined,
+            backgroundImage: !displayColor
               ? "linear-gradient(45deg,#aaa 25%,transparent 25%),linear-gradient(-45deg,#aaa 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#aaa 75%),linear-gradient(-45deg,transparent 75%,#aaa 75%)"
               : undefined,
             backgroundSize: "8px 8px",
             backgroundPosition: "0 0,0 4px,4px -4px,-4px 0",
           }}
         >
-          <input
-            type="color"
-            value={value ?? "#000000"}
-            onChange={(e) => onChange(e.target.value)}
-            className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
-          />
+          {!isCssVar && (
+            <input
+              type="color"
+              value={value ?? "#000000"}
+              onChange={(e) => onChange(e.target.value)}
+              className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
+            />
+          )}
         </div>
-        <input
-          type="text"
-          value={value ? value.toUpperCase() : ""}
-          placeholder={placeholder}
-          onChange={(e) => {
-            const v = e.target.value;
-            onChange(v === "" ? null : v);
-          }}
-          className="flex-1 min-w-0 bg-transparent border-none text-sm font-mono outline-none"
-        />
+        {isCssVar ? (
+          <span className="flex-1 min-w-0 text-sm font-mono text-(--color-muted) truncate">
+            {value}
+          </span>
+        ) : (
+          <input
+            type="text"
+            value={value ? value.toUpperCase() : ""}
+            placeholder={placeholder}
+            onChange={(e) => {
+              const v = e.target.value;
+              onChange(v === "" ? null : v);
+            }}
+            className="flex-1 min-w-0 bg-transparent border-none text-sm font-mono outline-none"
+          />
+        )}
         {!!value && (
           <button
             type="button"

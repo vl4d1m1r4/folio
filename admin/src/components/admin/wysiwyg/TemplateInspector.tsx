@@ -3,11 +3,12 @@
  * Handles both home mode (text in translations[lang]) and page mode (text in config).
  */
 import { useState } from "react";
-import type { HomeBlock, PageBlock, BlockType } from "../../../api/types";
+import type { HomeBlock, PageBlock, BlockType, NavLink, SocialLink } from "../../../api/types";
 import { RichTextEditor } from "../RichTextEditor";
 import { MediaPickerModal } from "../MediaPickerModal";
 import { Field } from "../blockShared";
 import { BLOCK_LABELS } from "../blockShared";
+import { NavBlockInspector } from "./NavBlockInspector";
 
 interface TemplateInspectorProps {
   block: HomeBlock | PageBlock;
@@ -15,6 +16,10 @@ interface TemplateInspectorProps {
   activeLang: string;
   onConfigChange: (key: string, value: unknown) => void;
   onTransChange: (key: string, value: string) => void;
+  themeColors?: Record<string, string>;
+  navSnapshot?: NavLink[];
+  footerSnapshot?: NavLink[];
+  socialSnapshot?: SocialLink[];
 }
 
 export function TemplateInspector({
@@ -23,6 +28,10 @@ export function TemplateInspector({
   activeLang,
   onConfigChange,
   onTransChange,
+  themeColors,
+  navSnapshot,
+  footerSnapshot,
+  socialSnapshot,
 }: TemplateInspectorProps) {
   const type = block.type as BlockType;
 
@@ -51,6 +60,10 @@ export function TemplateInspector({
           t={t}
           setT={setT}
           onConfigChange={onConfigChange}
+          themeColors={themeColors}
+          navSnapshot={navSnapshot}
+          footerSnapshot={footerSnapshot}
+          socialSnapshot={socialSnapshot}
         />
       </div>
     </div>
@@ -65,12 +78,20 @@ function BlockTypeFields({
   t,
   setT,
   onConfigChange,
+  themeColors,
+  navSnapshot,
+  footerSnapshot,
+  socialSnapshot,
 }: {
   block: HomeBlock | PageBlock;
   type: BlockType;
   t: (key: string) => string;
   setT: (key: string, value: string) => void;
   onConfigChange: (key: string, value: unknown) => void;
+  themeColors?: Record<string, string>;
+  navSnapshot?: NavLink[];
+  footerSnapshot?: NavLink[];
+  socialSnapshot?: SocialLink[];
 }) {
   const [mediaPicker, setMediaPicker] = useState<string | null>(null);
 
@@ -271,6 +292,25 @@ function BlockTypeFields({
       );
 
     default:
+      if (
+        type === "nav-links" ||
+        type === "subnav-links" ||
+        type === "single-nav-item" ||
+        type === "social-links" ||
+        type === "single-social-link"
+      ) {
+        return (
+          <NavBlockInspector
+            type={type}
+            config={block.config}
+            onConfigChange={onConfigChange}
+            themeColors={themeColors}
+            navSnapshot={navSnapshot}
+            footerSnapshot={footerSnapshot}
+            socialSnapshot={socialSnapshot}
+          />
+        );
+      }
       return (
         <p className="text-sm text-(--color-muted)">
           No editable fields for this block type.

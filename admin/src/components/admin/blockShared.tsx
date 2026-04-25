@@ -30,6 +30,11 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   text: "Text",
   image: "Image",
   button: "Button",
+  "nav-links": "Navigation",
+  "subnav-links": "Sub-navigation",
+  "single-nav-item": "Nav Item",
+  "social-links": "Social Links",
+  "single-social-link": "Social Link",
 };
 
 // ── Default configs ───────────────────────────────────────────────────────────
@@ -129,6 +134,41 @@ export function applyContainerDefaults(config: Record<string, unknown>): void {
   config.textColor = null;
   config.customStyle = null;
   config.elementId = null;
+}
+
+export function applyNavLinksDefaults(config: Record<string, unknown>): void {
+  config.dropdown_style = "simple"; // "simple" | "mega"
+  config.show_language_switcher = true;
+  config.link_color = null;
+  config.bg_color = null;
+  config.sticky = true;
+}
+
+export function applySubnavLinksDefaults(config: Record<string, unknown>): void {
+  config.source = "nav"; // "nav" | "footer"
+  config.parent_key = "";
+  config.layout = "vertical"; // "vertical" | "horizontal" | "grid"
+  config.link_color = null;
+}
+
+export function applySingleNavItemDefaults(config: Record<string, unknown>): void {
+  config.source = "nav"; // "nav" | "footer"
+  config.link_key = "";
+  config.render_as = "link"; // "link" | "button"
+  config.link_color = null;
+}
+
+export function applySocialLinksDefaults(config: Record<string, unknown>): void {
+  config.show_icons = true;
+  config.icon_style = "outline"; // "outline" | "filled"
+  config.layout = "horizontal"; // "horizontal" | "vertical"
+  config.link_color = null;
+}
+
+export function applySingleSocialLinkDefaults(config: Record<string, unknown>): void {
+  config.platform = "";
+  config.show_icon = true;
+  config.link_color = null;
 }
 
 // ── Icon toggle button (used inside ContainerBlockEditor) ───────────────────

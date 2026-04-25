@@ -14,6 +14,7 @@ interface TextInspectorProps {
   content: string;
   onConfigChange: (key: string, value: unknown) => void;
   onContentChange: (html: string) => void;
+  themeColors?: Record<string, string>;
 }
 
 const TAG_OPTIONS = [
@@ -30,6 +31,7 @@ export function TextInspector({
   content,
   onConfigChange,
   onContentChange,
+  themeColors,
 }: TextInspectorProps) {
   return (
     <div>
@@ -67,12 +69,14 @@ export function TextInspector({
             value={c.color as string | null}
             placeholder="Inherit"
             onChange={(v) => onConfigChange("color", v)}
+            themeColors={themeColors}
           />
           <ColorRow
             label="Background"
             value={c.bgColor as string | null}
             placeholder="None"
             onChange={(v) => onConfigChange("bgColor", v)}
+            themeColors={themeColors}
           />
         </div>
 

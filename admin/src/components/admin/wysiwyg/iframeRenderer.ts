@@ -31,6 +31,12 @@ export interface RenderBlock {
   translations?: Record<string, Record<string, unknown>>;
 }
 
+export interface NavSnapshot {
+  navLinks?: Array<{ label: string; url: string; children?: Array<{ label: string; url: string }> }>;
+  footerLinks?: Array<{ label: string; url: string }>;
+  socialLinks?: Array<{ platform: string; url: string }>;
+}
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /** Build the full srcdoc HTML for the WYSIWYG iframe. */
@@ -39,9 +45,10 @@ export function buildSrcdoc(
   themeVars: Record<string, string>,
   activeLang = "en",
   mode: "home" | "page" = "page",
+  navSnapshot: NavSnapshot = {},
 ): string {
   const themeStyle = buildThemeStyle(themeVars);
-  const blocksHtml = renderBlocksHtml(blocks, activeLang, mode);
+  const blocksHtml = renderBlocksHtml(blocks, activeLang, mode, navSnapshot);
 
   return `<!DOCTYPE html>
 <html lang="${esc(activeLang)}">
@@ -89,11 +96,12 @@ export function renderBlocksHtml(
   blocks: RenderBlock[],
   activeLang = "en",
   mode: "home" | "page" = "page",
+  navSnapshot: NavSnapshot = {},
 ): string {
   return [...blocks]
     .filter((b) => b.visible !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((b) => blockToHtml(b, activeLang, mode))
+    .map((b) => blockToHtml(b, activeLang, mode, navSnapshot))
     .join("\n");
 }
 
@@ -103,17 +111,24 @@ function blockToHtml(
   block: RenderBlock,
   activeLang: string,
   mode: "home" | "page",
+  navSnapshot: NavSnapshot = {},
 ): string {
   if (block.visible === false) return "";
   switch (block.type) {
     case "container":
-      return containerToHtml(block, activeLang, mode);
+      return containerToHtml(block, activeLang, mode, navSnapshot);
     case "text":
       return textToHtml(block, activeLang, mode);
     case "image":
       return imageToHtml(block);
     case "button":
       return buttonToHtml(block);
+    case "nav-links":
+    case "subnav-links":
+    case "single-nav-item":
+    case "social-links":
+    case "single-social-link":
+      return navBlockHtml(block, navSnapshot);
     default:
       return templatePlaceholderHtml(block);
   }
@@ -125,6 +140,7 @@ function containerToHtml(
   block: RenderBlock,
   activeLang: string,
   mode: "home" | "page",
+  navSnapshot: NavSnapshot = {},
 ): string {
   const c = block.config;
   const baseCls = containerClassNames(c);
@@ -138,7 +154,7 @@ function containerToHtml(
   let inner = [...(block.children ?? [])]
     .filter((ch) => ch.visible !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((ch) => blockToHtml(ch, activeLang, mode))
+    .map((ch) => blockToHtml(ch, activeLang, mode, navSnapshot))
     .join("\n");
 
   if (inner === "") {
@@ -551,6 +567,141 @@ function templatePlaceholderHtml(block: RenderBlock): string {
     `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2"/></svg>`;
   const label = TEMPLATE_DISPLAY[block.type as BlockType] ?? block.type;
   return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="template" class="block-placeholder"><span class="wysiwyg-label">◈ ${escHtml(label)}</span>${icon}<span class="bp-label">${escHtml(label)}</span><span style="font-size:11px;color:#9ca3af;">Select to edit in inspector →</span></div>`;
+}
+
+// ── Nav-aware blocks ──────────────────────────────────────────────────────────
+
+function navBlockHtml(block: RenderBlock, snap: NavSnapshot): string {
+  const c = block.config;
+  const id = escAttr(block.id);
+  const labelText = navBlockLabel(block.type);
+  const label = `<span class="wysiwyg-label">⬡ ${escHtml(labelText)}</span>`;
+
+  switch (block.type) {
+    case "nav-links": {
+      const links = snap.navLinks ?? [];
+      const bgColor = (c.bg_color as string) || "var(--color-bg-surface)";
+      const linkColor = (c.link_color as string) || "var(--color-muted)";
+      const linksHtml = links
+        .map(
+          (l) =>
+            `<a href="#" style="color:${escAttr(linkColor)};text-decoration:none;">${escHtml(l.label)}</a>`,
+        )
+        .join("\n");
+      return `<nav data-wysiwyg-id="${id}" data-wysiwyg-type="nav-links"
+        style="background:${escAttr(bgColor)};border-bottom:1px solid var(--color-border);padding:0 24px;"
+        class="flex items-center justify-between h-16 gap-6 text-sm">
+        ${label}
+        <a href="#" style="color:var(--color-accent);font-weight:700;text-decoration:none;">Site Name</a>
+        <div class="flex items-center gap-6">${linksHtml}</div>
+      </nav>`;
+    }
+
+    case "subnav-links": {
+      const source = (c.source as string) ?? "nav";
+      const parentKey = (c.parent_key as string) ?? "";
+      const links = source === "footer" ? snap.footerLinks ?? [] : snap.navLinks ?? [];
+      const parent = links.find((l) => l.label === parentKey);
+      const children = (parent as any)?.children ?? [];
+      const layout = (c.layout as string) ?? "vertical";
+      const linkColor = (c.link_color as string) || "var(--color-muted)";
+      const flexDir = layout === "vertical" ? "column" : "row";
+      const flexWrap = layout === "grid" ? "wrap" : "nowrap";
+      const childHtml = children.length
+        ? children
+            .map(
+              (ch: { label: string }) =>
+                `<a href="#" style="color:${escAttr(linkColor)};text-decoration:none;${layout === "grid" ? "width:50%;" : ""}">${escHtml(ch.label)}</a>`,
+            )
+            .join("")
+        : `<span style="color:#9ca3af;font-size:12px;">No children — select a parent link with dropdown children</span>`;
+      return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="subnav-links"
+        style="display:flex;flex-direction:${flexDir};flex-wrap:${flexWrap};gap:8px;padding:12px;">
+        ${label}${childHtml}
+      </div>`;
+    }
+
+    case "single-nav-item": {
+      const source = (c.source as string) ?? "nav";
+      const linkKey = (c.link_key as string) ?? "";
+      const renderAs = (c.render_as as string) ?? "link";
+      const links = source === "footer" ? snap.footerLinks ?? [] : snap.navLinks ?? [];
+      const allLinks = links.flatMap((l) => [l, ...((l as any).children ?? [])]);
+      const found = allLinks.find((l) => l.label === linkKey);
+      const linkColor = (c.link_color as string) || "var(--color-accent)";
+      const label2 = found?.label ?? (linkKey || "— select a link —");
+      const style =
+        renderAs === "button"
+          ? `background:${escAttr(linkColor)};color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:14px;`
+          : `color:${escAttr(linkColor)};text-decoration:none;font-size:14px;`;
+      return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="single-nav-item" style="display:inline-block;padding:8px;">
+        ${label}
+        <a href="#" style="${escAttr(style)}">${escHtml(label2)}</a>
+      </div>`;
+    }
+
+    case "social-links": {
+      const socials = snap.socialLinks ?? [];
+      const layout = (c.layout as string) ?? "horizontal";
+      const linkColor = (c.link_color as string) || "var(--color-muted)";
+      const showIcons = c.show_icons !== false;
+      const flexDir = layout === "vertical" ? "column" : "row";
+      const items = socials.length
+        ? socials
+            .map(
+              (s) =>
+                `<a href="#" style="color:${escAttr(linkColor)};text-decoration:none;display:flex;align-items:center;gap:4px;">
+                ${showIcons ? socialIconSvg(s.platform) : ""}${escHtml(s.platform)}</a>`,
+            )
+            .join("")
+        : `<span style="color:#9ca3af;font-size:12px;">No social links configured</span>`;
+      return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="social-links"
+        style="display:flex;flex-direction:${flexDir};gap:12px;padding:8px;flex-wrap:wrap;">
+        ${label}${items}
+      </div>`;
+    }
+
+    case "single-social-link": {
+      const platform = (c.platform as string) ?? "";
+      const found = snap.socialLinks?.find((s) => s.platform === platform);
+      const linkColor = (c.link_color as string) || "var(--color-muted)";
+      const showIcon = c.show_icon !== false;
+      const displayName = found?.platform ?? (platform || "— select a platform —");
+      return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="single-social-link" style="display:inline-block;padding:8px;">
+        ${label}
+        <a href="#" style="color:${escAttr(linkColor)};text-decoration:none;display:flex;align-items:center;gap:4px;">
+          ${showIcon ? socialIconSvg(displayName) : ""}${escHtml(displayName)}
+        </a>
+      </div>`;
+    }
+
+    default:
+      return templatePlaceholderHtml(block);
+  }
+}
+
+function navBlockLabel(type: string): string {
+  const map: Record<string, string> = {
+    "nav-links": "Navigation",
+    "subnav-links": "Sub-navigation",
+    "single-nav-item": "Nav Item",
+    "social-links": "Social Links",
+    "single-social-link": "Social Link",
+  };
+  return map[type] ?? type;
+}
+
+function socialIconSvg(platform: string): string {
+  const p = platform.toLowerCase();
+  if (p === "github")
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
+  if (p === "twitter" || p === "x")
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
+  if (p === "linkedin")
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>`;
+  if (p === "instagram")
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.98-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>`;
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
 }
 
 // ── Interaction script ────────────────────────────────────────────────────────

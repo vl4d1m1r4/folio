@@ -71,6 +71,23 @@ const PALETTE: {
       newsletter: <NewsletterIcon />,
     },
   },
+  {
+    label: "Navigation",
+    types: [
+      "nav-links",
+      "subnav-links",
+      "single-nav-item",
+      "social-links",
+      "single-social-link",
+    ] as BlockType[],
+    icons: {
+      "nav-links": <NavLinksIcon />,
+      "subnav-links": <SubnavIcon />,
+      "single-nav-item": <SingleNavIcon />,
+      "social-links": <SocialLinksIcon />,
+      "single-social-link": <SingleSocialIcon />,
+    },
+  },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -569,8 +586,48 @@ function ButtonIcon({ size = 18 }: { size?: number }) {
   );
 }
 
-function EyeIcon({ size = 14 }: { size?: number }) {
+function NavLinksIcon() {
   return (
+    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+      <rect x="1" y="3" width="14" height="10" rx="1.5" />
+      <path d="M4 8h2M7 8h5M4 11h3" />
+    </svg>
+  );
+}
+function SubnavIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M3 4h10M3 8h7M3 12h4" />
+    </svg>
+  );
+}
+function SingleNavIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+      <path d="M3 8h10M10 5l3 3-3 3" />
+    </svg>
+  );
+}
+function SocialLinksIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="4" cy="8" r="2" />
+      <circle cx="12" cy="4" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <path d="M6 7l4-2M6 9l4 2" />
+    </svg>
+  );
+}
+function SingleSocialIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+      <circle cx="8" cy="8" r="5" />
+      <path d="M8 5v6M5 8h6" />
+    </svg>
+  );
+}
+
+function EyeIcon({ size = 14 }: { size?: number }) {  return (
     <svg
       viewBox="0 0 16 16"
       width={size}

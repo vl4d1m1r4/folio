@@ -22,6 +22,8 @@ const PagesPage = lazy(() => import("./pages/admin/PagesPage"));
 const PageEditPage = lazy(() => import("./pages/admin/PageEditPage"));
 const SettingsPage = lazy(() => import("./pages/admin/SettingsPage"));
 const HomeBuilderPage = lazy(() => import("./pages/admin/HomeBuilderPage"));
+const HeaderBuilderPage = lazy(() => import("./pages/admin/HeaderBuilderPage"));
+const FooterBuilderPage = lazy(() => import("./pages/admin/FooterBuilderPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 60_000 } },
@@ -147,6 +149,22 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<Loading />}>
             <HomeBuilderPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "header-builder",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <HeaderBuilderPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: "footer-builder",
+        element: (
+          <Suspense fallback={<Loading />}>
+            <FooterBuilderPage />
           </Suspense>
         ),
       },

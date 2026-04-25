@@ -4,6 +4,7 @@ import {
   buildSrcdoc,
   renderBlocksHtml,
   type RenderBlock,
+  type NavSnapshot,
 } from "./iframeRenderer";
 
 type ViewportMode = "desktop" | "tablet" | "mobile";
@@ -22,6 +23,7 @@ interface CanvasProps {
   paletteDragType: BlockType | null;
   onDelete: () => void;
   onMoveToContainer: (fromId: string, containerId: string) => void;
+  navSnapshot?: NavSnapshot;
 }
 
 export function Canvas({
@@ -38,6 +40,7 @@ export function Canvas({
   paletteDragType,
   onDelete,
   onMoveToContainer,
+  navSnapshot = {},
 }: CanvasProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const initialSrcdocRef = useRef<string | null>(null);
@@ -48,7 +51,7 @@ export function Canvas({
 
   // Build srcdoc once on first render
   if (!initialSrcdocRef.current) {
-    initialSrcdocRef.current = buildSrcdoc(blocks, themeVars, activeLang, mode);
+    initialSrcdocRef.current = buildSrcdoc(blocks, themeVars, activeLang, mode, navSnapshot);
   }
 
   // Send updated blocks to iframe whenever they change
@@ -57,7 +60,7 @@ export function Canvas({
       skipUpdateRef.current = false;
       return;
     }
-    const html = renderBlocksHtml(blocks, activeLang, mode);
+    const html = renderBlocksHtml(blocks, activeLang, mode, navSnapshot);
     latestHtmlRef.current = html;
     const iframe = iframeRef.current;
     if (!iframe?.contentWindow) return;

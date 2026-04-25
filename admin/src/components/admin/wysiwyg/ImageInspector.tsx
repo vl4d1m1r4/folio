@@ -9,6 +9,7 @@ import {
 interface ImageInspectorProps {
   config: Record<string, unknown>;
   onConfigChange: (key: string, value: unknown) => void;
+  themeColors?: Record<string, string>;
 }
 
 const sLabel =

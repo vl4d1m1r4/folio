@@ -3,6 +3,7 @@ import { ContainerBlockEditor } from "../blockShared";
 interface ContainerInspectorProps {
   config: Record<string, unknown>;
   onConfigChange: (key: string, value: unknown) => void;
+  themeColors?: Record<string, string>;
 }
 
 export function ContainerInspector({

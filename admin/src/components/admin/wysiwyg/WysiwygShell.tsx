@@ -3,7 +3,9 @@ import type {
   BlockType,
   HomeBlock,
   Language,
+  NavLink,
   PageBlock,
+  SocialLink,
 } from "../../../api/types";
 import { Canvas } from "./Canvas";
 import { LeftSidebar } from "./LeftSidebar";
@@ -17,6 +19,7 @@ import {
   withNormalizedOrder,
   type AnyBlock,
 } from "./blockUtils";
+import type { NavSnapshot } from "./iframeRenderer";
 
 type ViewportMode = "desktop" | "tablet" | "mobile";
 
@@ -42,6 +45,12 @@ export interface WysiwygShellProps {
   activeLeftTab?: "add" | "layers" | "page";
   /** Called when the left-sidebar tab changes */
   onLeftTabChange?: (tab: "add" | "layers" | "page") => void;
+  /** Nav/social data snapshot for canvas preview of nav block types */
+  navSnapshot?: NavSnapshot;
+  /** Resolved theme color values for ColorRow swatches */
+  themeColors?: Record<string, string>;
+  /** If provided, shows a "Load default template" button in the top bar */
+  onLoadDefaultTemplate?: () => void;
 }
 
 export function WysiwygShell({
@@ -62,6 +71,9 @@ export function WysiwygShell({
   pageSettingsNode,
   activeLeftTab,
   onLeftTabChange,
+  navSnapshot = {},
+  themeColors,
+  onLoadDefaultTemplate,
 }: WysiwygShellProps) {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [viewportMode, setViewportMode] = useState<ViewportMode>("desktop");
@@ -293,6 +305,14 @@ export function WysiwygShell({
           >
             {saving ? "Saving…" : mode === "home" ? "Save & Rebuild" : "Save"}
           </button>
+          {onLoadDefaultTemplate && (
+            <button
+              onClick={onLoadDefaultTemplate}
+              className="px-3 py-1.5 text-sm border border-(--color-border) rounded text-(--color-muted) hover:text-(--color-text)"
+            >
+              Load default template
+            </button>
+          )}
         </div>
       </header>
 
@@ -339,6 +359,7 @@ export function WysiwygShell({
           paletteDragType={paletteDragType}
           onDelete={handleDelete}
           onMoveToContainer={handleMoveToContainer}
+          navSnapshot={navSnapshot}
         />
 
         <InspectorPanel
@@ -347,6 +368,10 @@ export function WysiwygShell({
           activeLang={activeLang}
           onConfigChange={updateBlockConfig}
           onTransChange={updateBlockTranslation}
+          themeColors={themeColors}
+          navSnapshot={navSnapshot?.navLinks as NavLink[] | undefined}
+          footerSnapshot={navSnapshot?.footerLinks as NavLink[] | undefined}
+          socialSnapshot={navSnapshot?.socialLinks as SocialLink[] | undefined}
         />
       </div>
     </div>

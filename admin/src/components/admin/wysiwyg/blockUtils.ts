@@ -11,6 +11,11 @@ import {
   applyTextDefaults,
   applyImageDefaults,
   applyButtonDefaults,
+  applyNavLinksDefaults,
+  applySubnavLinksDefaults,
+  applySingleNavItemDefaults,
+  applySocialLinksDefaults,
+  applySingleSocialLinkDefaults,
 } from "../blockShared";
 
 // ── Shared structural interface ────────────────────────────────────────────────
@@ -101,6 +106,11 @@ function baseConfig(type: BlockType): Record<string, unknown> {
   if (type === "text") applyTextDefaults(config);
   if (type === "image") applyImageDefaults(config);
   if (type === "button") applyButtonDefaults(config);
+  if (type === "nav-links") applyNavLinksDefaults(config);
+  if (type === "subnav-links") applySubnavLinksDefaults(config);
+  if (type === "single-nav-item") applySingleNavItemDefaults(config);
+  if (type === "social-links") applySocialLinksDefaults(config);
+  if (type === "single-social-link") applySingleSocialLinkDefaults(config);
   return config;
 }
 

@@ -15,6 +15,7 @@ import {
 interface ButtonInspectorProps {
   config: Record<string, unknown>;
   onConfigChange: (key: string, value: unknown) => void;
+  themeColors?: Record<string, string>;
 }
 
 const VARIANT_OPTIONS = [
@@ -50,6 +51,7 @@ const TARGET_OPTIONS = [
 export function ButtonInspector({
   config: c,
   onConfigChange,
+  themeColors,
 }: ButtonInspectorProps) {
   return (
     <div>
@@ -229,18 +231,21 @@ export function ButtonInspector({
             value={c.bgColor as string | null}
             placeholder="Theme accent"
             onChange={(v) => onConfigChange("bgColor", v)}
+            themeColors={themeColors}
           />
           <ColorRow
             label="Text Color"
             value={c.textColor as string | null}
             placeholder="Auto"
             onChange={(v) => onConfigChange("textColor", v)}
+            themeColors={themeColors}
           />
           <ColorRow
             label="Border Color"
             value={c.borderColor as string | null}
             placeholder="Auto"
             onChange={(v) => onConfigChange("borderColor", v)}
+            themeColors={themeColors}
           />
         </div>
 

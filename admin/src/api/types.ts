@@ -214,7 +214,12 @@ export type BlockType =
   | "container"
   | "text"
   | "image"
-  | "button";
+  | "button"
+  | "nav-links"
+  | "subnav-links"
+  | "single-nav-item"
+  | "social-links"
+  | "single-social-link";
 
 export interface HomeBlock {
   id: string;
@@ -236,6 +241,8 @@ export interface AllSettings {
   footer_links: NavLink[] | null;
   social_links: SocialLink[] | null;
   home_sections: HomeBlock[] | null;
+  header_sections: HomeBlock[] | null;
+  footer_sections: HomeBlock[] | null;
   languages: Language[] | null;
   ui_strings: Record<string, Record<string, string>> | null;
   email_status: { provider: string; configured: boolean } | null;

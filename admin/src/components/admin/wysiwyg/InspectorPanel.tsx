@@ -1,4 +1,4 @@
-import type { HomeBlock, PageBlock } from "../../../api/types";
+import type { HomeBlock, PageBlock, NavLink, SocialLink } from "../../../api/types";
 import { ContainerInspector } from "./ContainerInspector";
 import { TextInspector } from "./TextInspector";
 import { ImageInspector } from "./ImageInspector";
@@ -11,6 +11,10 @@ interface InspectorPanelProps {
   activeLang: string;
   onConfigChange: (id: string, key: string, value: unknown) => void;
   onTransChange: (id: string, key: string, value: string) => void;
+  themeColors?: Record<string, string>;
+  navSnapshot?: NavLink[];
+  footerSnapshot?: NavLink[];
+  socialSnapshot?: SocialLink[];
 }
 
 export function InspectorPanel({
@@ -19,6 +23,10 @@ export function InspectorPanel({
   activeLang,
   onConfigChange,
   onTransChange,
+  themeColors,
+  navSnapshot,
+  footerSnapshot,
+  socialSnapshot,
 }: InspectorPanelProps) {
   if (!block) {
     return (
@@ -80,6 +88,7 @@ export function InspectorPanel({
           <ContainerInspector
             config={block.config}
             onConfigChange={cfgChange}
+            themeColors={themeColors}
           />
         )}
 
@@ -89,15 +98,16 @@ export function InspectorPanel({
             content={textContent}
             onConfigChange={cfgChange}
             onContentChange={handleTextContentChange}
+            themeColors={themeColors}
           />
         )}
 
         {block.type === "image" && (
-          <ImageInspector config={block.config} onConfigChange={cfgChange} />
+          <ImageInspector config={block.config} onConfigChange={cfgChange} themeColors={themeColors} />
         )}
 
         {block.type === "button" && (
-          <ButtonInspector config={block.config} onConfigChange={cfgChange} />
+          <ButtonInspector config={block.config} onConfigChange={cfgChange} themeColors={themeColors} />
         )}
 
         {!["container", "text", "image", "button"].includes(block.type) && (
@@ -107,6 +117,10 @@ export function InspectorPanel({
             activeLang={activeLang}
             onConfigChange={cfgChange}
             onTransChange={transChange}
+            themeColors={themeColors}
+            navSnapshot={navSnapshot}
+            footerSnapshot={footerSnapshot}
+            socialSnapshot={socialSnapshot}
           />
         )}
       </div>
