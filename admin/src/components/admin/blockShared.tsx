@@ -37,7 +37,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
 export function applyTextDefaults(config: Record<string, unknown>): void {
   config.tag = "p";
   config.content = "";
-  config.fontSize = 16;
+  config.fontSize = null;
   config.fontWeight = "normal";
   config.textAlign = "left";
   config.color = null;

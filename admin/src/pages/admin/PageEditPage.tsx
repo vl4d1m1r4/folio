@@ -105,6 +105,7 @@ function PageForm({
   const [serverError, setServerError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [themeVars, setThemeVars] = useState<Record<string, string>>({});
+  const [leftTab, setLeftTab] = useState<"add" | "layers" | "page">("add");
 
   const { data: settings } = useQuery({
     queryKey: ["admin", "settings"],
@@ -204,6 +205,7 @@ function PageForm({
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length) {
+      setLeftTab("page");
       return;
     }
     saveMutation.mutate({
@@ -388,6 +390,8 @@ function PageForm({
       serverError={serverError}
       onCopyBlocksFrom={languages.length > 1 ? handleCopyBlocksFrom : undefined}
       pageSettingsNode={pageSettingsNode}
+      activeLeftTab={leftTab}
+      onLeftTabChange={setLeftTab}
     />
   );
 }

@@ -118,8 +118,14 @@ export function TypographySection({
             type="number"
             min={8}
             max={200}
-            value={(c.fontSize as number) ?? 16}
-            onChange={(e) => onChange("fontSize", Number(e.target.value))}
+            value={(c.fontSize as number) ?? ""}
+            placeholder="auto"
+            onChange={(e) =>
+              onChange(
+                "fontSize",
+                e.target.value === "" ? null : Number(e.target.value),
+              )
+            }
             className="flex-1 min-w-0 bg-transparent border-none text-sm outline-none"
           />
           <span className="text-xs text-(--color-muted) shrink-0">px</span>

@@ -18,11 +18,6 @@ permalink: "/{{ item.lang.code }}/{{ item.page.slug }}/index.html"
 {% block content %}
 {# Render the block builder sections if any exist, otherwise fall back to body HTML #}
 {% if page.sections and page.sections.length %}
-  <div class="max-w-5xl mx-auto px-6">
-    <header class="py-12">
-      <h1 class="text-4xl font-extrabold tracking-tight" style="color: var(--color-text);">{{ page.title }}</h1>
-    </header>
-  </div>
   {% for block in page.sections %}
     {% if block.visible !== false %}
       {% set b = block %}

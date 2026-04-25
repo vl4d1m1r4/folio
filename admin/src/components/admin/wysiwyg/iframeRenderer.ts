@@ -294,7 +294,7 @@ function textToHtml(
   const safeTag = ["p", "h1", "h2", "h3", "h4", "span", "code"].includes(tag)
     ? tag
     : "p";
-  const fontSize = (c.fontSize as number) || 16;
+  const fontSize = (c.fontSize as number | null) || null;
   const fontWeight = (c.fontWeight as string) || "normal";
   const textAlign = (c.textAlign as string) || "left";
   const color = (c.color as string) || null;
@@ -311,7 +311,16 @@ function textToHtml(
   // ── Build Tailwind class list ──────────────────────────────────────────────
   const cls: string[] = [];
 
-  cls.push(`text-[${fontSize}px]`);
+  // Font size: explicit px OR tag-based heading class
+  const tagSizeMap: Record<string, string> = {
+    h1: "text-4xl",
+    h2: "text-3xl",
+    h3: "text-2xl",
+    h4: "text-xl",
+  };
+  cls.push(
+    fontSize ? `text-[${fontSize}px]` : (tagSizeMap[safeTag] ?? "text-base"),
+  );
 
   const twWeight: Record<string, string> = {
     normal: "font-normal",

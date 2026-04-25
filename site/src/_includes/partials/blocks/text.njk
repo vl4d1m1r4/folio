@@ -8,8 +8,15 @@
 {# Build Tailwind class list #}
 {%- set _cls = [] -%}
 
-{# Font size #}
-{%- set _cls = (_cls.push("text-[" + (cc.fontSize if cc.fontSize else 16) + "px]"), _cls) -%}
+{# Font size: explicit px OR tag-based heading class #}
+{%- if cc.fontSize -%}
+  {%- set _cls = (_cls.push("text-[" + cc.fontSize + "px]"), _cls) -%}
+{%- elif tag === "h1" -%}{%- set _cls = (_cls.push("text-4xl"), _cls) -%}
+{%- elif tag === "h2" -%}{%- set _cls = (_cls.push("text-3xl"), _cls) -%}
+{%- elif tag === "h3" -%}{%- set _cls = (_cls.push("text-2xl"), _cls) -%}
+{%- elif tag === "h4" -%}{%- set _cls = (_cls.push("text-xl"), _cls) -%}
+{%- else -%}{%- set _cls = (_cls.push("text-base"), _cls) -%}
+{%- endif -%}
 
 {# Font weight #}
 {%- if cc.fontWeight === "bold" -%}{%- set _cls = (_cls.push("font-bold"), _cls) -%}

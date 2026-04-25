@@ -38,6 +38,10 @@ export interface WysiwygShellProps {
   onCopyBlocksFrom?: (fromLang: string) => void;
   /** Page-mode only: metadata form rendered in the "Page" tab of the left sidebar */
   pageSettingsNode?: ReactNode;
+  /** Externally controlled left-sidebar tab (optional; falls back to internal state) */
+  activeLeftTab?: "add" | "layers" | "page";
+  /** Called when the left-sidebar tab changes */
+  onLeftTabChange?: (tab: "add" | "layers" | "page") => void;
 }
 
 export function WysiwygShell({
@@ -56,10 +60,19 @@ export function WysiwygShell({
   serverError,
   onCopyBlocksFrom,
   pageSettingsNode,
+  activeLeftTab,
+  onLeftTabChange,
 }: WysiwygShellProps) {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [viewportMode, setViewportMode] = useState<ViewportMode>("desktop");
-  const [leftTab, setLeftTab] = useState<"add" | "layers" | "page">("add");
+  const [leftTabInternal, setLeftTabInternal] = useState<
+    "add" | "layers" | "page"
+  >("add");
+  const leftTab = activeLeftTab ?? leftTabInternal;
+  const setLeftTab = (tab: "add" | "layers" | "page") => {
+    setLeftTabInternal(tab);
+    onLeftTabChange?.(tab);
+  };
   const [paletteDragType, setPaletteDragType] = useState<BlockType | null>(
     null,
   );

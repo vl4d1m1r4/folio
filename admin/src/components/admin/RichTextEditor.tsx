@@ -165,7 +165,14 @@ export function RichTextEditor({ value, onChange }: Props) {
           onClick={() => editor.chain().focus().toggleCode().run()}
           title="Inline code"
         >
-          {"<>"}
+          {"</>"}
+        </ToolbarButton>
+        <ToolbarButton
+          active={editor.isActive("codeBlock")}
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          title="Code block (pre)"
+        >
+          pre
         </ToolbarButton>
         <span className="w-px bg-(--color-border) mx-1 self-stretch" />
         <ToolbarButton
