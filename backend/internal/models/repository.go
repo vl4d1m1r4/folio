@@ -786,6 +786,10 @@ func (r *Repository) CreatePage(ctx context.Context, p Page) (int64, error) {
 		return 0, err
 	}
 	for _, t := range p.Translations {
+		// Skip non-default translations that have no slug — nothing to persist.
+		if t.Slug == "" {
+			continue
+		}
 		if _, err := r.db.ExecContext(ctx, `
 			INSERT INTO page_translations (page_id, lang_code, slug, title, body, sections, meta_title, meta_description)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -806,6 +810,10 @@ func (r *Repository) UpdatePage(ctx context.Context, p Page) error {
 		return err
 	}
 	for _, t := range p.Translations {
+		// Skip non-default translations that have no slug — nothing to persist.
+		if t.Slug == "" {
+			continue
+		}
 		if _, err := r.db.ExecContext(ctx, `
 			INSERT INTO page_translations (page_id, lang_code, slug, title, body, sections, meta_title, meta_description)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?)

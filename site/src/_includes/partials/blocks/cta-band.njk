@@ -1,4 +1,19 @@
 {% if b.config.cta_url or site.bookingUrl %}
+{%- if _inContainer -%}
+<div class="text-center w-full">
+  <h2 class="text-3xl font-bold mb-4" style="color: var(--color-text);">{{ b.config.headline | default("Ready to get started?") }}</h2>
+  {% if b.config.body %}
+    <p class="mb-8" style="color: var(--color-muted);">{{ b.config.body }}</p>
+  {% endif %}
+  <div class="flex flex-wrap justify-center gap-4">
+    <a href="{{ b.config.cta_url | default(site.bookingUrl) }}" rel="noopener noreferrer"
+       class="px-6 py-3 font-semibold transition-colors text-white"
+       style="background: var(--color-accent); border-radius: var(--radius-button);">
+      {{ b.config.cta_label | default("Book a call") }}
+    </a>
+  </div>
+</div>
+{%- else -%}
 <section class="py-16" style="background: var(--color-bg-surface); border-top: 1px solid var(--color-border);">
   <div class="max-w-2xl mx-auto px-6 text-center">
     <h2 class="text-3xl font-bold mb-4" style="color: var(--color-text);">{{ b.config.headline | default("Ready to get started?") }}</h2>
@@ -6,7 +21,7 @@
       <p class="mb-8" style="color: var(--color-muted);">{{ b.config.body }}</p>
     {% endif %}
     <div class="flex flex-wrap justify-center gap-4">
-      <a href="{{ b.config.cta_url | default(site.bookingUrl) }}" target="_blank" rel="noopener noreferrer"
+      <a href="{{ b.config.cta_url | default(site.bookingUrl) }}" rel="noopener noreferrer"
          class="px-6 py-3 font-semibold transition-colors text-white"
          style="background: var(--color-accent); border-radius: var(--radius-button);">
         {{ b.config.cta_label | default("Book a call") }}
@@ -14,4 +29,5 @@
     </div>
   </div>
 </section>
+{%- endif -%}
 {% endif %}

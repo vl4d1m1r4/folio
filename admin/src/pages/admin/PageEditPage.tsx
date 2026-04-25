@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../../api/client";
@@ -8,7 +8,7 @@ import type {
   PageBlock,
   Language,
 } from "../../api/types";
-import { PageBlockBuilder } from "../../components/admin/PageBlockBuilder";
+import { WysiwygShell } from "../../components/admin/wysiwyg/WysiwygShell";
 
 function emptyTranslation(langCode: string): PageTranslation {
   return {
@@ -69,7 +69,7 @@ export default function PageEditPage() {
   );
 }
 
-// ── Page form ─────────────────────────────────────────────────────────────────
+// ── Page form ──────────────────────────────────────────────────────────────────
 
 function PageForm({
   languages,
@@ -103,13 +103,27 @@ function PageForm({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
-  const [previewKey, setPreviewKey] = useState(0);
+  const [saved, setSaved] = useState(false);
+  const [themeVars, setThemeVars] = useState<Record<string, string>>({});
 
   const { data: settings } = useQuery({
     queryKey: ["admin", "settings"],
     queryFn: adminApi.getSettings,
   });
+
+  // Derive CSS custom properties for the iframe canvas from the active theme
+  useEffect(() => {
+    const theme = settings?.theme;
+    if (!theme?.colors) return;
+    const vars: Record<string, string> = {};
+    for (const [k, v] of Object.entries(theme.colors)) {
+      vars[`--color-${k}`] = v as string;
+    }
+    if (theme.fonts?.body) vars["--font-body"] = theme.fonts.body;
+    if (theme.fonts?.fallback) vars["--font-fallback"] = theme.fonts.fallback;
+    setThemeVars(vars);
+  }, [settings]);
+
   const siteUrl = (settings?.site?.url ?? "").replace(/\/$/, "");
 
   const saveMutation = useMutation({
@@ -117,37 +131,71 @@ function PageForm({
       isNew
         ? adminApi.createPage(data)
         : adminApi.updatePage(Number(existing!.id), data),
-    onSuccess: onSaved,
+    onSuccess: () => {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      onSaved();
+    },
     onError: (e: Error) => setServerError(e.message),
   });
 
-  function updateTranslation(
+  function updateTranslationField(
     lang: string,
     field: keyof PageTranslation,
-    value: string | PageBlock[],
+    value: string,
   ) {
     setTranslations((prev) => {
       const updated = { ...prev[lang], [field]: value };
-      // Auto-update slug from title as long as slug still matches slugify(title)
       if (field === "title") {
-        const titleStr = value as string;
-        if (
-          prev[lang].slug === slugify(prev[lang].title ?? "") ||
-          prev[lang].slug === ""
-        ) {
-          updated.slug = slugify(titleStr);
+        const t = prev[lang];
+        if (t.slug === slugify(t.title ?? "") || t.slug === "") {
+          updated.slug = slugify(value);
         }
       }
       return { ...prev, [lang]: updated };
     });
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[`${lang}.${field}`];
+      return next;
+    });
+  }
+
+  function updateSections(sections: PageBlock[]) {
+    setTranslations((prev) => ({
+      ...prev,
+      [activeLang]: { ...prev[activeLang], sections },
+    }));
+  }
+
+  function handleCopyBlocksFrom(fromLang: string) {
+    const src = translations[fromLang];
+    if (!src) return;
+    // Deep-clone via JSON to avoid shared references
+    const clonedSections = JSON.parse(
+      JSON.stringify(src.sections ?? []),
+    ) as PageBlock[];
+    setTranslations((prev) => ({
+      ...prev,
+      [activeLang]: {
+        ...prev[activeLang],
+        sections: clonedSections,
+        slug: src.slug,
+        title: src.title,
+        meta_title: src.meta_title,
+        meta_description: src.meta_description,
+      },
+    }));
   }
 
   function validate() {
     const errs: Record<string, string> = {};
-    for (const l of languages) {
-      const t = translations[l.code];
-      if (!t.title) errs[`${l.code}.title`] = "Required";
-      if (!t.slug) errs[`${l.code}.slug`] = "Required";
+    const defaultLang =
+      languages.find((l) => l.default)?.code ?? languages[0]?.code;
+    if (defaultLang) {
+      const t = translations[defaultLang];
+      if (!t.title) errs[`${defaultLang}.title`] = "Required";
+      if (!t.slug) errs[`${defaultLang}.slug`] = "Required";
     }
     return errs;
   }
@@ -156,13 +204,6 @@ function PageForm({
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length) {
-      // Switch to the first language that has errors so the user can see them
-      const firstErrLang = languages.find((l) =>
-        Object.keys(errs).some((k) => k.startsWith(l.code + ".")),
-      );
-      if (firstErrLang && firstErrLang.code !== activeLang) {
-        setActiveLang(firstErrLang.code);
-      }
       return;
     }
     saveMutation.mutate({
@@ -175,253 +216,178 @@ function PageForm({
   const previewUrl =
     !isNew && t.slug && siteUrl ? `${siteUrl}/${activeLang}/${t.slug}/` : "";
 
-  return (
-    <div
-      className={
-        showPreview
-          ? "flex flex-col lg:flex-row lg:items-start lg:gap-6"
-          : "max-w-3xl"
-      }
-    >
-      {/* ── Editor column ── */}
-      <div className={showPreview ? "w-full lg:w-[480px] shrink-0" : ""}>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">
-            {isNew ? "New page" : "Edit page"}
-          </h1>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowPreview((v) => !v)}
-              className={`px-3 py-2 text-sm border rounded ${
-                showPreview
-                  ? "border-(--color-accent) text-(--color-accent)"
-                  : "border-(--color-border) hover:bg-(--color-bg-surface)"
-              }`}
-            >
-              {showPreview ? "Hide preview" : "Preview ↗"}
-            </button>
-            <button
-              onClick={onCancel}
-              className="px-4 py-2 text-sm border border-(--color-border) rounded hover:bg-(--color-bg-surface)"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saveMutation.isPending}
-              className="px-4 py-2 text-sm text-white rounded disabled:opacity-50"
-              style={{ background: "var(--color-accent)" }}
-            >
-              {saveMutation.isPending ? "Saving…" : "Save"}
-            </button>
-          </div>
-        </div>
+  // ── Page-tab metadata node rendered inside the left sidebar ─────────────────
+  const pageSettingsNode: ReactNode = (
+    <div className="space-y-4 p-1">
+      {/* Back */}
+      <button
+        type="button"
+        onClick={onCancel}
+        className="flex items-center gap-1.5 text-sm text-(--color-muted) hover:text-(--color-text)"
+      >
+        <svg viewBox="0 0 20 20" fill="currentColor" width={14} height={14}>
+          <path
+            fillRule="evenodd"
+            d="M17 10a.75.75 0 0 1-.75.75H5.56l3.22 3.22a.75.75 0 1 1-1.06 1.06l-4.5-4.5a.75.75 0 0 1 0-1.06l4.5-4.5a.75.75 0 0 1 1.06 1.06L5.56 9.25H16.25A.75.75 0 0 1 17 10Z"
+            clipRule="evenodd"
+          />
+        </svg>
+        Back to pages
+      </button>
 
-        {serverError && (
-          <div className="mb-4 p-3 rounded border border-(--color-destructive) text-(--color-destructive) text-sm">
-            {serverError}
-          </div>
+      <div className="border-t border-(--color-border)" />
+
+      {/* Published toggle */}
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={isPublished}
+          onChange={(e) => setIsPublished(e.target.checked)}
+          className="w-4 h-4 accent-(--color-accent)"
+        />
+        <span className="text-sm font-medium">Published</span>
+      </label>
+
+      {/* Language selector (multi-lang only) */}
+      {languages.length > 1 && (
+        <p className="text-xs text-(--color-muted)">
+          Switch language using the selector at the top of the panel.
+        </p>
+      )}
+
+      {/* Title */}
+      <div>
+        <label className="block text-xs font-medium mb-1">
+          Title <span className="text-(--color-destructive)">*</span>
+        </label>
+        <input
+          type="text"
+          value={t.title}
+          onChange={(e) =>
+            updateTranslationField(activeLang, "title", e.target.value)
+          }
+          className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
+        />
+        {errors[`${activeLang}.title`] && (
+          <p className="text-(--color-destructive) text-xs mt-1">
+            {errors[`${activeLang}.title`]}
+          </p>
         )}
+      </div>
 
-        {/* Published toggle */}
-        <div className="mb-6 flex items-center gap-3">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isPublished}
-              onChange={(e) => setIsPublished(e.target.checked)}
-              className="w-4 h-4 accent-(--color-accent)"
-            />
-            <span className="text-sm font-medium">Published</span>
-          </label>
-        </div>
-
-        {/* Language tabs */}
-        {languages.length > 1 && (
-          <div className="flex gap-1 mb-4 border-b border-(--color-border)">
-            {languages.map((l) => {
-              const hasErr = Object.keys(errors).some((k) =>
-                k.startsWith(l.code + "."),
-              );
-              return (
-                <button
-                  key={l.code}
-                  onClick={() => setActiveLang(l.code)}
-                  className={`relative px-4 py-2 text-sm rounded-t font-medium border-b-2 -mb-px transition-colors ${
-                    activeLang === l.code
-                      ? "border-(--color-accent) text-(--color-accent)"
-                      : "border-transparent text-(--color-muted) hover:text-(--color-text)"
-                  }`}
-                >
-                  {l.label}
-                  {hasErr && (
-                    <span
-                      className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full align-middle"
-                      style={{ background: "var(--color-destructive)" }}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+      {/* Slug */}
+      <div>
+        <label className="block text-xs font-medium mb-1">
+          Slug <span className="text-(--color-destructive)">*</span>
+        </label>
+        <input
+          type="text"
+          value={t.slug}
+          onChange={(e) =>
+            setTranslations((prev) => ({
+              ...prev,
+              [activeLang]: {
+                ...prev[activeLang],
+                slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+              },
+            }))
+          }
+          onBlur={(e) =>
+            setTranslations((prev) => ({
+              ...prev,
+              [activeLang]: {
+                ...prev[activeLang],
+                slug: slugify(e.target.value),
+              },
+            }))
+          }
+          className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
+        />
+        <p className="text-[11px] text-(--color-muted) mt-1">
+          /{activeLang}/{t.slug}/
+        </p>
+        {errors[`${activeLang}.slug`] && (
+          <p className="text-(--color-destructive) text-xs mt-1">
+            {errors[`${activeLang}.slug`]}
+          </p>
         )}
+      </div>
 
-        {/* Translation fields */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
-            <input
-              type="text"
-              value={t.title}
-              onChange={(e) =>
-                updateTranslation(activeLang, "title", e.target.value)
-              }
-              className="w-full px-3 py-2 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
-            />
-            {errors[`${activeLang}.title`] && (
-              <p className="text-(--color-destructive) text-xs mt-1">
-                {errors[`${activeLang}.title`]}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Slug</label>
-            <input
-              type="text"
-              value={t.slug}
-              onChange={(e) =>
-                setTranslations((prev) => ({
-                  ...prev,
-                  [activeLang]: {
-                    ...prev[activeLang],
-                    slug: e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9-]/g, "-"),
-                  },
-                }))
-              }
-              onBlur={(e) =>
-                setTranslations((prev) => ({
-                  ...prev,
-                  [activeLang]: {
-                    ...prev[activeLang],
-                    slug: slugify(e.target.value),
-                  },
-                }))
-              }
-              className="w-full px-3 py-2 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
-            />
-            <p className="text-xs text-(--color-muted) mt-1">
-              URL: /{activeLang}/{t.slug}/
-            </p>
-            {errors[`${activeLang}.slug`] && (
-              <p className="text-(--color-destructive) text-xs mt-1">
-                {errors[`${activeLang}.slug`]}
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Page Sections
-            </label>
-            <PageBlockBuilder
-              blocks={t.sections ?? []}
-              onChange={(blocks) =>
-                updateTranslation(activeLang, "sections", blocks)
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Meta title</label>
-            <input
-              type="text"
-              value={t.meta_title}
-              onChange={(e) =>
-                updateTranslation(activeLang, "meta_title", e.target.value)
-              }
-              className="w-full px-3 py-2 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Meta description
-            </label>
-            <textarea
-              rows={2}
-              value={t.meta_description}
-              onChange={(e) =>
-                updateTranslation(
-                  activeLang,
-                  "meta_description",
-                  e.target.value,
-                )
-              }
-              className="w-full px-3 py-2 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:outline-none focus:ring-2 focus:ring-(--color-accent) resize-none"
-            />
-          </div>
-        </div>
-      </div>{" "}
-      {/* end editor column */}
-      {/* ── Preview column ── */}
-      {showPreview && (
-        <div
-          className="flex-1 flex flex-col min-h-[500px] lg:self-start lg:sticky lg:top-0"
-          style={{ height: "calc(100vh - 6rem)" }}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold">Preview</span>
-            <div className="flex items-center gap-3">
-              {previewUrl && (
-                <a
-                  href={previewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-(--color-accent) hover:underline"
-                >
-                  Open in tab ↗
-                </a>
-              )}
-              <button
-                type="button"
-                onClick={() => setPreviewKey((k) => k + 1)}
-                className="text-xs text-(--color-muted) hover:text-(--color-text)"
-                title="Reload preview"
-              >
-                ↺ Refresh
-              </button>
-            </div>
-          </div>
-          {previewUrl ? (
-            <iframe
-              key={previewKey}
-              src={previewUrl}
-              className="flex-1 w-full rounded border border-(--color-border) bg-white"
-              title="Page preview"
-            />
-          ) : (
-            <div className="flex-1 rounded border border-(--color-border) flex flex-col items-center justify-center gap-3 text-(--color-muted)">
-              <svg
-                viewBox="0 0 24 24"
-                width={40}
-                height={40}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                opacity={0.4}
-              >
-                <rect x="2" y="3" width="20" height="14" rx="2" />
-                <path d="M8 21h8M12 17v4" />
-              </svg>
-              <p className="text-sm text-center max-w-[200px]">
-                {isNew
-                  ? "Save the page first to enable preview."
-                  : "Add a slug, save, and rebuild to see a preview."}
-              </p>
-            </div>
-          )}
-        </div>
+      <div className="border-t border-(--color-border)" />
+
+      {/* Meta title */}
+      <div>
+        <label className="block text-xs font-medium mb-1">Meta title</label>
+        <input
+          type="text"
+          value={t.meta_title}
+          onChange={(e) =>
+            updateTranslationField(activeLang, "meta_title", e.target.value)
+          }
+          className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:outline-none focus:ring-2 focus:ring-(--color-accent)"
+        />
+      </div>
+
+      {/* Meta description */}
+      <div>
+        <label className="block text-xs font-medium mb-1">
+          Meta description
+        </label>
+        <textarea
+          rows={3}
+          value={t.meta_description}
+          onChange={(e) =>
+            updateTranslationField(
+              activeLang,
+              "meta_description",
+              e.target.value,
+            )
+          }
+          className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) focus:outline-none focus:ring-2 focus:ring-(--color-accent) resize-none"
+        />
+      </div>
+
+      {/* Live preview link */}
+      {previewUrl && (
+        <>
+          <div className="border-t border-(--color-border)" />
+          <a
+            href={previewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-xs text-(--color-accent) hover:underline"
+          >
+            Open live preview
+            <svg viewBox="0 0 20 20" fill="currentColor" width={12} height={12}>
+              <path
+                fillRule="evenodd"
+                d="M4.25 5.5a.75.75 0 0 0-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-4a.75.75 0 0 1 1.5 0v4A2.25 2.25 0 0 1 12.75 17h-8.5A2.25 2.25 0 0 1 2 14.75v-8.5A2.25 2.25 0 0 1 4.25 4h5a.75.75 0 0 1 0 1.5h-5ZM10 2.75a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0V4.56l-5.72 5.72a.75.75 0 0 1-1.06-1.06L15.44 3.5h-4.69a.75.75 0 0 1-.75-.75Z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </a>
+        </>
       )}
     </div>
+  );
+
+  return (
+    <WysiwygShell
+      mode="page"
+      title={isNew ? "New Page" : t.title || "Edit Page"}
+      subtitle={t.slug ? `/${activeLang}/${t.slug}/` : undefined}
+      themeVars={themeVars}
+      languages={languages}
+      activeLang={activeLang}
+      onActiveLangChange={setActiveLang}
+      blocks={t.sections ?? []}
+      onBlocksChange={(updated) => updateSections(updated as PageBlock[])}
+      onSave={handleSave}
+      saving={saveMutation.isPending}
+      saved={saved}
+      serverError={serverError}
+      onCopyBlocksFrom={languages.length > 1 ? handleCopyBlocksFrom : undefined}
+      pageSettingsNode={pageSettingsNode}
+    />
   );
 }

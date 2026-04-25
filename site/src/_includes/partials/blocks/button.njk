@@ -1,0 +1,75 @@
+{%- set cc = b.config -%}
+
+{# Size → padding + font-size #}
+{%- set _size = cc.size if cc.size else "md" -%}
+{%- set _szPad = "10px 22px" -%}
+{%- set _szFont = "15px" -%}
+{%- if _size === "sm" %}{%- set _szPad = "6px 14px" -%}{%- set _szFont = "13px" -%}
+{%- elif _size === "lg" %}{%- set _szPad = "14px 32px" -%}{%- set _szFont = "18px" -%}
+{%- endif -%}
+
+{# Font weight #}
+{%- set _fw = "600" -%}
+{%- if cc.fontWeight === "normal" %}{%- set _fw = "400" -%}
+{%- elif cc.fontWeight === "medium" %}{%- set _fw = "500" -%}
+{%- elif cc.fontWeight === "bold" %}{%- set _fw = "700" -%}
+{%- endif -%}
+
+{# Button inline style #}
+{%- set _btnParts = [] -%}
+{%- set _btnParts = (_btnParts.push("display:inline-block"), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("padding:" + _szPad), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("font-size:" + _szFont), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("font-weight:" + _fw), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("border-radius:" + (cc.borderRadius if cc.borderRadius else 6) + "px"), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("cursor:pointer"), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("text-decoration:none"), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("line-height:1.25"), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("transition:opacity 0.15s"), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("border-width:2px"), _btnParts) -%}
+{%- set _btnParts = (_btnParts.push("border-style:solid"), _btnParts) -%}
+
+{# Variant #}
+{%- set _variant = cc.variant if cc.variant else "filled" -%}
+{%- if _variant === "outline" -%}
+  {%- set _btnParts = (_btnParts.push("background:transparent"), _btnParts) -%}
+  {%- set _btnParts = (_btnParts.push("color:" + (cc.textColor if cc.textColor else (cc.bgColor if cc.bgColor else "var(--color-accent,#3b82f6)"))), _btnParts) -%}
+  {%- set _btnParts = (_btnParts.push("border-color:" + (cc.borderColor if cc.borderColor else (cc.bgColor if cc.bgColor else "var(--color-accent,#3b82f6)"))), _btnParts) -%}
+{%- elif _variant === "ghost" -%}
+  {%- set _btnParts = (_btnParts.push("background:transparent"), _btnParts) -%}
+  {%- set _btnParts = (_btnParts.push("color:" + (cc.textColor if cc.textColor else (cc.bgColor if cc.bgColor else "var(--color-accent,#3b82f6)"))), _btnParts) -%}
+  {%- set _btnParts = (_btnParts.push("border-color:transparent"), _btnParts) -%}
+{%- else -%}
+  {%- set _btnParts = (_btnParts.push("background:" + (cc.bgColor if cc.bgColor else "var(--color-accent,#3b82f6)")), _btnParts) -%}
+  {%- set _btnParts = (_btnParts.push("color:" + (cc.textColor if cc.textColor else "#fff")), _btnParts) -%}
+  {%- set _btnParts = (_btnParts.push("border-color:transparent"), _btnParts) -%}
+{%- endif -%}
+{%- if cc.customStyle %}{%- set _btnParts = (_btnParts.push(cc.customStyle), _btnParts) -%}{%- endif -%}
+
+{# Wrapper: alignment + spacing #}
+{%- set _align = cc.align if cc.align else "left" -%}
+{%- set _wrapParts = [] -%}
+{%- set _wrapParts = (_wrapParts.push("text-align:" + _align), _wrapParts) -%}
+{%- set _pt = cc.paddingTop | spToPx -%}
+{%- set _pb = cc.paddingBottom | spToPx -%}
+{%- set _pl = cc.paddingLeft | spToPx -%}
+{%- set _pr = cc.paddingRight | spToPx -%}
+{%- set _mt = cc.marginTop | spToPx -%}
+{%- set _mb = cc.marginBottom | spToPx -%}
+{%- set _ml = cc.marginLeft | spToPx -%}
+{%- set _mr = cc.marginRight | spToPx -%}
+{%- if _pt %}{%- set _wrapParts = (_wrapParts.push("padding-top:" + _pt + "px"), _wrapParts) -%}{%- endif -%}
+{%- if _pb %}{%- set _wrapParts = (_wrapParts.push("padding-bottom:" + _pb + "px"), _wrapParts) -%}{%- endif -%}
+{%- if _pl %}{%- set _wrapParts = (_wrapParts.push("padding-left:" + _pl + "px"), _wrapParts) -%}{%- endif -%}
+{%- if _pr %}{%- set _wrapParts = (_wrapParts.push("padding-right:" + _pr + "px"), _wrapParts) -%}{%- endif -%}
+{%- if _mt %}{%- set _wrapParts = (_wrapParts.push("margin-top:" + _mt + "px"), _wrapParts) -%}{%- endif -%}
+{%- if _mb %}{%- set _wrapParts = (_wrapParts.push("margin-bottom:" + _mb + "px"), _wrapParts) -%}{%- endif -%}
+{%- if _ml %}{%- set _wrapParts = (_wrapParts.push("margin-left:" + _ml + "px"), _wrapParts) -%}{%- endif -%}
+{%- if _mr %}{%- set _wrapParts = (_wrapParts.push("margin-right:" + _mr + "px"), _wrapParts) -%}{%- endif -%}
+
+<div style="{{ _wrapParts | join(';') }}">
+  <a{% if cc.elementId %} id="{{ cc.elementId }}"{% endif %}
+     href="{{ cc.href if cc.href else '#' }}"
+     target="{{ cc.target if cc.target else '_self' }}"
+     style="{{ _btnParts | join(';') }}">{{ cc.label if cc.label else "Button" }}</a>
+</div>

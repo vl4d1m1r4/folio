@@ -1,4 +1,4 @@
-<section class="max-w-5xl mx-auto px-6 py-10">
+{%- if _inContainer -%}<div class="w-full">{%- else -%}<section class="max-w-5xl mx-auto px-6 py-10">{%- endif -%}
   <div class="flex flex-col {{ 'md:flex-row-reverse' if b.config.image_position === 'right' else 'md:flex-row' }} gap-10 items-center">
     {% if b.config.image_url %}
       <div class="md:w-1/2">
@@ -16,4 +16,4 @@
       {% endif %}
     </div>
   </div>
-</section>
+{%- if _inContainer -%}</div>{%- else -%}</section>{%- endif -%}

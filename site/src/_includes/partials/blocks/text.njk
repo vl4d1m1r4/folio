@@ -1,0 +1,48 @@
+{%- set cc = b.config -%}
+
+{%- set tag = "p" -%}
+{%- if cc.tag === "h1" or cc.tag === "h2" or cc.tag === "h3" or cc.tag === "h4" or cc.tag === "span" or cc.tag === "code" -%}
+  {%- set tag = cc.tag -%}
+{%- endif -%}
+
+{# Font weight #}
+{%- set _fw = "700" if cc.fontWeight === "bold" else ("600" if cc.fontWeight === "semibold" else ("500" if cc.fontWeight === "medium" else "400")) -%}
+
+{# letter-spacing is stored as hundredths of an em (e.g. 50 → 0.5em) #}
+{%- set _lts = cc.letterSpacing if cc.letterSpacing else 0 -%}
+
+{# Build inline style as an array, then join with ";" #}
+{%- set _parts = [] -%}
+{%- set _parts = (_parts.push("font-size:" + (cc.fontSize if cc.fontSize else 16) + "px"), _parts) -%}
+{%- set _parts = (_parts.push("font-weight:" + _fw), _parts) -%}
+{%- set _parts = (_parts.push("text-align:" + (cc.textAlign if cc.textAlign else "left")), _parts) -%}
+{%- set _parts = (_parts.push("margin:0"), _parts) -%}
+{%- if cc.italic %}{%- set _parts = (_parts.push("font-style:italic"), _parts) -%}{%- endif -%}
+{%- if cc.color %}{%- set _parts = (_parts.push("color:" + cc.color), _parts) -%}{%- endif -%}
+{%- if _lts %}{%- set _parts = (_parts.push("letter-spacing:" + (_lts / 100) + "em"), _parts) -%}{%- endif -%}
+{%- if cc.lineHeight %}{%- set _parts = (_parts.push("line-height:" + cc.lineHeight), _parts) -%}{%- endif -%}
+{%- if cc.textTransform and cc.textTransform !== "none" %}{%- set _parts = (_parts.push("text-transform:" + cc.textTransform), _parts) -%}{%- endif -%}
+{%- if cc.textDecoration and cc.textDecoration !== "none" %}{%- set _parts = (_parts.push("text-decoration:" + cc.textDecoration), _parts) -%}{%- endif -%}
+{%- if cc.bgColor %}{%- set _parts = (_parts.push("background-color:" + cc.bgColor), _parts) -%}{%- endif -%}
+
+{# Spacing — decoded via spToPx filter (integer Tailwind unit × 4, or [Npx] string) #}
+{%- set _pt = cc.paddingTop | spToPx -%}
+{%- set _pb = cc.paddingBottom | spToPx -%}
+{%- set _pl = cc.paddingLeft | spToPx -%}
+{%- set _pr = cc.paddingRight | spToPx -%}
+{%- set _mt = cc.marginTop | spToPx -%}
+{%- set _mb = cc.marginBottom | spToPx -%}
+{%- set _ml = cc.marginLeft | spToPx -%}
+{%- set _mr = cc.marginRight | spToPx -%}
+{%- if _pt %}{%- set _parts = (_parts.push("padding-top:" + _pt + "px"), _parts) -%}{%- endif -%}
+{%- if _pb %}{%- set _parts = (_parts.push("padding-bottom:" + _pb + "px"), _parts) -%}{%- endif -%}
+{%- if _pl %}{%- set _parts = (_parts.push("padding-left:" + _pl + "px"), _parts) -%}{%- endif -%}
+{%- if _pr %}{%- set _parts = (_parts.push("padding-right:" + _pr + "px"), _parts) -%}{%- endif -%}
+{%- if _mt %}{%- set _parts = (_parts.push("margin-top:" + _mt + "px"), _parts) -%}{%- endif -%}
+{%- if _mb %}{%- set _parts = (_parts.push("margin-bottom:" + _mb + "px"), _parts) -%}{%- endif -%}
+{%- if _ml %}{%- set _parts = (_parts.push("margin-left:" + _ml + "px"), _parts) -%}{%- endif -%}
+{%- if _mr %}{%- set _parts = (_parts.push("margin-right:" + _mr + "px"), _parts) -%}{%- endif -%}
+{%- if cc.maxWidth %}{%- set _parts = (_parts.push("max-width:" + cc.maxWidth), _parts) -%}{%- endif -%}
+{%- if cc.customStyle %}{%- set _parts = (_parts.push(cc.customStyle), _parts) -%}{%- endif -%}
+
+<{{ tag }}{% if cc.elementId %} id="{{ cc.elementId }}"{% endif %} style="{{ _parts | join(';') }}">{{ cc.content | safe }}</{{ tag }}>

@@ -1,5 +1,5 @@
 {% if b.config.items | length %}
-<section class="max-w-5xl mx-auto px-6 py-10">
+{%- if _inContainer -%}<div class="w-full">{%- else -%}<section class="max-w-5xl mx-auto px-6 py-10">{%- endif -%}
   {% if b.config.title %}
     <h2 class="text-2xl font-bold mb-8 text-center" style="color: var(--color-text);">{{ b.config.title }}</h2>
   {% endif %}
@@ -16,5 +16,5 @@
       </div>
     {% endfor %}
   </div>
-</section>
+{%- if _inContainer -%}</div>{%- else -%}</section>{%- endif -%}
 {% endif %}

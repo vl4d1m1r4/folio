@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"folio/internal/config"
 	"folio/internal/models"
 
 	"github.com/labstack/echo/v4"
@@ -17,8 +19,28 @@ type PagesHandler struct {
 }
 
 // NewPagesHandler creates a new PagesHandler.
-func NewPagesHandler(repo *models.Repository) *PagesHandler {
+func NewPagesHandler(repo *models.Repository, cfg *config.Config) *PagesHandler {
 	return &PagesHandler{repo: repo}
+}
+
+// defaultLangCode reads the default language code from the DB settings,
+// falling back to "en" if not found.
+func (h *PagesHandler) defaultLangCode(c echo.Context) string {
+	v, err := h.repo.GetSetting(c.Request().Context(), "languages")
+	if err == nil && v != "" && v != "null" {
+		var langs []config.Language
+		if json.Unmarshal([]byte(v), &langs) == nil {
+			for _, l := range langs {
+				if l.Default {
+					return l.Code
+				}
+			}
+			if len(langs) > 0 {
+				return langs[0].Code
+			}
+		}
+	}
+	return "en"
 }
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -63,10 +85,15 @@ func (h *PagesHandler) CreatePage(c echo.Context) error {
 	if len(p.Translations) == 0 {
 		return respondError(c, http.StatusUnprocessableEntity, "at least one translation is required")
 	}
+	defaultLang := h.defaultLangCode(c)
 	for _, t := range p.Translations {
-		if t.Slug == "" || t.Title == "" {
+		// Only the default language is required to have slug and title.
+		if t.LangCode == defaultLang && (t.Slug == "" || t.Title == "") {
 			return respondError(c, http.StatusUnprocessableEntity,
 				fmt.Sprintf("translation %q requires slug and title", t.LangCode))
+		}
+		if t.Slug == "" {
+			continue // non-default, no slug — skip conflict check
 		}
 		conflict, err := h.repo.PageSlugConflictExists(c.Request().Context(), t.Slug, t.LangCode, 0)
 		if err != nil {
@@ -113,10 +140,14 @@ func (h *PagesHandler) UpdatePage(c echo.Context) error {
 	}
 	p.ID = id
 
+	defaultLang := h.defaultLangCode(c)
 	for _, t := range p.Translations {
-		if t.Slug == "" || t.Title == "" {
+		if t.LangCode == defaultLang && (t.Slug == "" || t.Title == "") {
 			return respondError(c, http.StatusUnprocessableEntity,
 				fmt.Sprintf("translation %q requires slug and title", t.LangCode))
+		}
+		if t.Slug == "" {
+			continue // non-default, no slug — skip conflict check
 		}
 		conflict, err := h.repo.PageSlugConflictExists(c.Request().Context(), t.Slug, t.LangCode, id)
 		if err != nil {

@@ -211,7 +211,10 @@ export type BlockType =
   | "image-text"
   | "testimonials"
   | "newsletter"
-  | "container";
+  | "container"
+  | "text"
+  | "image"
+  | "button";
 
 export interface HomeBlock {
   id: string;

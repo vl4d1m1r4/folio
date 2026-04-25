@@ -95,6 +95,17 @@ export default function (eleventyConfig) {
     return arr.slice(0, n);
   });
 
+  // ── spToPx filter — decode element spacing values to px numbers ───────────
+  // Stored as integer Tailwind unit (×4 = px) or "[Npx]" arbitrary string.
+  eleventyConfig.addFilter("spToPx", (val) => {
+    if (typeof val === "number") return val * 4;
+    if (typeof val === "string") {
+      const m = val.match(/^\[(\d+(?:\.\d+)?)px\]$/);
+      if (m) return parseFloat(m[1]);
+    }
+    return 0;
+  });
+
   // ── Reading time filter ─────────────────────────────────────────────────────
   eleventyConfig.addFilter("readingTime", (body, langCodeOrSuffix, suffix) => {
     if (!body) return "";

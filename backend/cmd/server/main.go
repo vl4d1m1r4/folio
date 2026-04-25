@@ -208,7 +208,7 @@ func main() {
 	contactH := handlers.NewContactHandler(repo, emailSvc, contactEmail)
 	newsletterH := handlers.NewNewsletterHandler(repo)
 	settingsH := handlers.NewSettingsHandler(repo, emailProvider, emailConfigured, emailSvc)
-	pagesH := handlers.NewPagesHandler(repo)
+	pagesH := handlers.NewPagesHandler(repo, cfg)
 
 	// 7. Echo setup
 	e := echo.New()

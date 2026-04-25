@@ -27,9 +27,81 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   testimonials: "Testimonials",
   newsletter: "Newsletter Subscribe",
   container: "Container",
+  text: "Text",
+  image: "Image",
+  button: "Button",
 };
 
-// ── Default container config ──────────────────────────────────────────────────
+// ── Default configs ───────────────────────────────────────────────────────────
+
+export function applyTextDefaults(config: Record<string, unknown>): void {
+  config.tag = "p";
+  config.content = "";
+  config.fontSize = 16;
+  config.fontWeight = "normal";
+  config.textAlign = "left";
+  config.color = null;
+  config.italic = false;
+  config.letterSpacing = 0; // 1/100 em units (0 = normal, 10 = 0.10em)
+  config.lineHeight = null; // null = CSS default
+  config.textTransform = "none";
+  config.textDecoration = "none";
+  config.bgColor = null;
+  config.paddingTop = 0;
+  config.paddingBottom = 0;
+  config.paddingLeft = 0;
+  config.paddingRight = 0;
+  config.marginTop = 0;
+  config.marginBottom = 0;
+  config.marginLeft = 0;
+  config.marginRight = 0;
+  config.maxWidth = "";
+  config.elementId = "";
+  config.customStyle = "";
+}
+
+export function applyButtonDefaults(config: Record<string, unknown>): void {
+  config.label = "Click Me";
+  config.href = "";
+  config.target = "_self";
+  config.variant = "filled"; // "filled" | "outline" | "ghost"
+  config.size = "md"; // "sm" | "md" | "lg"
+  config.align = "left"; // "left" | "center" | "right"
+  config.bgColor = null; // null = theme accent
+  config.textColor = null; // null = auto
+  config.borderColor = null; // null = auto
+  config.borderRadius = 6;
+  config.fontWeight = "semibold";
+  config.paddingTop = 0;
+  config.paddingBottom = 0;
+  config.paddingLeft = 0;
+  config.paddingRight = 0;
+  config.marginTop = 0;
+  config.marginBottom = 0;
+  config.marginLeft = 0;
+  config.marginRight = 0;
+  config.elementId = "";
+  config.customStyle = "";
+}
+
+export function applyImageDefaults(config: Record<string, unknown>): void {
+  config.src = null;
+  config.alt = "";
+  config.width = "w-full";
+  config.objectFit = "cover";
+  config.aspectRatio = "auto";
+  config.borderRadius = 0;
+  config.paddingTop = 0;
+  config.paddingBottom = 0;
+  config.paddingLeft = 0;
+  config.paddingRight = 0;
+  config.marginTop = 0;
+  config.marginBottom = 0;
+  config.marginLeft = 0;
+  config.marginRight = 0;
+  config.elementId = "";
+  config.customStyle = "";
+}
 
 export function applyContainerDefaults(config: Record<string, unknown>): void {
   config.direction = "row";
@@ -49,6 +121,14 @@ export function applyContainerDefaults(config: Record<string, unknown>): void {
   config.marginLeft = 0;
   config.marginRight = 0;
   config.backgroundColor = null;
+  config.backgroundImage = null;
+  config.backgroundSize = "cover";
+  config.backgroundPosition = "center";
+  config.backgroundOverlay = null;
+  config.borderRadius = 0;
+  config.textColor = null;
+  config.customStyle = null;
+  config.elementId = null;
 }
 
 // ── Icon toggle button (used inside ContainerBlockEditor) ───────────────────
@@ -92,17 +172,25 @@ export function ContainerConfigPopover({
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 320 });
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 320, maxH: 480 });
 
   const place = useCallback(() => {
     if (!btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    const panelW = 340;
+    const panelW = 400;
+    const panelMaxH = Math.min(900, window.innerHeight - 80);
     const vw = window.innerWidth;
+    const vh = window.innerHeight;
     let left = r.right - panelW;
     if (left < 8) left = 8;
     if (left + panelW > vw - 8) left = vw - panelW - 8;
-    setPos({ top: r.bottom + 6, left, width: panelW });
+    // Flip above the button when there isn't enough space below
+    const spaceBelow = vh - r.bottom - 8;
+    const top =
+      spaceBelow >= panelMaxH
+        ? r.bottom + 6
+        : Math.max(8, r.top - panelMaxH - 6);
+    setPos({ top, left, width: panelW, maxH: panelMaxH });
   }, []);
 
   useEffect(() => {
@@ -153,7 +241,7 @@ export function ContainerConfigPopover({
               left: pos.left,
               width: pos.width,
               zIndex: 9999,
-              maxHeight: "calc(100vh - 120px)",
+              maxHeight: pos.maxH,
             }}
             className="rounded-lg border border-(--color-border) bg-(--color-bg-surface) shadow-xl overflow-y-auto"
           >
@@ -171,7 +259,7 @@ export function ContainerConfigPopover({
             </div>
             <div
               className="p-3 overflow-y-auto"
-              style={{ maxHeight: "calc(100vh - 160px)" }}
+              style={{ maxHeight: pos.maxH - 48 }}
             >
               <ContainerBlockEditor config={config} setConfig={setConfig} />
             </div>
@@ -191,9 +279,21 @@ export function ContainerBlockEditor({
   config: Record<string, unknown>;
   setConfig: (key: string, value: unknown) => void;
 }) {
-  // Stored as Tailwind units (e.g. 4 = 1rem); shown and entered as pixels
-  const toPx = (val: unknown, def: number) => ((val as number) ?? def) * 4;
-  const fromPx = (px: number) => Math.max(0, Math.round(px / 4));
+  // Stored as Tailwind integer unit OR "[Npx]" string; shown/entered as pixels.
+  const toPx = (val: unknown, def: number): number => {
+    if (typeof val === "number") return val * 4;
+    if (typeof val === "string") {
+      const m = val.match(/^\[(\d+(?:\.\d+)?)px\]$/);
+      if (m) return parseFloat(m[1]);
+    }
+    return def * 4;
+  };
+  const fromPx = (px: number): number | string => {
+    const n = Math.max(0, px);
+    if (n === 0) return 0;
+    if (Number.isInteger(n) && n % 4 === 0) return n / 4;
+    return `[${n}px]`;
+  };
 
   const sLabel =
     "text-[10px] font-semibold uppercase tracking-wider text-(--color-muted) mb-2";
@@ -219,6 +319,9 @@ export function ContainerBlockEditor({
               className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
             >
               <option value="w-full">Fill Container (100%)</option>
+              <option value="w-1/2">Half Width (50%)</option>
+              <option value="w-1/3">Third Width (33%)</option>
+              <option value="w-1/4">Quarter Width (25%)</option>
               <option value="w-page">Page width (max-w-5xl)</option>
               <option value="w-auto">Hug Contents (Auto)</option>
               <option value="w-screen">Full Screen (100vw)</option>
@@ -545,66 +648,300 @@ export function ContainerBlockEditor({
       </div>
 
       {/* ── BACKGROUND ── */}
-      <div className="py-3">
+      <div className="py-3 space-y-3">
         <p className={sLabel}>Background</p>
-        <div className="flex items-center border border-(--color-border) rounded bg-(--color-bg) px-2 h-9 gap-2">
-          {/* Color swatch — native picker hidden behind a styled div */}
-          <div
-            className="relative w-5 h-5 rounded shrink-0 overflow-hidden"
-            style={{
-              border: "1px solid rgba(255,255,255,0.12)",
-              background: (c.backgroundColor as string) || undefined,
-              backgroundImage: !c.backgroundColor
-                ? "linear-gradient(45deg,#555 25%,transparent 25%),linear-gradient(-45deg,#555 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#555 75%),linear-gradient(-45deg,transparent 75%,#555 75%)"
-                : undefined,
-              backgroundSize: "8px 8px",
-              backgroundPosition: "0 0,0 4px,4px -4px,-4px 0",
-            }}
-          >
+
+        {/* Color row */}
+        <div>
+          <p className={subLabel}>Color</p>
+          <div className="flex items-center border border-(--color-border) rounded bg-(--color-bg) px-2 h-9 gap-2">
+            <div
+              className="relative w-5 h-5 rounded shrink-0 overflow-hidden"
+              style={{
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: (c.backgroundColor as string) || undefined,
+                backgroundImage: !c.backgroundColor
+                  ? "linear-gradient(45deg,#555 25%,transparent 25%),linear-gradient(-45deg,#555 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#555 75%),linear-gradient(-45deg,transparent 75%,#555 75%)"
+                  : undefined,
+                backgroundSize: "8px 8px",
+                backgroundPosition: "0 0,0 4px,4px -4px,-4px 0",
+              }}
+            >
+              <input
+                type="color"
+                value={(c.backgroundColor as string) ?? "#ffffff"}
+                onChange={(e) => setConfig("backgroundColor", e.target.value)}
+                className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
+              />
+            </div>
             <input
-              type="color"
-              value={(c.backgroundColor as string) ?? "#ffffff"}
-              onChange={(e) => setConfig("backgroundColor", e.target.value)}
-              className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
+              type="text"
+              value={
+                c.backgroundColor
+                  ? (c.backgroundColor as string).toUpperCase()
+                  : ""
+              }
+              placeholder="None"
+              onChange={(e) => {
+                const v = e.target.value;
+                setConfig("backgroundColor", v === "" ? null : v);
+              }}
+              className="flex-1 min-w-0 bg-transparent border-none text-sm font-mono outline-none"
             />
+            <button
+              type="button"
+              onClick={() => setConfig("backgroundColor", null)}
+              className="text-(--color-muted) hover:text-red-400 transition-colors shrink-0"
+              title="Remove background color"
+            >
+              <svg
+                viewBox="0 0 16 16"
+                width={14}
+                height={14}
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+              >
+                <path d="M4 4l8 8m0-8l-8 8" />
+              </svg>
+            </button>
           </div>
-          {/* Hex text */}
+        </div>
+
+        {/* Background image URL */}
+        <div>
+          <p className={subLabel}>Image URL</p>
+          <div className="flex items-center gap-1">
+            <input
+              type="text"
+              value={(c.backgroundImage as string) ?? ""}
+              placeholder="/uploads/photo.jpg or https://…"
+              onChange={(e) =>
+                setConfig(
+                  "backgroundImage",
+                  e.target.value === "" ? null : e.target.value,
+                )
+              }
+              className="flex-1 px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) outline-none focus:ring-2 focus:ring-(--color-accent)"
+            />
+            {!!(c.backgroundImage as string) && (
+              <button
+                type="button"
+                onClick={() => setConfig("backgroundImage", null)}
+                className="text-(--color-muted) hover:text-red-400 transition-colors shrink-0 px-1"
+                title="Remove image"
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  width={14}
+                  height={14}
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                >
+                  <path d="M4 4l8 8m0-8l-8 8" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Size + Position (only shown when an image is set) */}
+        {!!(c.backgroundImage as string) && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className={subLabel}>Size</p>
+              <select
+                value={(c.backgroundSize as string) ?? "cover"}
+                onChange={(e) => setConfig("backgroundSize", e.target.value)}
+                className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
+              >
+                <option value="cover">Cover</option>
+                <option value="contain">Contain</option>
+                <option value="auto">Auto</option>
+                <option value="100% 100%">Stretch (100%)</option>
+              </select>
+            </div>
+            <div>
+              <p className={subLabel}>Position</p>
+              <select
+                value={(c.backgroundPosition as string) ?? "center"}
+                onChange={(e) =>
+                  setConfig("backgroundPosition", e.target.value)
+                }
+                className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
+              >
+                <option value="center">Center</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+                <option value="top left">Top Left</option>
+                <option value="top right">Top Right</option>
+                <option value="bottom left">Bottom Left</option>
+                <option value="bottom right">Bottom Right</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Overlay colour (only shown when an image is set) */}
+        {!!(c.backgroundImage as string) && (
+          <div>
+            <p className={subLabel}>Overlay (tint / scrim)</p>
+            <div className="flex items-center border border-(--color-border) rounded bg-(--color-bg) px-2 h-9 gap-2">
+              <div
+                className="relative w-5 h-5 rounded shrink-0 overflow-hidden"
+                style={{
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: (c.backgroundOverlay as string) || undefined,
+                  backgroundImage: !c.backgroundOverlay
+                    ? "linear-gradient(45deg,#555 25%,transparent 25%),linear-gradient(-45deg,#555 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#555 75%),linear-gradient(-45deg,transparent 75%,#555 75%)"
+                    : undefined,
+                  backgroundSize: "8px 8px",
+                  backgroundPosition: "0 0,0 4px,4px -4px,-4px 0",
+                }}
+              >
+                <input
+                  type="color"
+                  value={
+                    c.backgroundOverlay
+                      ? (c.backgroundOverlay as string).slice(0, 7)
+                      : "#000000"
+                  }
+                  onChange={(e) => {
+                    const hex = e.target.value;
+                    const existing = (c.backgroundOverlay as string) ?? "";
+                    const alpha =
+                      existing.length === 9 ? existing.slice(7) : "80";
+                    setConfig("backgroundOverlay", hex + alpha);
+                  }}
+                  className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
+                />
+              </div>
+              <input
+                type="text"
+                value={(c.backgroundOverlay as string) ?? ""}
+                placeholder="None  e.g. #00000080"
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setConfig("backgroundOverlay", v === "" ? null : v);
+                }}
+                className="flex-1 min-w-0 bg-transparent border-none text-sm font-mono outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setConfig("backgroundOverlay", null)}
+                className="text-(--color-muted) hover:text-red-400 transition-colors shrink-0"
+                title="Remove overlay"
+              >
+                <svg
+                  viewBox="0 0 16 16"
+                  width={14}
+                  height={14}
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                >
+                  <path d="M4 4l8 8m0-8l-8 8" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-[10px] text-(--color-muted) mt-1">
+              Use 8-digit hex for opacity, e.g. <code>#00000080</code> = 50%
+              black
+            </p>
+          </div>
+        )}
+
+        {/* Border radius */}
+        <div>
+          <p className={subLabel}>Border Radius (px)</p>
+          <div className={numInput}>
+            <input
+              type="number"
+              min={0}
+              max={999}
+              value={(c.borderRadius as number) ?? 0}
+              onChange={(e) =>
+                setConfig("borderRadius", Number(e.target.value))
+              }
+              className="flex-1 min-w-0 bg-transparent border-none text-sm outline-none"
+            />
+            <span className="text-xs text-(--color-muted) shrink-0">px</span>
+          </div>
+        </div>
+
+        {/* Text color */}
+        <div>
+          <p className={subLabel}>Text Color</p>
+          <div className="flex items-center gap-2">
+            <div className="relative w-8 h-8 rounded border border-(--color-border) overflow-hidden shrink-0">
+              <input
+                type="color"
+                value={(c.textColor as string) || "#000000"}
+                onChange={(e) => setConfig("textColor", e.target.value)}
+                className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
+              />
+              <div
+                className="w-full h-full"
+                style={{ background: (c.textColor as string) || "transparent" }}
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="#ffffff or inherit"
+              value={(c.textColor as string) ?? ""}
+              onChange={(e) => setConfig("textColor", e.target.value || null)}
+              className="flex-1 px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono"
+            />
+            {!!(c.textColor as string) && (
+              <button
+                type="button"
+                onClick={() => setConfig("textColor", null)}
+                className="text-(--color-muted) hover:text-(--color-text) text-base leading-none shrink-0"
+                title="Clear"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── ADVANCED ── */}
+      <div className="py-3 space-y-3">
+        <p className={sLabel}>Advanced</p>
+
+        {/* Element ID */}
+        <div>
+          <label className="block text-[11px] text-(--color-muted) mb-1">
+            Element ID
+          </label>
           <input
             type="text"
-            value={
-              c.backgroundColor
-                ? (c.backgroundColor as string).toUpperCase()
-                : ""
-            }
-            placeholder="None"
-            onChange={(e) => {
-              const v = e.target.value;
-              setConfig("backgroundColor", v === "" ? null : v);
-            }}
-            className="flex-1 min-w-0 bg-transparent border-none text-sm font-mono outline-none"
+            placeholder="e.g. features, hero-section"
+            value={(c.elementId as string) ?? ""}
+            onChange={(e) => setConfig("elementId", e.target.value || null)}
+            className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono"
           />
-          {/* Opacity (static) */}
-          <div className="border-l border-(--color-border) pl-2 shrink-0">
-            <span className="text-sm text-(--color-muted)">100%</span>
-          </div>
-          {/* Clear */}
-          <button
-            type="button"
-            onClick={() => setConfig("backgroundColor", null)}
-            className="text-(--color-muted) hover:text-red-400 transition-colors shrink-0"
-            title="Remove background"
-          >
-            <svg
-              viewBox="0 0 16 16"
-              width={14}
-              height={14}
-              stroke="currentColor"
-              strokeWidth="1.5"
-              fill="none"
-            >
-              <path d="M4 4l8 8m0-8l-8 8" />
-            </svg>
-          </button>
+          <p className="text-[10px] text-(--color-muted) mt-1">
+            Allows linking with <code>#id</code> anchors
+          </p>
+        </div>
+
+        {/* Custom style */}
+        <div>
+          <label className="block text-[11px] text-(--color-muted) mb-1">
+            Custom CSS (inline style)
+          </label>
+          <textarea
+            rows={3}
+            placeholder="e.g. box-shadow: 0 4px 24px #0004; min-height: 400px"
+            value={(c.customStyle as string) ?? ""}
+            onChange={(e) => setConfig("customStyle", e.target.value || null)}
+            className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono resize-y"
+          />
         </div>
       </div>
     </div>
@@ -613,6 +950,24 @@ export function ContainerBlockEditor({
 
 // ── Add-block modal ───────────────────────────────────────────────────────────
 
+const PALETTE_GROUPS: { label: string; types: BlockType[] }[] = [
+  { label: "Layout", types: ["container"] },
+  { label: "Content", types: ["text", "image"] },
+  {
+    label: "Templates",
+    types: [
+      "hero",
+      "featured-articles",
+      "latest-articles",
+      "cta-band",
+      "rich-text",
+      "image-text",
+      "testimonials",
+      "newsletter",
+    ],
+  },
+];
+
 export function AddBlockModal({
   onSelect,
   onClose,
@@ -620,20 +975,28 @@ export function AddBlockModal({
   onSelect: (type: BlockType) => void;
   onClose: () => void;
 }) {
-  const types = Object.keys(BLOCK_LABELS) as BlockType[];
   return createPortal(
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-(--color-bg) rounded-xl shadow-xl w-full max-w-sm p-6">
         <h2 className="text-lg font-bold mb-4">Add block</h2>
-        <div className="grid grid-cols-2 gap-2">
-          {types.map((t) => (
-            <button
-              key={t}
-              onClick={() => onSelect(t)}
-              className="px-3 py-2 rounded border border-(--color-border) text-sm text-left hover:bg-(--color-bg-surface) transition-colors"
-            >
-              {BLOCK_LABELS[t]}
-            </button>
+        <div className="space-y-4">
+          {PALETTE_GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-(--color-muted) mb-2">
+                {group.label}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {group.types.map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => onSelect(t)}
+                    className="px-3 py-2 rounded border border-(--color-border) text-sm text-left hover:bg-(--color-bg-surface) transition-colors"
+                  >
+                    {BLOCK_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
         <button

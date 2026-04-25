@@ -19,6 +19,9 @@ export default async function () {
   const byLang = {};
   const items = [];
 
+  // Reserved slugs that would conflict with built-in Eleventy templates.
+  const RESERVED_SLUGS = new Set(["", "index"]);
+
   for (const lang of languages) {
     let pages = [];
     try {
@@ -27,6 +30,10 @@ export default async function () {
     } catch {
       console.warn(`[folio] Could not fetch pages for lang ${lang.code}`);
     }
+    // Filter out pages whose slug would collide with index.njk or other reserved paths.
+    pages = pages.filter(
+      (p) => !RESERVED_SLUGS.has((p.slug ?? "").toLowerCase()),
+    );
     byLang[lang.code] = pages;
     for (const page of pages) {
       items.push({ lang, page });
@@ -41,7 +48,11 @@ export default async function () {
   for (const lang of languages) {
     if (lang.code === defaultLang.code) continue;
     const existingIds = new Set((byLang[lang.code] ?? []).map((p) => p.id));
-    const fallbacks = defaultPages.filter((p) => !existingIds.has(p.id));
+    const fallbacks = defaultPages.filter(
+      (p) =>
+        !existingIds.has(p.id) &&
+        !RESERVED_SLUGS.has((p.slug ?? "").toLowerCase()),
+    );
     if (fallbacks.length === 0) continue;
     console.log(
       `[folio] Falling back ${fallbacks.length} page(s) to "${defaultLang.code}" for lang "${lang.code}"`,

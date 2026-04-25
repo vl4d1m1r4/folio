@@ -18,14 +18,14 @@
 {%- elif cc.align === "stretch" %}{%- set _ali = "items-stretch" -%}
 {%- endif -%}
 
-{%- set _gx = cc.gapX if cc.gapX else 4 -%}
-{%- set _gy = cc.gapY if cc.gapY else 4 -%}
+{%- if cc.gapX is defined and cc.gapX is not none %}{%- set _gx = cc.gapX -%}{%- else %}{%- set _gx = 4 -%}{%- endif -%}
+{%- if cc.gapY is defined and cc.gapY is not none %}{%- set _gy = cc.gapY -%}{%- else %}{%- set _gy = 4 -%}{%- endif -%}
 {%- set _gap = ("gap-" + _gx) if _gx === _gy else ("gap-x-" + _gx + " gap-y-" + _gy) -%}
 
-{%- set _pt = cc.paddingTop if cc.paddingTop else 6 -%}
-{%- set _pb = cc.paddingBottom if cc.paddingBottom else 6 -%}
-{%- set _pl = cc.paddingLeft if cc.paddingLeft else 6 -%}
-{%- set _pr = cc.paddingRight if cc.paddingRight else 6 -%}
+{%- if cc.paddingTop is defined and cc.paddingTop is not none %}{%- set _pt = cc.paddingTop -%}{%- else %}{%- set _pt = 6 -%}{%- endif -%}
+{%- if cc.paddingBottom is defined and cc.paddingBottom is not none %}{%- set _pb = cc.paddingBottom -%}{%- else %}{%- set _pb = 6 -%}{%- endif -%}
+{%- if cc.paddingLeft is defined and cc.paddingLeft is not none %}{%- set _pl = cc.paddingLeft -%}{%- else %}{%- set _pl = 6 -%}{%- endif -%}
+{%- if cc.paddingRight is defined and cc.paddingRight is not none %}{%- set _pr = cc.paddingRight -%}{%- else %}{%- set _pr = 6 -%}{%- endif -%}
 {%- if _pt === _pb and _pl === _pr and _pt === _pl -%}
   {%- set _pad = "p-" + _pt -%}
 {%- elif _pt === _pb and _pl === _pr -%}
@@ -46,10 +46,23 @@
   {%- set _mar = ("mt-" + _mt + " mb-" + _mb + " ml-" + _ml + " mr-" + _mr) -%}
 {%- endif -%}
 
-{%- set _bgStyle = ('background-color:' + cc.backgroundColor + ';') if cc.backgroundColor else "" -%}
+{%- set _bgParts = [] -%}
+{%- if cc.backgroundColor %}{%- set _bgParts = (_bgParts.push("background-color:" + cc.backgroundColor), _bgParts) -%}{%- endif -%}
+{%- if cc.backgroundImage %}{%- set _bgParts = (_bgParts.push("background-image:url('" + cc.backgroundImage + "')"), _bgParts) -%}{%- set _bgParts = (_bgParts.push("background-size:" + (cc.backgroundSize if cc.backgroundSize else "cover")), _bgParts) -%}{%- set _bgParts = (_bgParts.push("background-position:" + (cc.backgroundPosition if cc.backgroundPosition else "center")), _bgParts) -%}{%- set _bgParts = (_bgParts.push("background-repeat:no-repeat"), _bgParts) -%}{%- endif -%}
+{%- if cc.borderRadius and cc.borderRadius > 0 %}{%- set _bgParts = (_bgParts.push("border-radius:" + cc.borderRadius + "px"), _bgParts) -%}{%- endif -%}
+{%- if cc.textColor %}{%- set _bgParts = (_bgParts.push("color:" + cc.textColor), _bgParts) -%}{%- endif -%}
+{%- if cc.customStyle %}{%- set _bgParts = (_bgParts.push(cc.customStyle), _bgParts) -%}{%- endif -%}
+{%- set _bgStyle = _bgParts | join(";") -%}
 
-<div class="flex {{ _dir }}{{ _wrap }} {{ _w }}{{ _h }} {{ _jus }} {{ _ali }} {{ _gap }} {{ _pad }} {{ _mar }}"
+<div {% if cc.elementId %}id="{{ cc.elementId }}"{% endif %} class="relative flex {{ _dir }}{{ _wrap }} {{ _w }}{{ _h }} {{ _jus }} {{ _ali }} {{ _gap }} {{ _pad }} {{ _mar }}"
      {% if _bgStyle %}style="{{ _bgStyle }}"{% endif %}>
+  {%- if cc.backgroundImage and cc.backgroundOverlay %}
+    <div class="absolute inset-0 pointer-events-none" style="background:{{ cc.backgroundOverlay }};{% if cc.borderRadius and cc.borderRadius > 0 %}border-radius:{{ cc.borderRadius }}px;{% endif %}" aria-hidden="true"></div>
+  {%- endif %}
+  {%- set _innerW = "w-auto" if cc.width === "w-auto" else "w-full" -%}
+  {%- set _prevInContainer = _inContainer -%}
+  {%- set _inContainer = true -%}
+  <div class="relative flex {{ _dir }}{{ _wrap }} {{ _innerW }} h-full {{ _jus }} {{ _ali }} {{ _gap }}" style="min-width:0;">
   {%- for child in containerChildren %}
     {%- if child.visible !== false %}
       {%- set b = child %}
@@ -62,7 +75,12 @@
       {%- elif child.type === "testimonials" %}{%- include "partials/blocks/testimonials.njk" %}
       {%- elif child.type === "newsletter" %}{%- include "partials/blocks/newsletter.njk" %}
       {%- elif child.type === "container" %}{%- include "partials/blocks/container.njk" %}
+      {%- elif child.type === "text" %}{%- include "partials/blocks/text.njk" %}
+      {%- elif child.type === "image" %}{%- include "partials/blocks/image.njk" %}
+      {%- elif child.type === "button" %}{%- include "partials/blocks/button.njk" %}
       {%- endif %}
     {%- endif %}
   {%- endfor %}
+  </div>
+  {%- set _inContainer = _prevInContainer -%}
 </div>
