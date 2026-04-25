@@ -1,41 +1,9 @@
-<footer class="mt-20" style="border-top: 1px solid var(--color-border); background: var(--color-bg-surface);">
-  <div class="max-w-5xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-    <div>
-      <p class="font-semibold" style="color: var(--color-text);">{{ site.name }}</p>
-      {% if site.tagline %}
-        <p class="text-sm mt-1" style="color: var(--color-muted);">{{ site.tagline }}</p>
-      {% endif %}
-    </div>
-
-    <div>
-      <p class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--color-muted);">Links</p>
-      <ul class="space-y-2 text-sm">
-        {% for link in footer.byLang[lang] %}
-          <li>
-            {% if link.type === 'builtin' or link.type === 'page' %}
-              <a href="/{{ lang }}{{ link.url }}" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">{{ link.label }}</a>
-            {% else %}
-              <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">{{ link.label }}</a>
-            {% endif %}
-          </li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <div>
-      {% if social | length %}
-        <p class="text-xs font-semibold uppercase tracking-wider mb-3" style="color: var(--color-muted);">Social</p>
-        <ul class="space-y-2 text-sm">
-          {% for s in social %}
-            {% if s.url %}
-              <li><a href="{{ s.url }}" target="_blank" rel="noopener noreferrer" style="color: var(--color-muted);" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='var(--color-muted)'">{{ s.platform }}</a></li>
-            {% endif %}
-          {% endfor %}
-        </ul>
-      {% endif %}
-    </div>
-  </div>
-  <div style="border-top: 1px solid var(--color-border);">
-    <p class="text-xs text-center py-4" style="color: var(--color-muted);">© {{ site.name }} · Powered by <a href="https://github.com/vl4d1m1r4/folio" class="hover:underline" style="color: var(--color-muted);">Folio</a></p>
-  </div>
-</footer>
+{% for b in footer_sections.byLang[lang] %}
+  {% if b.visible !== false %}
+    {% set block = b %}
+    {% include "partials/blocks/" + b.type + ".njk" %}
+  {% endif %}
+{% endfor %}
+<div style="border-top: 1px solid var(--color-border);">
+  <p class="text-xs text-center py-4" style="color: var(--color-muted);">© {{ site.name }} · Powered by <a href="https://github.com/vl4d1m1r4/folio" class="hover:underline" style="color: var(--color-muted);">Folio</a></p>
+</div>

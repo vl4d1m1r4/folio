@@ -1,0 +1,14 @@
+{%- set cfg = block.config -%}
+{%- set platform = cfg.platform or "" -%}
+{%- set showIcon = cfg.show_icon !== false -%}
+{%- set linkColor = cfg.link_color or "var(--color-muted)" -%}
+{% for s in social %}
+  {% if s.platform === platform and s.url %}
+    <a href="{{ s.url }}" target="_blank" rel="noopener noreferrer"
+       style="color:{{ linkColor }};text-decoration:none;display:inline-flex;align-items:center;gap:6px;"
+       onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='{{ linkColor }}'">
+      {% if showIcon %}{{ s.platform | socialIcon | safe }}{% endif %}
+      {{ s.platform }}
+    </a>
+  {% endif %}
+{% endfor %}

@@ -1,0 +1,27 @@
+{%- set cfg = block.config -%}
+{%- set source = cfg.source or "nav" -%}
+{%- set parentKey = cfg.parent_key or "" -%}
+{%- set layout = cfg.layout or "vertical" -%}
+{%- set linkColor = cfg.link_color or "var(--color-muted)" -%}
+{%- set links = footer_sections.byLang[lang] if source === "footer" else nav.byLang[lang] -%}
+{%- set parent = null -%}
+{% for l in links %}
+  {% if l.label === parentKey %}
+    {%- set parent = l -%}
+  {% endif %}
+{% endfor %}
+{% if parent and parent.children %}
+  <ul class="{% if layout === 'horizontal' %}flex flex-wrap gap-4{% elif layout === 'grid' %}grid grid-cols-2 gap-2{% else %}space-y-2{% endif %} text-sm">
+    {% for child in parent.children %}
+      {% if child.type !== "divider" %}
+        <li>
+          {% if child.type === "builtin" or child.type === "page" %}
+            <a href="/{{ lang }}{{ child.url }}" style="color:{{ linkColor }};" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='{{ linkColor }}'">{{ child.labels[lang] if (child.labels and child.labels[lang]) else child.label }}</a>
+          {% else %}
+            <a href="{{ child.url }}" target="_blank" rel="noopener noreferrer" style="color:{{ linkColor }};" onmouseover="this.style.color='var(--color-text)'" onmouseout="this.style.color='{{ linkColor }}'">{{ child.labels[lang] if (child.labels and child.labels[lang]) else child.label }}</a>
+          {% endif %}
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+{% endif %}
