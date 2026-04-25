@@ -256,6 +256,60 @@ func resolveBlockTranslations(blocks []map[string]json.RawMessage, lang string) 
 	}
 }
 
+// GetHeaderSections returns the header builder block config.
+// GET /api/v1/config/header?lang=en
+func (h *PublicHandler) GetHeaderSections(c echo.Context) error {
+	lang := c.QueryParam("lang")
+	if lang == "" {
+		lang = h.cfg.DefaultLanguage().Code
+	}
+
+	raw, err := h.repo.GetSetting(c.Request().Context(), "header_sections")
+	if err != nil {
+		return respondError(c, http.StatusInternalServerError, "failed to load header sections")
+	}
+	if raw == "" || raw == "null" {
+		return c.JSONBlob(http.StatusOK, []byte("[]"))
+	}
+
+	var blocks []map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(raw), &blocks); err != nil {
+		return c.JSONBlob(http.StatusOK, []byte(raw))
+	}
+
+	resolveBlockTranslations(blocks, lang)
+
+	out, _ := json.Marshal(blocks)
+	return c.JSONBlob(http.StatusOK, out)
+}
+
+// GetFooterSections returns the footer builder block config.
+// GET /api/v1/config/footer-sections?lang=en
+func (h *PublicHandler) GetFooterSections(c echo.Context) error {
+	lang := c.QueryParam("lang")
+	if lang == "" {
+		lang = h.cfg.DefaultLanguage().Code
+	}
+
+	raw, err := h.repo.GetSetting(c.Request().Context(), "footer_sections")
+	if err != nil {
+		return respondError(c, http.StatusInternalServerError, "failed to load footer sections")
+	}
+	if raw == "" || raw == "null" {
+		return c.JSONBlob(http.StatusOK, []byte("[]"))
+	}
+
+	var blocks []map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(raw), &blocks); err != nil {
+		return c.JSONBlob(http.StatusOK, []byte(raw))
+	}
+
+	resolveBlockTranslations(blocks, lang)
+
+	out, _ := json.Marshal(blocks)
+	return c.JSONBlob(http.StatusOK, out)
+}
+
 // getSettingOrDefault returns a DB setting value as raw JSON, or a default blob.
 func (h *PublicHandler) getSettingOrDefault(c echo.Context, key, defaultJSON string) error {
 	v, err := h.repo.GetSetting(c.Request().Context(), key)
