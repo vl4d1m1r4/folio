@@ -88,6 +88,14 @@ const PALETTE: {
       "single-social-link": <SingleSocialIcon />,
     },
   },
+  {
+    label: "Presets",
+    types: ["preset-nav", "preset-footer"] as BlockType[],
+    icons: {
+      "preset-nav": <PresetNavIcon />,
+      "preset-footer": <PresetFooterIcon />,
+    },
+  },
 ];
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -588,7 +596,14 @@ function ButtonIcon({ size = 18 }: { size?: number }) {
 
 function NavLinksIcon() {
   return (
-    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      viewBox="0 0 16 16"
+      width={16}
+      height={16}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <rect x="1" y="3" width="14" height="10" rx="1.5" />
       <path d="M4 8h2M7 8h5M4 11h3" />
     </svg>
@@ -596,21 +611,42 @@ function NavLinksIcon() {
 }
 function SubnavIcon() {
   return (
-    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      viewBox="0 0 16 16"
+      width={16}
+      height={16}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <path d="M3 4h10M3 8h7M3 12h4" />
     </svg>
   );
 }
 function SingleNavIcon() {
   return (
-    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      viewBox="0 0 16 16"
+      width={16}
+      height={16}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <path d="M3 8h10M10 5l3 3-3 3" />
     </svg>
   );
 }
 function SocialLinksIcon() {
   return (
-    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      viewBox="0 0 16 16"
+      width={16}
+      height={16}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <circle cx="4" cy="8" r="2" />
       <circle cx="12" cy="4" r="2" />
       <circle cx="12" cy="12" r="2" />
@@ -620,14 +656,57 @@ function SocialLinksIcon() {
 }
 function SingleSocialIcon() {
   return (
-    <svg viewBox="0 0 16 16" width={16} height={16} fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      viewBox="0 0 16 16"
+      width={16}
+      height={16}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <circle cx="8" cy="8" r="5" />
       <path d="M8 5v6M5 8h6" />
     </svg>
   );
 }
 
-function EyeIcon({ size = 14 }: { size?: number }) {  return (
+function PresetNavIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={16}
+      height={16}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="1" y="2" width="14" height="5" rx="1" />
+      <circle cx="3.5" cy="4.5" r="1" fill="currentColor" stroke="none" />
+      <path d="M6 4.5h6M13 4.5h.5" />
+      <path d="M1 10h5M8 10h3M13 10h2" strokeOpacity="0.4" />
+    </svg>
+  );
+}
+
+function PresetFooterIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={16}
+      height={16}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="1" y="9" width="14" height="5" rx="1" />
+      <path d="M1 6h5M8 6h3M13 6h2" strokeOpacity="0.4" />
+      <path d="M3 11h3M7.5 11h2M11 11h2" />
+    </svg>
+  );
+}
+
+function EyeIcon({ size = 14 }: { size?: number }) {
+  return (
     <svg
       viewBox="0 0 16 16"
       width={size}

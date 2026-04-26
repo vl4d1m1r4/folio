@@ -219,7 +219,9 @@ export type BlockType =
   | "subnav-links"
   | "single-nav-item"
   | "social-links"
-  | "single-social-link";
+  | "single-social-link"
+  | "preset-nav"
+  | "preset-footer";
 
 export interface HomeBlock {
   id: string;

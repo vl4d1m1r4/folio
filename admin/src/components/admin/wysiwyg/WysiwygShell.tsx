@@ -15,10 +15,12 @@ import {
   makeHomeBlock,
   makePageBlock,
   patchBlocks,
+  reorderInTree,
   removeFromBlocks,
   withNormalizedOrder,
   type AnyBlock,
 } from "./blockUtils";
+import { buildNavPreset, buildFooterPreset } from "./presets";
 import type { NavSnapshot } from "./iframeRenderer";
 
 type ViewportMode = "desktop" | "tablet" | "mobile";
@@ -142,6 +144,22 @@ export function WysiwygShell({
   }
 
   function addBlock(type: BlockType, targetId: string | null) {
+    // Preset types expand into a complete block tree
+    if (type === "preset-nav" || type === "preset-footer") {
+      const presetBlocks =
+        type === "preset-nav"
+          ? buildNavPreset(activeLang)
+          : buildFooterPreset(activeLang);
+      commit(
+        withNormalizedOrder([
+          ...anyBlocks(),
+          ...(presetBlocks as unknown as AnyBlock[]),
+        ]),
+      );
+      if (presetBlocks[0]) setSelectedBlockId(presetBlocks[0].id);
+      return;
+    }
+
     const newBlock =
       mode === "home"
         ? makeHomeBlock(type, blocks.length)
@@ -174,14 +192,8 @@ export function WysiwygShell({
   // ── Canvas callbacks ─────────────────────────────────────────────────────────
 
   const handleReorder = useCallback(
-    (fromId: string, toId: string) => {
-      const arr = [...anyBlocks()];
-      const fromIdx = arr.findIndex((b) => b.id === fromId);
-      const toIdx = arr.findIndex((b) => b.id === toId);
-      if (fromIdx === -1 || toIdx === -1) return;
-      const [moved] = arr.splice(fromIdx, 1);
-      arr.splice(toIdx, 0, moved);
-      commit(withNormalizedOrder(arr));
+    (fromId: string, toId: string, before: boolean) => {
+      commit(reorderInTree(anyBlocks(), fromId, toId, before));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [blocks],
@@ -221,6 +233,18 @@ export function WysiwygShell({
         children: [...existingChildren, movedBlock],
       } as Partial<AnyBlock>);
       commit(withNormalizedOrder(updated));
+      setSelectedBlockId(fromId);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [blocks],
+  );
+
+  const handleMoveToRoot = useCallback(
+    (fromId: string) => {
+      const block = findBlock(anyBlocks(), fromId);
+      if (!block) return;
+      const without = removeFromBlocks(anyBlocks(), fromId);
+      commit(withNormalizedOrder([...without, { ...block } as AnyBlock]));
       setSelectedBlockId(fromId);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -359,6 +383,7 @@ export function WysiwygShell({
           paletteDragType={paletteDragType}
           onDelete={handleDelete}
           onMoveToContainer={handleMoveToContainer}
+          onMoveToRoot={handleMoveToRoot}
           navSnapshot={navSnapshot}
         />
 

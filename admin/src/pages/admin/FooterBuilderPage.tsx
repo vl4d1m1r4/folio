@@ -4,42 +4,10 @@ import { adminApi } from "../../api/client";
 import type { HomeBlock, Language, NavLink, SocialLink } from "../../api/types";
 import { WysiwygShell } from "../../components/admin/wysiwyg/WysiwygShell";
 import type { NavSnapshot } from "../../components/admin/wysiwyg/iframeRenderer";
-import {
-  makeHomeBlock,
-  withNormalizedOrder,
-} from "../../components/admin/wysiwyg/blockUtils";
+import { buildFooterPreset } from "../../components/admin/wysiwyg/presets";
 
-function buildDefaultFooterTemplate(lang: string): HomeBlock[] {
-  // Outer container: horizontal 3-column layout
-  const outer = makeHomeBlock("container", 0) as HomeBlock;
-  outer.config.direction = "row";
-  outer.config.wrap = "wrap";
-  outer.config.justify = "between";
-  outer.config.align = "start";
-  outer.config.paddingTop = 12;
-  outer.config.paddingBottom = 12;
-  outer.config.width = "w-page";
-
-  // Col 1: site name text block
-  const siteInfo = makeHomeBlock("text", 0) as HomeBlock;
-  siteInfo.config.tag = "p";
-  siteInfo.config.fontWeight = "semibold";
-  siteInfo.translations = { [lang]: { content: "Site Name" } };
-
-  // Col 2: footer-links block
-  const footerLinks = makeHomeBlock("subnav-links", 1) as HomeBlock;
-  footerLinks.config.source = "footer";
-  footerLinks.config.parent_key = "";
-  footerLinks.config.layout = "vertical";
-
-  // Col 3: social-links block
-  const socialLinks = makeHomeBlock("social-links", 2) as HomeBlock;
-  socialLinks.config.show_icons = true;
-  socialLinks.config.layout = "vertical";
-
-  outer.children = [siteInfo, footerLinks, socialLinks];
-
-  return withNormalizedOrder([outer]) as HomeBlock[];
+function buildDefaultFooterTemplate(lang: string) {
+  return buildFooterPreset(lang);
 }
 
 export default function FooterBuilderPage() {
@@ -133,7 +101,9 @@ export default function FooterBuilderPage() {
       saved={saved}
       serverError={serverError}
       navSnapshot={navSnapshot}
-      onLoadDefaultTemplate={blocks.length === 0 ? loadDefaultTemplate : undefined}
+      onLoadDefaultTemplate={
+        blocks.length === 0 ? loadDefaultTemplate : undefined
+      }
     />
   );
 }

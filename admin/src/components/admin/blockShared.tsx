@@ -35,6 +35,8 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   "single-nav-item": "Nav Item",
   "social-links": "Social Links",
   "single-social-link": "Social Link",
+  "preset-nav": "Header Preset",
+  "preset-footer": "Footer Preset",
 };
 
 // ── Default configs ───────────────────────────────────────────────────────────
@@ -144,28 +146,36 @@ export function applyNavLinksDefaults(config: Record<string, unknown>): void {
   config.sticky = true;
 }
 
-export function applySubnavLinksDefaults(config: Record<string, unknown>): void {
+export function applySubnavLinksDefaults(
+  config: Record<string, unknown>,
+): void {
   config.source = "nav"; // "nav" | "footer"
   config.parent_key = "";
   config.layout = "vertical"; // "vertical" | "horizontal" | "grid"
   config.link_color = null;
 }
 
-export function applySingleNavItemDefaults(config: Record<string, unknown>): void {
+export function applySingleNavItemDefaults(
+  config: Record<string, unknown>,
+): void {
   config.source = "nav"; // "nav" | "footer"
   config.link_key = "";
   config.render_as = "link"; // "link" | "button"
   config.link_color = null;
 }
 
-export function applySocialLinksDefaults(config: Record<string, unknown>): void {
+export function applySocialLinksDefaults(
+  config: Record<string, unknown>,
+): void {
   config.show_icons = true;
   config.icon_style = "outline"; // "outline" | "filled"
   config.layout = "horizontal"; // "horizontal" | "vertical"
   config.link_color = null;
 }
 
-export function applySingleSocialLinkDefaults(config: Record<string, unknown>): void {
+export function applySingleSocialLinkDefaults(
+  config: Record<string, unknown>,
+): void {
   config.platform = "";
   config.show_icon = true;
   config.link_color = null;

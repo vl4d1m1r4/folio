@@ -95,6 +95,49 @@ export function moveInBlocks<T extends AnyBlock>(
   );
 }
 
+/**
+ * Inserts `block` before or after the element with `targetId` anywhere in the
+ * block tree. Used by reorderInTree after the source block has been removed.
+ */
+function insertNearBlock<T extends AnyBlock>(
+  blocks: T[],
+  block: T,
+  targetId: string,
+  before: boolean,
+): T[] {
+  const toIdx = blocks.findIndex((b) => b.id === targetId);
+  if (toIdx !== -1) {
+    const arr = [...blocks];
+    arr.splice(before ? toIdx : toIdx + 1, 0, block);
+    return withNormalizedOrder(arr);
+  }
+  return blocks.map((b) => {
+    if (!b.children) return b;
+    return {
+      ...b,
+      children: insertNearBlock(b.children as T[], block, targetId, before),
+    };
+  });
+}
+
+/**
+ * Moves `fromId` to just before/after `toId` anywhere in the block tree.
+ * Works whether the two blocks are siblings, in different containers, or at
+ * different nesting levels.
+ * @param before – true = insert before toId, false = insert after toId
+ */
+export function reorderInTree<T extends AnyBlock>(
+  blocks: T[],
+  fromId: string,
+  toId: string,
+  before: boolean,
+): T[] {
+  const fromBlock = findBlock(blocks, fromId);
+  if (!fromBlock) return blocks;
+  const without = removeFromBlocks(blocks, fromId);
+  return insertNearBlock(without, { ...fromBlock } as T, toId, before);
+}
+
 // ── Block factories ────────────────────────────────────────────────────────────
 
 function baseConfig(type: BlockType): Record<string, unknown> {

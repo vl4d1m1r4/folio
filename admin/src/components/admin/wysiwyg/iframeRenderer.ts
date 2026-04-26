@@ -32,7 +32,11 @@ export interface RenderBlock {
 }
 
 export interface NavSnapshot {
-  navLinks?: Array<{ label: string; url: string; children?: Array<{ label: string; url: string }> }>;
+  navLinks?: Array<{
+    label: string;
+    url: string;
+    children?: Array<{ label: string; url: string }>;
+  }>;
   footerLinks?: Array<{ label: string; url: string }>;
   socialLinks?: Array<{ platform: string; url: string }>;
 }
@@ -66,10 +70,16 @@ export function buildSrcdoc(
     .wysiwyg-label { display: none; position: absolute; top: -22px; left: -2px; background: #3b82f6; color: #fff; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px 4px 0 0; white-space: nowrap; z-index: 9; pointer-events: none; align-items: center; gap: 4px; }
     .wysiwyg-drop-before { border-top: 3px solid #3b82f6 !important; }
     .wysiwyg-drop-after  { border-bottom: 3px solid #3b82f6 !important; }
+    .wysiwyg-drop-left   { border-left: 3px solid #3b82f6 !important; }
+    .wysiwyg-drop-right  { border-right: 3px solid #3b82f6 !important; }
     .wysiwyg-drop-inside { outline: 2px dashed #3b82f6 !important; background: rgba(59,130,246,0.04) !important; }
-    [contenteditable=true] { outline: none; cursor: text; }
-    [contenteditable=true]:focus { outline: 2px solid #3b82f6; outline-offset: 1px; }
-    [contenteditable=true]:empty::before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; }
+    [contenteditable="false"] { cursor: inherit; user-select: none; }
+    [contenteditable="true"] { outline: none; cursor: text; }
+    [contenteditable="true"]:focus { outline: 2px solid #3b82f6; outline-offset: 1px; }
+    [data-wysiwyg-content-id]:empty::before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; }
+    #wysiwyg-root-dropzone { display:none; min-height:52px; margin:6px; border-radius:8px; border:2px dashed #d1d5db; align-items:center; justify-content:center; font-size:12px; color:#9ca3af; gap:6px; }
+    #wysiwyg-root-dropzone.dz-visible { display:flex; }
+    #wysiwyg-root-dropzone.dz-active { border-color:#3b82f6; background:rgba(59,130,246,0.05); color:#3b82f6; }
     .block-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; border: 2px dashed #d1d5db; border-radius: 8px; gap: 8px; padding: 20px; background: #f9fafb; color: #6b7280; font-size: 13px; text-align: center; }
     .block-placeholder .bp-label { font-weight: 600; color: #374151; font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase; }
     .prose p { margin-bottom: .875em; line-height: 1.75; }
@@ -390,11 +400,11 @@ function textToHtml(
 
   const placeholder =
     safeTag === "p"
-      ? "Click to edit text…"
-      : `Click to edit ${safeTag.toUpperCase()}…`;
+      ? "Double-click to edit text…"
+      : `Double-click to edit ${safeTag.toUpperCase()}…`;
   const labelText = safeTag === "p" ? "T Text" : `T ${safeTag.toUpperCase()}`;
 
-  return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="text" style="position:relative"><span class="wysiwyg-label">${escHtml(labelText)}</span><${safeTag}${idAttr} contenteditable="true" data-wysiwyg-content-id="${escAttr(block.id)}" data-placeholder="${escAttr(placeholder)}" class="${escAttr(classAttr)}"${styleAttr}>${content}</${safeTag}></div>`;
+  return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="text" style="position:relative"><span class="wysiwyg-label">${escHtml(labelText)}</span><${safeTag}${idAttr} contenteditable="false" data-wysiwyg-content-id="${escAttr(block.id)}" data-placeholder="${escAttr(placeholder)}" class="${escAttr(classAttr)}"${styleAttr}>${content}</${safeTag}></div>`;
 }
 
 // ── Button ─────────────────────────────────────────────────────────────────────
@@ -600,21 +610,30 @@ function navBlockHtml(block: RenderBlock, snap: NavSnapshot): string {
     case "subnav-links": {
       const source = (c.source as string) ?? "nav";
       const parentKey = (c.parent_key as string) ?? "";
-      const links = source === "footer" ? snap.footerLinks ?? [] : snap.navLinks ?? [];
-      const parent = links.find((l) => l.label === parentKey);
-      const children = (parent as any)?.children ?? [];
+      const links =
+        source === "footer" ? (snap.footerLinks ?? []) : (snap.navLinks ?? []);
       const layout = (c.layout as string) ?? "vertical";
       const linkColor = (c.link_color as string) || "var(--color-muted)";
       const flexDir = layout === "vertical" ? "column" : "row";
       const flexWrap = layout === "grid" ? "wrap" : "nowrap";
-      const childHtml = children.length
-        ? children
+
+      let renderLinks: Array<{ label: string; url: string }>;
+      if (parentKey) {
+        const parent = links.find((l) => l.label === parentKey);
+        renderLinks = (parent as any)?.children ?? [];
+      } else {
+        // Empty parent_key → show all root links from the source directly
+        renderLinks = links;
+      }
+
+      const childHtml = renderLinks.length
+        ? renderLinks
             .map(
-              (ch: { label: string }) =>
+              (ch) =>
                 `<a href="#" style="color:${escAttr(linkColor)};text-decoration:none;${layout === "grid" ? "width:50%;" : ""}">${escHtml(ch.label)}</a>`,
             )
             .join("")
-        : `<span style="color:#9ca3af;font-size:12px;">No children — select a parent link with dropdown children</span>`;
+        : `<span style="color:#9ca3af;font-size:12px;">${parentKey ? "No children — select a parent link with dropdown children" : "No links configured"}</span>`;
       return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="subnav-links"
         style="display:flex;flex-direction:${flexDir};flex-wrap:${flexWrap};gap:8px;padding:12px;">
         ${label}${childHtml}
@@ -625,18 +644,27 @@ function navBlockHtml(block: RenderBlock, snap: NavSnapshot): string {
       const source = (c.source as string) ?? "nav";
       const linkKey = (c.link_key as string) ?? "";
       const renderAs = (c.render_as as string) ?? "link";
-      const links = source === "footer" ? snap.footerLinks ?? [] : snap.navLinks ?? [];
-      const allLinks = links.flatMap((l) => [l, ...((l as any).children ?? [])]);
+      const links =
+        source === "footer" ? (snap.footerLinks ?? []) : (snap.navLinks ?? []);
+      const allLinks = links.flatMap((l) => [
+        l,
+        ...((l as any).children ?? []),
+      ]);
       const found = allLinks.find((l) => l.label === linkKey);
-      const linkColor = (c.link_color as string) || "var(--color-accent)";
+      const rawColor = (c.link_color as string) || "";
+      // Ensure CSS vars always carry a #hex fallback so they resolve in the iframe
+      const safeColor =
+        rawColor.startsWith("var(") && !rawColor.includes(",")
+          ? rawColor.slice(0, -1) + ",#3b82f6)"
+          : rawColor || "#3b82f6";
       const label2 = found?.label ?? (linkKey || "— select a link —");
-      const style =
+      const btnHtml =
         renderAs === "button"
-          ? `background:${escAttr(linkColor)};color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:14px;`
-          : `color:${escAttr(linkColor)};text-decoration:none;font-size:14px;`;
-      return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="single-nav-item" style="display:inline-block;padding:8px;">
+          ? `<a href="#" style="display:inline-block;padding:6px 16px;font-size:13px;font-weight:600;border-radius:6px;background:${escAttr(safeColor)};color:#fff;text-decoration:none;line-height:1.4;border:2px solid transparent;">${escHtml(label2)}</a>`
+          : `<a href="#" style="color:${escAttr(safeColor)};text-decoration:none;font-size:14px;">${escHtml(label2)}</a>`;
+      return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="single-nav-item" style="display:inline-block;padding:4px;">
         ${label}
-        <a href="#" style="${escAttr(style)}">${escHtml(label2)}</a>
+        ${btnHtml}
       </div>`;
     }
 
@@ -666,7 +694,8 @@ function navBlockHtml(block: RenderBlock, snap: NavSnapshot): string {
       const found = snap.socialLinks?.find((s) => s.platform === platform);
       const linkColor = (c.link_color as string) || "var(--color-muted)";
       const showIcon = c.show_icon !== false;
-      const displayName = found?.platform ?? (platform || "— select a platform —");
+      const displayName =
+        found?.platform ?? (platform || "— select a platform —");
       return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="single-social-link" style="display:inline-block;padding:8px;">
         ${label}
         <a href="#" style="color:${escAttr(linkColor)};text-decoration:none;display:flex;align-items:center;gap:4px;">
@@ -709,24 +738,63 @@ function socialIconSvg(platform: string): string {
 function buildInteractionScript(): string {
   return `(function(){
   var activeContentId=null,dragFromId=null,selectedId=null;
-  var EDGE=10;
   function reportHeight(){
     var h=Math.max(document.documentElement.scrollHeight,document.body.scrollHeight,400);
     window.parent.postMessage({type:'height',value:h},'*');
   }
+  // Returns true if targetEl is the same as or a DOM descendant of the element
+  // currently being dragged. Used to prevent a block from being dropped into itself.
+  function isDragAncestorOf(targetEl){
+    if(!dragFromId) return false;
+    var src=document.querySelector('[data-wysiwyg-id="'+dragFromId+'"]');
+    if(!src) return false;
+    return src===targetEl||src.contains(targetEl);
+  }
+  function getRootDropZone(){
+    var dz=document.getElementById('wysiwyg-root-dropzone');
+    if(!dz){
+      dz=document.createElement('div');
+      dz.id='wysiwyg-root-dropzone';
+      dz.innerHTML='<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3v10M3 8l5 5 5-5"/></svg> Drop here — move to root level';
+      document.getElementById('wysiwyg-root').appendChild(dz);
+      dz.addEventListener('dragover',function(e){e.preventDefault();e.stopPropagation();dz.classList.add('dz-active');});
+      dz.addEventListener('dragleave',function(){dz.classList.remove('dz-active');});
+      dz.addEventListener('drop',function(e){
+        e.preventDefault();e.stopPropagation();
+        dz.classList.remove('dz-active','dz-visible');
+        var fromId=e.dataTransfer.getData('text/plain');
+        if(fromId) window.parent.postMessage({type:'moveToRoot',fromId:fromId},'*');
+      });
+    }
+    return dz;
+  }
+  function showRootDropZone(){getRootDropZone().classList.add('dz-visible');}
+  function hideRootDropZone(){var dz=document.getElementById('wysiwyg-root-dropzone');if(dz)dz.classList.remove('dz-visible','dz-active');}
+  // Returns true if the nearest ancestor container uses flex-row direction
+  function isParentRow(el){
+    var p=el.parentElement;
+    while(p){
+      if(p.dataset&&p.dataset.wysiwygType==='container'){
+        return window.getComputedStyle(p).flexDirection==='row';
+      }
+      p=p.parentElement;
+    }
+    return false;
+  }
   function bindInteractions(){
+    // Ensure the root drop zone element exists
+    getRootDropZone();
     document.querySelectorAll('[data-wysiwyg-id]').forEach(function(el){
       el.addEventListener('click',function(e){
         e.stopPropagation();
         window.parent.postMessage({type:'select',id:el.dataset.wysiwygId},'*');
       });
-      // Edge-detection drag: text blocks only drag from edges; all others always draggable
       el.removeAttribute('draggable');
-      var isText=el.dataset.wysiwygType==='text';
-      el.addEventListener('mousedown',function(e){
-        var rect=el.getBoundingClientRect();
-        var onEdge=(e.clientX-rect.left<EDGE)||(rect.right-e.clientX<EDGE)||(e.clientY-rect.top<EDGE)||(rect.bottom-e.clientY<EDGE);
-        if(!isText||onEdge) el.setAttribute('draggable','true');
+      el.addEventListener('mousedown',function(){
+        // Suppress drag if a text child is actively being edited
+        var contentEl=el.querySelector('[data-wysiwyg-content-id]');
+        if(contentEl&&contentEl.getAttribute('contenteditable')==='true') return;
+        el.setAttribute('draggable','true');
       });
       el.addEventListener('mouseup',function(){el.removeAttribute('draggable');});
       el.addEventListener('dragstart',function(e){
@@ -735,13 +803,22 @@ function buildInteractionScript(): string {
         e.dataTransfer.effectAllowed='move';
         e.dataTransfer.setData('text/plain',el.dataset.wysiwygId);
         e.stopPropagation();
+        // Use a compact label ghost so the dragged element itself doesn't obscure drop targets
+        var label=el.querySelector('.wysiwyg-label');
+        var ghost=document.createElement('div');
+        ghost.textContent=(label?label.textContent.trim():'Block')||'Block';
+        ghost.style.cssText='position:fixed;top:-999px;left:-999px;padding:3px 10px;background:#3b82f6;color:#fff;font-size:11px;font-weight:600;border-radius:4px;font-family:system-ui,sans-serif;pointer-events:none;';
+        document.body.appendChild(ghost);
+        e.dataTransfer.setDragImage(ghost,0,0);
+        setTimeout(function(){document.body.removeChild(ghost);},0);
+        showRootDropZone();
       });
-      el.addEventListener('dragend',function(){el.removeAttribute('draggable');clearDropHints();});
-      // Drop targets: containers accept inside-drops; others accept before/after reorder
+      el.addEventListener('dragend',function(){el.removeAttribute('draggable');clearDropHints();hideRootDropZone();});
       var isContainer=el.dataset.wysiwygType==='container';
       if(isContainer){
         el.addEventListener('dragover',function(e){
           e.preventDefault();e.stopPropagation();
+          if(isDragAncestorOf(el)) return;
           clearDropHints();
           el.classList.add('wysiwyg-drop-inside');
         });
@@ -753,15 +830,22 @@ function buildInteractionScript(): string {
           var fromId=e.dataTransfer.getData('text/plain');
           var toId=el.dataset.wysiwygId;
           clearDropHints();
-          if(fromId&&fromId!==toId) window.parent.postMessage({type:'moveToContainer',fromId:fromId,containerId:toId},'*');
+          if(fromId&&fromId!==toId&&!isDragAncestorOf(el)) window.parent.postMessage({type:'moveToContainer',fromId:fromId,containerId:toId},'*');
         });
       } else {
+        // Non-container: direction-aware before/after drop hints
         el.addEventListener('dragover',function(e){
           e.preventDefault();e.stopPropagation();
+          if(isDragAncestorOf(el)) return;
           clearDropHints();
           var rect=el.getBoundingClientRect();
-          if(e.clientY<rect.top+rect.height/2) el.classList.add('wysiwyg-drop-before');
-          else el.classList.add('wysiwyg-drop-after');
+          if(isParentRow(el)){
+            if(e.clientX<rect.left+rect.width/2) el.classList.add('wysiwyg-drop-left');
+            else el.classList.add('wysiwyg-drop-right');
+          } else {
+            if(e.clientY<rect.top+rect.height/2) el.classList.add('wysiwyg-drop-before');
+            else el.classList.add('wysiwyg-drop-after');
+          }
         });
         el.addEventListener('dragleave',function(){clearDropHints();});
         el.addEventListener('drop',function(e){
@@ -769,22 +853,43 @@ function buildInteractionScript(): string {
           var fromId=e.dataTransfer.getData('text/plain');
           var toId=el.dataset.wysiwygId;
           clearDropHints();
-          if(fromId&&fromId!==toId) window.parent.postMessage({type:'reorder',fromId:fromId,toId:toId},'*');
+          if(isDragAncestorOf(el)) return;
+          var rect=el.getBoundingClientRect();
+          var before=isParentRow(el)?(e.clientX<rect.left+rect.width/2):(e.clientY<rect.top+rect.height/2);
+          if(fromId&&fromId!==toId) window.parent.postMessage({type:'reorder',fromId:fromId,toId:toId,before:before},'*');
         });
       }
     });
-    // Content-editable interactions (text editing via inner contenteditable elements)
+    // Text editing: double-click to activate, blur to save, Escape to exit
     document.querySelectorAll('[data-wysiwyg-content-id]').forEach(function(el){
+      el.addEventListener('dblclick',function(e){
+        e.stopPropagation();
+        el.setAttribute('contenteditable','true');
+        el.focus();
+        // Place caret at the clicked position
+        if(document.caretRangeFromPoint){
+          var r=document.caretRangeFromPoint(e.clientX,e.clientY);
+          if(r){var sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);}
+        }
+      });
       el.addEventListener('focus',function(){activeContentId=el.dataset.wysiwygContentId;});
       el.addEventListener('blur',function(){
         window.parent.postMessage({type:'content',id:el.dataset.wysiwygContentId,html:el.innerHTML},'*');
+        el.setAttribute('contenteditable','false');
         activeContentId=null;
+      });
+      el.addEventListener('keydown',function(e){
+        if(e.key==='Escape'){e.preventDefault();el.blur();}
+      });
+      // While in edit mode, prevent click from bubbling to the select handler
+      el.addEventListener('click',function(e){
+        if(el.getAttribute('contenteditable')==='true') e.stopPropagation();
       });
     });
   }
   function clearDropHints(){
-    document.querySelectorAll('.wysiwyg-drop-before,.wysiwyg-drop-after,.wysiwyg-drop-inside').forEach(function(el){
-      el.classList.remove('wysiwyg-drop-before','wysiwyg-drop-after','wysiwyg-drop-inside');
+    document.querySelectorAll('.wysiwyg-drop-before,.wysiwyg-drop-after,.wysiwyg-drop-inside,.wysiwyg-drop-left,.wysiwyg-drop-right').forEach(function(el){
+      el.classList.remove('wysiwyg-drop-before','wysiwyg-drop-after','wysiwyg-drop-inside','wysiwyg-drop-left','wysiwyg-drop-right');
     });
   }
   // Delete/Backspace removes the selected block (when not editing text)
@@ -805,6 +910,11 @@ function buildInteractionScript(): string {
   document.addEventListener('click',function(){window.parent.postMessage({type:'select',id:null},'*');});
   window.addEventListener('message',function(e){
     var msg=e.data;if(!msg||!msg.type)return;
+    if(msg.type==='updateTheme'){
+      var ts=document.getElementById('wysiwyg-theme-vars');
+      if(!ts){ts=document.createElement('style');ts.id='wysiwyg-theme-vars';document.head.appendChild(ts);}
+      ts.textContent=msg.css;
+    }
     if(msg.type==='select'){
       selectedId=msg.id!=null?msg.id:null;
       document.querySelectorAll('.wysiwyg-selected').forEach(function(el){el.classList.remove('wysiwyg-selected');});

@@ -3,7 +3,7 @@
 {%- set linkKey = cfg.link_key or "" -%}
 {%- set renderAs = cfg.render_as or "link" -%}
 {%- set linkColor = cfg.link_color or "var(--color-accent)" -%}
-{%- set links = footer_sections.byLang[lang] if source === "footer" else nav.byLang[lang] -%}
+{%- set links = footer.byLang[lang] if source === "footer" else nav.byLang[lang] -%}
 {%- set found = null -%}
 {% for l in links %}
   {% if l.label === linkKey %}
@@ -21,11 +21,13 @@
   {% set href = ("/"+lang+found.url) if (found.type === "builtin" or found.type === "page") else found.url %}
   {% set isExternal = found.type === "external" %}
   {% if renderAs === "button" %}
-    <a href="{{ href }}"{% if isExternal %} target="_blank" rel="noopener noreferrer"{% endif %}
-       class="inline-block px-4 py-2 text-sm rounded font-medium"
-       style="background:{{ linkColor }};color:#fff;text-decoration:none;">
-      {{ found.labels[lang] if (found.labels and found.labels[lang]) else found.label }}
-    </a>
+    <span style="display:inline-block;">
+      <a href="{{ href }}"{% if isExternal %} target="_blank" rel="noopener noreferrer"{% endif %}
+         class="inline-block px-4 py-2 text-sm rounded font-medium"
+         style="background:{{ linkColor }};color:#fff;text-decoration:none;">
+        {{ found.labels[lang] if (found.labels and found.labels[lang]) else found.label }}
+      </a>
+    </span>
   {% else %}
     <a href="{{ href }}"{% if isExternal %} target="_blank" rel="noopener noreferrer"{% endif %}
        style="color:{{ linkColor }};text-decoration:none;">

@@ -3,7 +3,7 @@
 
 {%- set _dir = "flex-row" if cc.direction !== "col" else "flex-col" -%}
 {%- set _wrap = " flex-wrap" if cc.wrap === "wrap" else "" -%}
-{%- set _w = "max-w-5xl mx-auto" if cc.width === "w-page" else (cc.width if cc.width else "w-full") -%}
+{%- set _w = "w-full max-w-5xl mx-auto" if cc.width === "w-page" else (cc.width if cc.width else "w-full") -%}
 {%- set _h = (" " + cc.height) if cc.height and cc.height !== "h-auto" else "" -%}
 
 {%- set _jus = "justify-start" -%}
@@ -81,6 +81,7 @@
   {%- for child in containerChildren %}
     {%- if child.visible !== false %}
       {%- set b = child %}
+      {%- set block = b -%}
       {%- if child.type === "hero" %}{%- include "partials/blocks/hero.njk" %}
       {%- elif child.type === "featured-articles" %}{%- include "partials/blocks/featured-articles.njk" %}
       {%- elif child.type === "latest-articles" %}{%- include "partials/blocks/latest-articles.njk" %}
@@ -93,6 +94,11 @@
       {%- elif child.type === "text" %}{%- include "partials/blocks/text.njk" %}
       {%- elif child.type === "image" %}{%- include "partials/blocks/image.njk" %}
       {%- elif child.type === "button" %}{%- include "partials/blocks/button.njk" %}
+      {%- elif child.type === "nav-links" %}{%- include "partials/blocks/nav-links.njk" %}
+      {%- elif child.type === "subnav-links" %}{%- include "partials/blocks/subnav-links.njk" %}
+      {%- elif child.type === "single-nav-item" %}{%- include "partials/blocks/single-nav-item.njk" %}
+      {%- elif child.type === "social-links" %}{%- include "partials/blocks/social-links.njk" %}
+      {%- elif child.type === "single-social-link" %}{%- include "partials/blocks/single-social-link.njk" %}
       {%- endif %}
     {%- endif %}
   {%- endfor %}

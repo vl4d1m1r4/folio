@@ -4,6 +4,7 @@ import { adminApi } from "../../api/client";
 import type { HomeBlock, Language, NavLink, SocialLink } from "../../api/types";
 import { WysiwygShell } from "../../components/admin/wysiwyg/WysiwygShell";
 import type { NavSnapshot } from "../../components/admin/wysiwyg/iframeRenderer";
+import { buildNavPreset } from "../../components/admin/wysiwyg/presets";
 
 export default function HeaderBuilderPage() {
   const [blocks, setBlocks] = useState<HomeBlock[]>([]);
@@ -91,6 +92,7 @@ export default function HeaderBuilderPage() {
       saved={saved}
       serverError={serverError}
       navSnapshot={navSnapshot}
+      onLoadDefaultTemplate={() => setBlocks(buildNavPreset(activeLang))}
     />
   );
 }
