@@ -101,13 +101,20 @@ func seedSettings(repo *models.Repository, cfg *config.Config, themePath string)
 		_ = repo.SetSetting(ctx, "social_links", string(b))
 	}
 
+	// Seed default header_sections with a navigation layout.
+	if _, ok := all["header_sections"]; !ok {
+		defaultHeader := `[{"id":"header-nav-links","type":"nav-links","visible":true,"order":0,"config":{"dropdown_style":"simple","show_language_switcher":true,"link_color":null,"bg_color":null,"sticky":true},"translations":{}}]`
+		_ = repo.SetSetting(ctx, "header_sections", defaultHeader)
+	}
+
 	// Seed default home_sections matching the existing layout.
 	if _, ok := all["home_sections"]; !ok {
 		defaultSections := `[
 			{"id":"hero","type":"hero","visible":true,"order":0,"config":{},"translations":{"en":{"headline":"My Blog","subheadline":"","cta_label":"Book a free call","cta_url":""}}},
 			{"id":"featured","type":"featured-articles","visible":true,"order":1,"config":{"max_count":4},"translations":{"en":{"title":"Featured"}}},
 			{"id":"latest","type":"latest-articles","visible":true,"order":2,"config":{"max_count":6},"translations":{"en":{"title":"Latest Articles"}}},
-			{"id":"cta","type":"cta-band","visible":true,"order":3,"config":{},"translations":{"en":{"headline":"Ready to get started?","body":"","cta_label":"Book a call","cta_url":""}}}
+			{"id":"newsletter","type":"newsletter","visible":true,"order":3,"config":{},"translations":{"en":{"headline":"Stay in the loop","body":"Get the latest articles delivered to your inbox.","placeholder":"Your email address","button_label":"Subscribe","success_message":"You're subscribed — thank you!"}}},
+			{"id":"cta","type":"cta-band","visible":true,"order":4,"config":{},"translations":{"en":{"headline":"Ready to get started?","body":"","cta_label":"Book a call","cta_url":""}}}
 		]`
 		_ = repo.SetSetting(ctx, "home_sections", defaultSections)
 	}
