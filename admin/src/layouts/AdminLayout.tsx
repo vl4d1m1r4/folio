@@ -48,9 +48,9 @@ const links = [
   { label: "Contacts", to: "/admin/contacts", section: false },
   { label: "Newsletter", to: "/admin/newsletter", section: false },
   { label: "Customization", to: null, section: true },
-  { label: "Home Builder", to: "/admin/home-builder", section: false },
-  { label: "Header Builder", to: "/admin/header-builder", section: false },
-  { label: "Footer Builder", to: "/admin/footer-builder", section: false },
+  { label: "Home Layout", to: "/admin/home-builder", section: false },
+  { label: "Header Layout", to: "/admin/header-builder", section: false },
+  { label: "Footer Layout", to: "/admin/footer-builder", section: false },
   { label: "Settings", to: "/admin/settings", section: false },
 ] as const;
 

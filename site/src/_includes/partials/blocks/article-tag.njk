@@ -1,0 +1,19 @@
+{#
+  article-tag.njk — renders _articleCtx.tag as a badge, delegating to text.njk.
+  The badge visual style (inline-block, border-radius, color-mix bg) goes into customStyle.
+  Color and bgColor from config are respected; defaults to theme accent if not set.
+  All TextInspector font and spacing properties apply via text.njk.
+#}
+{%- if _articleCtx and _articleCtx.tag -%}
+{%- set _fgColor = b.config.color if b.config.color else "var(--color-accent)" -%}
+{%- set _bgColor = b.config.bgColor if b.config.bgColor else "color-mix(in srgb, " + _fgColor + " 10%, transparent)" -%}
+{%- set _badgeStyle = "display:inline-block;padding:2px 8px;border-radius:4px;color:" + _fgColor + ";background:" + _bgColor + ";" -%}
+{%- set b = b | merge({config: b.config | merge({
+  content: _articleCtx.tag,
+  tag: "span",
+  color: null,
+  customStyle: _badgeStyle + (b.config.customStyle if b.config.customStyle else "")
+})}) -%}
+{%- include "partials/blocks/text.njk" -%}
+{%- endif -%}
+

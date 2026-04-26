@@ -1,7 +1,7 @@
 {%- set cc = b.config -%}
 
 {%- set tag = "p" -%}
-{%- if cc.tag === "h1" or cc.tag === "h2" or cc.tag === "h3" or cc.tag === "h4" or cc.tag === "span" or cc.tag === "code" -%}
+{%- if cc.tag === "h1" or cc.tag === "h2" or cc.tag === "h3" or cc.tag === "h4" or cc.tag === "span" or cc.tag === "code" or cc.tag === "time" -%}
   {%- set tag = cc.tag -%}
 {%- endif -%}
 

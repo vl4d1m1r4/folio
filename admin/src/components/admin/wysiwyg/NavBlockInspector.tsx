@@ -261,7 +261,8 @@ export function NavBlockInspector({
           />
           {socialSnapshot.length === 0 && (
             <p className="text-xs text-(--color-muted)">
-              No social links configured. Add them in Settings → Footer & Social.
+              No social links configured. Add them in Settings → Footer &
+              Social.
             </p>
           )}
         </div>

@@ -1,0 +1,9 @@
+{#
+  article-title.njk — sets content to _articleCtx.title (as a link) then delegates to text.njk.
+  All TextInspector properties (font, size, weight, spacing, colour, etc.) apply via text.njk.
+#}
+{%- if _articleCtx -%}
+{%- set _titleContent %}<a href="/{{ lang }}/articles/{{ _articleCtx.slug }}.html" style="color:inherit;text-decoration:none;">{{ _articleCtx.title }}</a>{%- endset -%}
+{%- set b = b | merge({config: b.config | merge({content: _titleContent, tag: b.config.tag if b.config.tag else "h3"})}) -%}
+{%- include "partials/blocks/text.njk" -%}
+{%- endif -%}

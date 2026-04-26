@@ -1,0 +1,8 @@
+{#
+  article-date.njk — sets content to the localised publish date then delegates to text.njk.
+  Uses tag "time" so text.njk emits a <time> element. All TextInspector properties apply.
+#}
+{%- if _articleCtx -%}
+{%- set b = b | merge({config: b.config | merge({content: _articleCtx.published_at | localizedDate(lang), tag: "time"})}) -%}
+{%- include "partials/blocks/text.njk" -%}
+{%- endif -%}

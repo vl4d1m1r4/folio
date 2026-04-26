@@ -99,6 +99,13 @@
       {%- elif child.type === "single-nav-item" %}{%- include "partials/blocks/single-nav-item.njk" %}
       {%- elif child.type === "social-links" %}{%- include "partials/blocks/social-links.njk" %}
       {%- elif child.type === "single-social-link" %}{%- include "partials/blocks/single-social-link.njk" %}
+      {%- elif child.type === "article-grid" %}{%- include "partials/blocks/article-grid.njk" %}
+      {%- elif child.type === "article-card" %}{%- include "partials/blocks/article-card.njk" %}
+      {%- elif child.type === "article-image" %}{%- include "partials/blocks/article-image.njk" %}
+      {%- elif child.type === "article-title" %}{%- include "partials/blocks/article-title.njk" %}
+      {%- elif child.type === "article-excerpt" %}{%- include "partials/blocks/article-excerpt.njk" %}
+      {%- elif child.type === "article-date" %}{%- include "partials/blocks/article-date.njk" %}
+      {%- elif child.type === "article-tag" %}{%- include "partials/blocks/article-tag.njk" %}
       {%- endif %}
     {%- endif %}
   {%- endfor %}

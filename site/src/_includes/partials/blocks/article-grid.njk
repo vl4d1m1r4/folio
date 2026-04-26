@@ -1,0 +1,54 @@
+{#
+  article-grid.njk
+  b.children contains one article-card block (type === "article-card") used as the card template.
+  _articleCtx is set for each article iteration; nested includes inherit scope.
+#}
+{%- set _gc = b.config -%}
+{%- set _gSource = _gc.source if _gc.source else "latest" -%}
+{%- set _gMax = _gc.max_count if _gc.max_count else 6 -%}
+{%- set _gCols = _gc.grid_cols if _gc.grid_cols else 3 -%}
+{%- set _gGap = _gc.gap if _gc.gap else 6 -%}
+{%- set _gPt = _gc.padding_top if _gc.padding_top is not none else 10 -%}
+{%- set _gPb = _gc.padding_bottom if _gc.padding_bottom is not none else 10 -%}
+{%- set _gShowViewAll = _gc.show_view_all if _gc.show_view_all is not none else true -%}
+{%- set _gTagFilter = _gc.tag_filter if _gc.tag_filter else "" -%}
+
+{# Build the article list based on source #}
+{%- set _allArticles = articles.byLang[lang] if articles.byLang and articles.byLang[lang] else [] -%}
+{%- if _gSource === "featured" -%}
+  {%- set _gridArticles = _allArticles | selectattr("is_featured") | list -%}
+{%- elif _gSource === "tag" and _gTagFilter -%}
+  {%- set _gridArticles = _allArticles | selectattr("tag", "equalto", _gTagFilter) | list -%}
+{%- else -%}
+  {%- set _gridArticles = _allArticles -%}
+{%- endif -%}
+{%- set _gridArticles = _gridArticles | limit(_gMax) -%}
+
+{# Find the article-card child that defines the card layout #}
+{%- set _cardTpl = null -%}
+{%- for _child in b.children | sort(attribute="order") -%}
+  {%- if _child.type === "article-card" -%}
+    {%- set _cardTpl = _child -%}
+  {%- endif -%}
+{%- endfor -%}
+
+<section class="pt-{{ _gPt }} pb-{{ _gPb }}">
+  <div class="max-w-5xl mx-auto px-6">
+    {%- if _gShowViewAll and _gridArticles | length -%}
+    <div class="flex justify-end mb-{{ _gGap }}">
+      <a href="/{{ lang }}/articles/" class="text-sm" style="color:var(--color-accent);">View all →</a>
+    </div>
+    {%- endif -%}
+    <div class="grid grid-cols-1 md:grid-cols-{{ _gCols }} gap-{{ _gGap }}">
+      {%- for _article in _gridArticles -%}
+        {%- set _articleCtx = _article -%}
+        {%- if _cardTpl -%}
+          {%- set b = _cardTpl -%}
+          {%- include "partials/blocks/article-card.njk" -%}
+        {%- endif -%}
+      {%- else -%}
+        <p class="text-sm col-span-{{ _gCols }}" style="color:var(--color-muted);">No articles found.</p>
+      {%- endfor -%}
+    </div>
+  </div>
+</section>

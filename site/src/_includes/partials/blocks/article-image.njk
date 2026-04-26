@@ -1,0 +1,13 @@
+{#
+  article-image.njk — sets src/alt/linkUrl/aspectRatio from _articleCtx then delegates to image.njk.
+  All image block properties (objectFit, borderRadius, spacing, etc.) apply via image.njk.
+#}
+{%- if _articleCtx and _articleCtx.cover_image_path -%}
+{%- set b = b | merge({config: b.config | merge({
+  src: "/uploads/" + _articleCtx.cover_image_path,
+  alt: _articleCtx.title,
+  linkUrl: "/" + lang + "/articles/" + _articleCtx.slug + ".html",
+  aspectRatio: b.config.aspectRatio if b.config.aspectRatio else "16/9"
+})}) -%}
+{%- include "partials/blocks/image.njk" -%}
+{%- endif -%}

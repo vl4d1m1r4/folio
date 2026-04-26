@@ -221,7 +221,14 @@ export type BlockType =
   | "social-links"
   | "single-social-link"
   | "preset-nav"
-  | "preset-footer";
+  | "preset-footer"
+  | "article-grid"
+  | "article-card"
+  | "article-image"
+  | "article-title"
+  | "article-excerpt"
+  | "article-date"
+  | "article-tag";
 
 export interface HomeBlock {
   id: string;

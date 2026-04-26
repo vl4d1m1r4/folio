@@ -17,7 +17,8 @@
 
 {# Image classes #}
 {%- set _imgCls = ["w-full", "block", _fitCls] -%}
-{%- if _br -%}{%- set _imgCls = (_imgCls.push("rounded-[" + _br + "px]"), _imgCls) -%}{%- endif -%}
+{%- if cc.aspectRatio -%}{%- set _imgCls = ["w-full", "h-full", "block", _fitCls] -%}{%- endif -%}
+{%- if _br and not cc.aspectRatio -%}{%- set _imgCls = (_imgCls.push("rounded-[" + _br + "px]"), _imgCls) -%}{%- endif -%}
 
 {# Wrapper classes — width + spacing #}
 {%- set _wCls = [_widthCls] -%}
@@ -39,10 +40,24 @@
 {%- else -%}{%- set _wCls = (_wCls.push("mr-" + _mr), _wCls) -%}{%- endif -%}
 
 <div class="{{ _wCls | join(' ') }}">
+  {%- if cc.aspectRatio -%}
+  <div style="aspect-ratio:{{ cc.aspectRatio }};overflow:hidden;border-radius:{{ _br }}px;">
+    {%- if cc.linkUrl -%}<a href="{{ cc.linkUrl }}" tabindex="-1" aria-hidden="true">{%- endif -%}
+    <img{% if cc.elementId %} id="{{ cc.elementId }}"{% endif %}
+         src="{{ cc.src }}"
+         alt="{{ cc.alt if cc.alt else '' }}"
+         loading="lazy"
+         class="{{ _imgCls | join(' ') }}"{% if cc.customStyle %} style="{{ cc.customStyle }}"{% endif %} />
+    {%- if cc.linkUrl -%}</a>{%- endif -%}
+  </div>
+  {%- else -%}
+  {%- if cc.linkUrl -%}<a href="{{ cc.linkUrl }}" tabindex="-1" aria-hidden="true">{%- endif -%}
   <img{% if cc.elementId %} id="{{ cc.elementId }}"{% endif %}
        src="{{ cc.src }}"
        alt="{{ cc.alt if cc.alt else '' }}"
        class="{{ _imgCls | join(' ') }}"{% if cc.customStyle %} style="{{ cc.customStyle }}"{% endif %} />
+  {%- if cc.linkUrl -%}</a>{%- endif -%}
+  {%- endif -%}
 </div>
 
 {%- endif -%}

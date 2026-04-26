@@ -2,7 +2,10 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
-import { useState, useEffect } from "react";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-color";
+import { Highlight } from "@tiptap/extension-highlight";
+import { useState, useEffect, useRef } from "react";
 import { MediaPickerModal } from "./MediaPickerModal";
 
 interface Props {
@@ -44,6 +47,8 @@ export function RichTextEditor({ value, onChange }: Props) {
   const [linkUrl, setLinkUrl] = useState("");
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const colorInputRef = useRef<HTMLInputElement>(null);
+  const highlightInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -53,6 +58,9 @@ export function RichTextEditor({ value, onChange }: Props) {
         openOnClick: false,
         HTMLAttributes: { class: "text-blue-600 underline" },
       }),
+      TextStyle,
+      Color,
+      Highlight.configure({ multicolor: true }),
     ],
     content: value,
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
@@ -200,6 +208,73 @@ export function RichTextEditor({ value, onChange }: Props) {
           title="Redo"
         >
           ↪
+        </ToolbarButton>
+        <span className="w-px bg-(--color-border) mx-1 self-stretch" />
+        {/* Text color */}
+        <label
+          title="Text color"
+          className="relative flex items-center cursor-pointer px-2 py-1 rounded text-sm hover:bg-(--color-bg) transition-colors"
+        >
+          <span
+            className="font-bold"
+            style={{
+              color: editor.getAttributes("textStyle").color ?? "currentColor",
+            }}
+          >
+            A
+          </span>
+          <span
+            className="block w-4 h-1 rounded-full mt-0.5 ml-0.5"
+            style={{
+              backgroundColor:
+                editor.getAttributes("textStyle").color ?? "#000000",
+            }}
+          />
+          <input
+            ref={colorInputRef}
+            type="color"
+            className="absolute opacity-0 w-0 h-0"
+            value={editor.getAttributes("textStyle").color ?? "#000000"}
+            onChange={(e) =>
+              editor.chain().focus().setColor(e.target.value).run()
+            }
+          />
+        </label>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().unsetColor().run()}
+          title="Remove text color"
+        >
+          A✕
+        </ToolbarButton>
+        {/* Highlight / background color */}
+        <label
+          title="Highlight color"
+          className="relative flex items-center cursor-pointer px-2 py-1 rounded text-sm hover:bg-(--color-bg) transition-colors"
+          style={{
+            backgroundColor:
+              editor.getAttributes("highlight").color ?? undefined,
+          }}
+        >
+          <span className="font-bold">H</span>
+          <input
+            ref={highlightInputRef}
+            type="color"
+            className="absolute opacity-0 w-0 h-0"
+            value={editor.getAttributes("highlight").color ?? "#ffff00"}
+            onChange={(e) =>
+              editor
+                .chain()
+                .focus()
+                .setHighlight({ color: e.target.value })
+                .run()
+            }
+          />
+        </label>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().unsetHighlight().run()}
+          title="Remove highlight"
+        >
+          H✕
         </ToolbarButton>
       </div>
 

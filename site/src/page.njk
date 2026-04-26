@@ -45,6 +45,10 @@ permalink: "/{{ item.lang.code }}/{{ item.page.slug }}/index.html"
         {% include "partials/blocks/image.njk" %}
       {% elif block.type === "button" %}
         {% include "partials/blocks/button.njk" %}
+      {% elif block.type === "article-grid" %}
+        {% include "partials/blocks/article-grid.njk" %}
+      {% elif block.type === "article-card" %}
+        {% include "partials/blocks/article-card.njk" %}
       {% endif %}
     {% endif %}
   {% endfor %}

@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type {
   BlockType,
   HomeBlock,
@@ -23,6 +23,7 @@ interface LeftSidebarProps {
   onSelect: (id: string) => void;
   onRemoveBlock: (id: string) => void;
   onToggleVisibility: (id: string) => void;
+  onReorder: (fromId: string, toId: string, before: boolean) => void;
   onStartDrag: (type: BlockType) => void;
   onEndDrag: () => void;
   /** Called when user clicks a palette tile (non-drag add) */
@@ -59,7 +60,7 @@ const PALETTE: {
       "image-text",
       "testimonials",
       "newsletter",
-    ],
+    ] as BlockType[],
     icons: {
       hero: <HeroIcon />,
       "featured-articles": <ArticlesIcon />,
@@ -69,6 +70,14 @@ const PALETTE: {
       "image-text": <ImageTextIcon />,
       testimonials: <TestimonialsIcon />,
       newsletter: <NewsletterIcon />,
+    },
+  },
+  {
+    label: "Articles",
+    types: ["article-grid", "article-card"] as BlockType[],
+    icons: {
+      "article-grid": <ArticleGridIcon />,
+      "article-card": <ArticleCardIcon />,
     },
   },
   {
@@ -113,6 +122,7 @@ export function LeftSidebar({
   onSelect,
   onRemoveBlock,
   onToggleVisibility,
+  onReorder,
   onStartDrag,
   onEndDrag,
   onAddBlock,
@@ -198,6 +208,7 @@ export function LeftSidebar({
             onSelect={onSelect}
             onRemove={onRemoveBlock}
             onToggleVisibility={onToggleVisibility}
+            onReorder={onReorder}
             depth={0}
           />
         )}
@@ -235,7 +246,7 @@ function AddTab({
                 onDragStart={() => onStartDrag(type)}
                 onDragEnd={onEndDrag}
                 onClick={() => onAddBlock(type)}
-                className="flex flex-col items-center gap-1.5 p-2.5 border border-(--color-border) rounded cursor-grab hover:border-(--color-accent) hover:bg-blue-50 transition-colors select-none"
+                className="flex flex-col items-center gap-1.5 p-2.5 border border-(--color-border) rounded cursor-grab hover:border-(--color-accent) hover:bg-(--color-bg-surface) transition-colors select-none"
                 title={`Drag or click to add ${BLOCK_LABELS[type]}`}
               >
                 <span className="text-(--color-muted)">
@@ -261,6 +272,7 @@ function LayersTab({
   onSelect,
   onRemove,
   onToggleVisibility,
+  onReorder,
   depth,
 }: {
   blocks: AnyBlock[];
@@ -268,6 +280,7 @@ function LayersTab({
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
   onToggleVisibility: (id: string) => void;
+  onReorder: (fromId: string, toId: string, before: boolean) => void;
   depth: number;
 }) {
   const sorted = [...blocks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
@@ -295,6 +308,7 @@ function LayersTab({
           onSelect={onSelect}
           onRemove={onRemove}
           onToggleVisibility={onToggleVisibility}
+          onReorder={onReorder}
         />
       ))}
     </div>
@@ -309,6 +323,7 @@ function LayerRow({
   onSelect,
   onRemove,
   onToggleVisibility,
+  onReorder,
 }: {
   block: AnyBlock;
   depth: number;
@@ -317,72 +332,128 @@ function LayerRow({
   onSelect: (id: string) => void;
   onRemove: (id: string) => void;
   onToggleVisibility: (id: string) => void;
+  onReorder: (fromId: string, toId: string, before: boolean) => void;
 }) {
+  const [dropPos, setDropPos] = useState<"before" | "after" | null>(null);
+
   const hasChildren =
-    block.type === "container" && (block.children?.length ?? 0) > 0;
+    (block.type === "container" ||
+      block.type === "article-grid" ||
+      block.type === "article-card") &&
+    (block.children?.length ?? 0) > 0;
 
   return (
     <div>
-      <div
-        className={`flex items-center group h-8 pr-1 cursor-pointer transition-colors ${
-          isSelected
-            ? "bg-(--color-accent) text-white"
-            : "hover:bg-(--color-bg-surface)"
-        }`}
-        style={{ paddingLeft: `${8 + depth * 16}px` }}
-        onClick={() => onSelect(block.id)}
-      >
-        {/* Type icon */}
-        <span
-          className={`shrink-0 mr-1.5 ${isSelected ? "text-white" : "text-(--color-muted)"}`}
-        >
-          <BlockTypeIcon type={block.type as BlockType} size={12} />
-        </span>
+      <div className="relative">
+        {/* Drop indicator – before */}
+        {dropPos === "before" && (
+          <div className="absolute top-0 inset-x-0 h-0.5 bg-(--color-accent) z-10 pointer-events-none" />
+        )}
 
-        {/* Label */}
-        <span className="flex-1 text-xs truncate font-medium">
-          {BLOCK_LABELS[block.type as BlockType] ?? block.type}
-        </span>
-
-        {/* Visibility toggle */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleVisibility(block.id);
-          }}
-          title={block.visible ? "Hide" : "Show"}
-          className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-opacity ${
+        <div
+          draggable
+          className={`flex items-center group h-8 pr-1 cursor-pointer transition-colors ${
             isSelected
-              ? "text-white/80 hover:text-white"
-              : "text-(--color-muted) hover:text-(--color-text)"
-          } ${!block.visible ? "!opacity-100" : ""}`}
-        >
-          {block.visible ? <EyeIcon size={12} /> : <EyeOffIcon size={12} />}
-        </button>
-
-        {/* Delete */}
-        <button
-          type="button"
-          onClick={(e) => {
+              ? "bg-(--color-accent) text-white"
+              : "hover:bg-(--color-bg-surface)"
+          }`}
+          style={{ paddingLeft: `${8 + depth * 16}px` }}
+          onClick={() => onSelect(block.id)}
+          onDragStart={(e) => {
+            e.dataTransfer.setData("text/plain", block.id);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
             e.stopPropagation();
-            if (
-              confirm(
-                `Remove "${BLOCK_LABELS[block.type as BlockType] ?? block.type}"?`,
-              )
-            ) {
-              onRemove(block.id);
+            e.dataTransfer.dropEffect = "move";
+            const rect = e.currentTarget.getBoundingClientRect();
+            setDropPos(e.clientY < rect.top + rect.height / 2 ? "before" : "after");
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setDropPos(null);
             }
           }}
-          title="Remove"
-          className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-opacity ${
-            isSelected
-              ? "text-white/80 hover:text-white"
-              : "text-(--color-muted) hover:text-red-500"
-          }`}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const fromId = e.dataTransfer.getData("text/plain");
+            if (fromId && fromId !== block.id) {
+              onReorder(fromId, block.id, dropPos === "before");
+            }
+            setDropPos(null);
+          }}
+          onDragEnd={() => setDropPos(null)}
         >
-          <TrashIcon size={11} />
-        </button>
+          {/* Drag grip */}
+          <span
+            className={`opacity-0 group-hover:opacity-50 shrink-0 mr-1 cursor-grab ${
+              isSelected ? "text-white" : "text-(--color-muted)"
+            }`}
+          >
+            <GripIcon size={10} />
+          </span>
+
+          {/* Type icon */}
+          <span
+            className={`shrink-0 mr-1.5 ${
+              isSelected ? "text-white" : "text-(--color-muted)"
+            }`}
+          >
+            <BlockTypeIcon type={block.type as BlockType} size={12} />
+          </span>
+
+          {/* Label */}
+          <span className="flex-1 text-xs truncate font-medium">
+            {BLOCK_LABELS[block.type as BlockType] ?? block.type}
+          </span>
+
+          {/* Visibility toggle */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleVisibility(block.id);
+            }}
+            title={block.visible ? "Hide" : "Show"}
+            className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-opacity ${
+              isSelected
+                ? "text-white/80 hover:text-white"
+                : "text-(--color-muted) hover:text-(--color-text)"
+            } ${!block.visible ? "!opacity-100" : ""}`}
+          >
+            {block.visible ? <EyeIcon size={12} /> : <EyeOffIcon size={12} />}
+          </button>
+
+          {/* Delete */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (
+                confirm(
+                  `Remove "${BLOCK_LABELS[block.type as BlockType] ?? block.type}"?`,
+                )
+              ) {
+                onRemove(block.id);
+              }
+            }}
+            title="Remove"
+            className={`opacity-0 group-hover:opacity-100 p-1 rounded transition-opacity ${
+              isSelected
+                ? "text-white/80 hover:text-white"
+                : "text-(--color-muted) hover:text-red-500"
+            }`}
+          >
+            <TrashIcon size={11} />
+          </button>
+        </div>
+
+        {/* Drop indicator – after */}
+        {dropPos === "after" && (
+          <div className="absolute bottom-0 inset-x-0 h-0.5 bg-(--color-accent) z-10 pointer-events-none" />
+        )}
       </div>
 
       {/* Nested children */}
@@ -393,6 +464,7 @@ function LayerRow({
           onSelect={onSelect}
           onRemove={onRemove}
           onToggleVisibility={onToggleVisibility}
+          onReorder={onReorder}
           depth={depth + 1}
         />
       )}
@@ -430,6 +502,20 @@ function BlockTypeIcon({
       return <TestimonialsIcon size={size} />;
     case "newsletter":
       return <NewsletterIcon size={size} />;
+    case "article-grid":
+      return <ArticleGridIcon size={size} />;
+    case "article-card":
+      return <ArticleCardIcon size={size} />;
+    case "article-image":
+      return <ArticleImageIcon size={size} />;
+    case "article-title":
+      return <ArticleTitleIcon size={size} />;
+    case "article-excerpt":
+      return <ArticleExcerptIcon size={size} />;
+    case "article-date":
+      return <ArticleDateIcon size={size} />;
+    case "article-tag":
+      return <ArticleTagIcon size={size} />;
     default:
       return <ArticlesIcon size={size} />;
   }
@@ -705,6 +791,134 @@ function PresetFooterIcon() {
   );
 }
 
+function ArticleGridIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="1" y="1" width="6" height="6" rx="1" />
+      <rect x="9" y="1" width="6" height="6" rx="1" />
+      <rect x="1" y="9" width="6" height="6" rx="1" />
+      <rect x="9" y="9" width="6" height="6" rx="1" />
+    </svg>
+  );
+}
+
+function ArticleCardIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="1" y="1" width="14" height="14" rx="2" />
+      <rect
+        x="1"
+        y="1"
+        width="14"
+        height="6"
+        rx="2"
+        fill="currentColor"
+        fillOpacity="0.15"
+      />
+      <path d="M3 10h6M3 12.5h4" />
+    </svg>
+  );
+}
+
+function ArticleImageIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="1" y="2" width="14" height="10" rx="1" />
+      <path d="M1 9l4-3 3 2.5 2-1.5 5 4" strokeOpacity="0.7" />
+      <circle cx="5" cy="5.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function ArticleTitleIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <path d="M2 4h12M2 4v8" />
+      <path d="M5 8h6" strokeOpacity="0.5" />
+      <path d="M5 11h4" strokeOpacity="0.3" />
+    </svg>
+  );
+}
+
+function ArticleExcerptIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <path d="M2 4h12" />
+      <path d="M2 7h12" />
+      <path d="M2 10h8" />
+    </svg>
+  );
+}
+
+function ArticleDateIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="1" y="2" width="14" height="13" rx="1" />
+      <path d="M1 6h14" />
+      <path d="M5 1v3M11 1v3" />
+      <path d="M4 9h2M7 9h2M10 9h2M4 12h2M7 12h2" strokeOpacity="0.7" />
+    </svg>
+  );
+}
+
+function ArticleTagIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="1" y="4" width="9" height="8" rx="2" />
+      <path d="M10 6l4 2-4 2" />
+    </svg>
+  );
+}
+
 function EyeIcon({ size = 14 }: { size?: number }) {
   return (
     <svg
@@ -734,6 +948,24 @@ function EyeOffIcon({ size = 14 }: { size?: number }) {
     </svg>
   );
 }
+function GripIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 10 14"
+      width={size}
+      height={size}
+      fill="currentColor"
+    >
+      <circle cx="3" cy="2" r="1" />
+      <circle cx="7" cy="2" r="1" />
+      <circle cx="3" cy="6" r="1" />
+      <circle cx="7" cy="6" r="1" />
+      <circle cx="3" cy="10" r="1" />
+      <circle cx="7" cy="10" r="1" />
+    </svg>
+  );
+}
+
 function TrashIcon({ size = 12 }: { size?: number }) {
   return (
     <svg

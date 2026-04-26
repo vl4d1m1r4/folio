@@ -9,6 +9,7 @@ interface ContainerInspectorProps {
 export function ContainerInspector({
   config,
   onConfigChange,
+  themeColors,
 }: ContainerInspectorProps) {
   return (
     <div>
@@ -18,7 +19,11 @@ export function ContainerInspector({
         </span>
       </div>
       <div className="p-3 overflow-y-auto">
-        <ContainerBlockEditor config={config} setConfig={onConfigChange} />
+        <ContainerBlockEditor
+          config={config}
+          setConfig={onConfigChange}
+          themeColors={themeColors}
+        />
       </div>
     </div>
   );

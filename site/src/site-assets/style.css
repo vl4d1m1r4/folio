@@ -94,10 +94,16 @@ img {
     margin: 1rem 0;
 }
 
-.prose ul,
+.prose ul {
+    padding-left: 1.5rem;
+    margin: 1rem 0;
+    list-style-type: disc;
+}
+
 .prose ol {
     padding-left: 1.5rem;
     margin: 1rem 0;
+    list-style-type: decimal;
 }
 
 .prose li {

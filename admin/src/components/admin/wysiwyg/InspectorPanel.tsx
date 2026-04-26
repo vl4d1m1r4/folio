@@ -1,9 +1,18 @@
-import type { HomeBlock, PageBlock, NavLink, SocialLink } from "../../../api/types";
+import type {
+  HomeBlock,
+  PageBlock,
+  NavLink,
+  SocialLink,
+  BlockType,
+} from "../../../api/types";
 import { ContainerInspector } from "./ContainerInspector";
 import { TextInspector } from "./TextInspector";
 import { ImageInspector } from "./ImageInspector";
 import { ButtonInspector } from "./ButtonInspector";
 import { TemplateInspector } from "./TemplateInspector";
+import { ArticlesInspector } from "./ArticlesInspector";
+import { ArticleFieldInspector } from "./ArticleFieldInspector";
+import { ArticleCardInspector } from "./ArticleCardInspector";
 
 interface InspectorPanelProps {
   block: HomeBlock | PageBlock | null;
@@ -15,6 +24,11 @@ interface InspectorPanelProps {
   navSnapshot?: NavLink[];
   footerSnapshot?: NavLink[];
   socialSnapshot?: SocialLink[];
+  onAddChild?: (
+    parentId: string,
+    type: BlockType,
+    opts?: { prepend?: boolean; keepParentSelected?: boolean },
+  ) => void;
 }
 
 export function InspectorPanel({
@@ -27,6 +41,7 @@ export function InspectorPanel({
   navSnapshot,
   footerSnapshot,
   socialSnapshot,
+  onAddChild,
 }: InspectorPanelProps) {
   if (!block) {
     return (
@@ -103,14 +118,82 @@ export function InspectorPanel({
         )}
 
         {block.type === "image" && (
-          <ImageInspector config={block.config} onConfigChange={cfgChange} themeColors={themeColors} />
+          <ImageInspector
+            config={block.config}
+            onConfigChange={cfgChange}
+            themeColors={themeColors}
+          />
         )}
 
         {block.type === "button" && (
-          <ButtonInspector config={block.config} onConfigChange={cfgChange} themeColors={themeColors} />
+          <ButtonInspector
+            config={block.config}
+            onConfigChange={cfgChange}
+            themeColors={themeColors}
+          />
         )}
 
-        {!["container", "text", "image", "button"].includes(block.type) && (
+        {block.type === "article-grid" && (
+          <ArticlesInspector
+            config={block.config}
+            onConfigChange={cfgChange}
+            themeColors={themeColors}
+          />
+        )}
+
+        {block.type === "article-card" && (
+          <ArticleCardInspector
+            blockId={block.id}
+            config={block.config}
+            children={block.children as Array<{ type: string }> | undefined}
+            onConfigChange={cfgChange}
+            themeColors={themeColors}
+            onAddField={
+              onAddChild
+                ? (type: BlockType) =>
+                    onAddChild(block.id, type, { keepParentSelected: true })
+                : undefined
+            }
+          />
+        )}
+
+        {(
+          [
+            "article-image",
+            "article-title",
+            "article-excerpt",
+            "article-date",
+            "article-tag",
+          ] as string[]
+        ).includes(block.type) && (
+          <ArticleFieldInspector
+            type={
+              block.type as
+                | "article-image"
+                | "article-title"
+                | "article-excerpt"
+                | "article-date"
+                | "article-tag"
+            }
+            config={block.config}
+            onConfigChange={cfgChange}
+            themeColors={themeColors}
+          />
+        )}
+
+        {![
+          "container",
+          "text",
+          "image",
+          "button",
+          "article-grid",
+          "article-card",
+          "article-image",
+          "article-title",
+          "article-excerpt",
+          "article-date",
+          "article-tag",
+        ].includes(block.type) && (
           <TemplateInspector
             block={block}
             mode={mode}

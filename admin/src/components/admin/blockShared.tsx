@@ -13,6 +13,7 @@ import {
   useCallback,
 } from "react";
 import { createPortal } from "react-dom";
+import { ColorRow } from "./wysiwyg/InspectorShared";
 import type { BlockType } from "../../api/types";
 
 // ── Block labels ──────────────────────────────────────────────────────────────
@@ -37,6 +38,13 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   "single-social-link": "Social Link",
   "preset-nav": "Header Preset",
   "preset-footer": "Footer Preset",
+  "article-grid": "Article Grid",
+  "article-card": "Article Card",
+  "article-image": "Article Image",
+  "article-title": "Article Title",
+  "article-excerpt": "Article Excerpt",
+  "article-date": "Article Date",
+  "article-tag": "Article Tag",
 };
 
 // ── Default configs ───────────────────────────────────────────────────────────
@@ -181,6 +189,141 @@ export function applySingleSocialLinkDefaults(
   config.link_color = null;
 }
 
+export function applyArticleGridDefaults(
+  config: Record<string, unknown>,
+): void {
+  config.source = "latest"; // "latest" | "featured" | "tag"
+  config.tag_filter = ""; // used when source="tag"
+  config.max_count = 6;
+  config.grid_cols = 3;
+  config.gap = 6;
+  config.show_view_all = true;
+  config.padding_top = 10;
+  config.padding_bottom = 10;
+}
+
+export function applyArticleCardDefaults(
+  config: Record<string, unknown>,
+): void {
+  // Layout — same keys as ContainerInspector (camelCase)
+  config.direction = "col";
+  config.wrap = "nowrap";
+  config.justify = "start";
+  config.align = "start";
+  config.width = "w-full";
+  config.height = "h-auto";
+  config.gapX = 0;
+  config.gapY = 2;
+  config.paddingTop = 2;
+  config.paddingBottom = 2;
+  config.paddingLeft = 2;
+  config.paddingRight = 2;
+  config.marginTop = 0;
+  config.marginBottom = 0;
+  config.marginLeft = 0;
+  config.marginRight = 0;
+  config.backgroundColor = null;
+  config.borderRadius = 8;
+  config.textColor = null;
+  config.customStyle = null;
+  config.elementId = null;
+  // Standalone article binding — slug of the article to show when not inside a grid
+  config.articleSlug = null;
+}
+
+export function applyArticleImageDefaults(
+  config: Record<string, unknown>,
+): void {
+  // Extends image block config — same camelCase keys as ImageInspector
+  config.aspectRatio = "16/9"; // "16/9" | "4/3" | "3/2" | "1/1"
+  config.objectFit = "cover";
+  config.borderRadius = 0;
+  config.paddingTop = 0;
+  config.paddingBottom = 0;
+  config.paddingLeft = 0;
+  config.paddingRight = 0;
+  config.marginTop = 0;
+  config.marginBottom = 0;
+  config.marginLeft = 0;
+  config.marginRight = 0;
+}
+
+export function applyArticleTitleDefaults(
+  config: Record<string, unknown>,
+): void {
+  // Extends text block config — same camelCase keys as TextInspector
+  config.tag = "h3";
+  config.fontWeight = "bold";
+  config.fontSize = null;
+  config.textAlign = "left";
+  config.color = null; // null = var(--color-text)
+  config.paddingTop = 0;
+  config.paddingBottom = 0;
+  config.paddingLeft = 0;
+  config.paddingRight = 0;
+  config.marginTop = 0;
+  config.marginBottom = 0;
+  config.marginLeft = 0;
+  config.marginRight = 0;
+}
+
+export function applyArticleExcerptDefaults(
+  config: Record<string, unknown>,
+): void {
+  // Extends text block config + lineClamp
+  config.tag = "p";
+  config.fontWeight = "normal";
+  config.fontSize = null;
+  config.textAlign = "left";
+  config.color = null; // null = var(--color-muted)
+  config.lineClamp = 3; // 0 = no clamp
+  config.paddingTop = 0;
+  config.paddingBottom = 0;
+  config.paddingLeft = 0;
+  config.paddingRight = 0;
+  config.marginTop = 0;
+  config.marginBottom = 0;
+  config.marginLeft = 0;
+  config.marginRight = 0;
+}
+
+export function applyArticleDateDefaults(
+  config: Record<string, unknown>,
+): void {
+  // Extends text block config
+  config.tag = "p";
+  config.fontWeight = "normal";
+  config.fontSize = 12;
+  config.textAlign = "left";
+  config.color = null; // null = var(--color-muted)
+  config.paddingTop = 0;
+  config.paddingBottom = 0;
+  config.paddingLeft = 0;
+  config.paddingRight = 0;
+  config.marginTop = 0;
+  config.marginBottom = 0;
+  config.marginLeft = 0;
+  config.marginRight = 0;
+}
+
+export function applyArticleTagDefaults(config: Record<string, unknown>): void {
+  // Extends text block config + tag display style
+  config.tag = "p";
+  config.fontWeight = "semibold";
+  config.fontSize = null;
+  config.textAlign = "left";
+  config.color = null; // null = var(--color-accent)
+  config.bgColor = null; // null = color-mix(accent 10%, transparent)
+  config.paddingTop = 0;
+  config.paddingBottom = 0;
+  config.paddingLeft = 0;
+  config.paddingRight = 0;
+  config.marginTop = 0;
+  config.marginBottom = 0;
+  config.marginLeft = 0;
+  config.marginRight = 0;
+}
+
 // ── Icon toggle button (used inside ContainerBlockEditor) ───────────────────
 
 function IconToggle({
@@ -215,9 +358,11 @@ function IconToggle({
 export function ContainerConfigPopover({
   config,
   setConfig,
+  themeColors,
 }: {
   config: Record<string, unknown>;
   setConfig: (key: string, value: unknown) => void;
+  themeColors?: Record<string, string>;
 }) {
   const [open, setOpen] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -311,7 +456,11 @@ export function ContainerConfigPopover({
               className="p-3 overflow-y-auto"
               style={{ maxHeight: pos.maxH - 48 }}
             >
-              <ContainerBlockEditor config={config} setConfig={setConfig} />
+              <ContainerBlockEditor
+                config={config}
+                setConfig={setConfig}
+                themeColors={themeColors}
+              />
             </div>
           </div>,
           document.body,
@@ -325,9 +474,11 @@ export function ContainerConfigPopover({
 export function ContainerBlockEditor({
   config: c,
   setConfig,
+  themeColors,
 }: {
   config: Record<string, unknown>;
   setConfig: (key: string, value: unknown) => void;
+  themeColors?: Record<string, string>;
 }) {
   // Stored as Tailwind integer unit OR "[Npx]" string; shown/entered as pixels.
   const toPx = (val: unknown, def: number): number => {
@@ -703,59 +854,13 @@ export function ContainerBlockEditor({
 
         {/* Color row */}
         <div>
-          <p className={subLabel}>Color</p>
-          <div className="flex items-center border border-(--color-border) rounded bg-(--color-bg) px-2 h-9 gap-2">
-            <div
-              className="relative w-5 h-5 rounded shrink-0 overflow-hidden"
-              style={{
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: (c.backgroundColor as string) || undefined,
-                backgroundImage: !c.backgroundColor
-                  ? "linear-gradient(45deg,#555 25%,transparent 25%),linear-gradient(-45deg,#555 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#555 75%),linear-gradient(-45deg,transparent 75%,#555 75%)"
-                  : undefined,
-                backgroundSize: "8px 8px",
-                backgroundPosition: "0 0,0 4px,4px -4px,-4px 0",
-              }}
-            >
-              <input
-                type="color"
-                value={(c.backgroundColor as string) ?? "#ffffff"}
-                onChange={(e) => setConfig("backgroundColor", e.target.value)}
-                className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
-              />
-            </div>
-            <input
-              type="text"
-              value={
-                c.backgroundColor
-                  ? (c.backgroundColor as string).toUpperCase()
-                  : ""
-              }
-              placeholder="None"
-              onChange={(e) => {
-                const v = e.target.value;
-                setConfig("backgroundColor", v === "" ? null : v);
-              }}
-              className="flex-1 min-w-0 bg-transparent border-none text-sm font-mono outline-none"
-            />
-            <button
-              type="button"
-              onClick={() => setConfig("backgroundColor", null)}
-              className="text-(--color-muted) hover:text-red-400 transition-colors shrink-0"
-              title="Remove background color"
-            >
-              <svg
-                viewBox="0 0 16 16"
-                width={14}
-                height={14}
-                stroke="currentColor"
-                strokeWidth="1.5"
-                fill="none"
-              >
-                <path d="M4 4l8 8m0-8l-8 8" />
-              </svg>
-            </button>
-          </div>
+          <ColorRow
+            label="Background / Fill"
+            value={(c.backgroundColor as string) ?? null}
+            placeholder="None"
+            onChange={(v) => setConfig("backgroundColor", v)}
+            themeColors={themeColors}
+          />
         </div>
 
         {/* Background image URL */}
@@ -838,65 +943,13 @@ export function ContainerBlockEditor({
         {/* Overlay colour (only shown when an image is set) */}
         {!!(c.backgroundImage as string) && (
           <div>
-            <p className={subLabel}>Overlay (tint / scrim)</p>
-            <div className="flex items-center border border-(--color-border) rounded bg-(--color-bg) px-2 h-9 gap-2">
-              <div
-                className="relative w-5 h-5 rounded shrink-0 overflow-hidden"
-                style={{
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  background: (c.backgroundOverlay as string) || undefined,
-                  backgroundImage: !c.backgroundOverlay
-                    ? "linear-gradient(45deg,#555 25%,transparent 25%),linear-gradient(-45deg,#555 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#555 75%),linear-gradient(-45deg,transparent 75%,#555 75%)"
-                    : undefined,
-                  backgroundSize: "8px 8px",
-                  backgroundPosition: "0 0,0 4px,4px -4px,-4px 0",
-                }}
-              >
-                <input
-                  type="color"
-                  value={
-                    c.backgroundOverlay
-                      ? (c.backgroundOverlay as string).slice(0, 7)
-                      : "#000000"
-                  }
-                  onChange={(e) => {
-                    const hex = e.target.value;
-                    const existing = (c.backgroundOverlay as string) ?? "";
-                    const alpha =
-                      existing.length === 9 ? existing.slice(7) : "80";
-                    setConfig("backgroundOverlay", hex + alpha);
-                  }}
-                  className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
-                />
-              </div>
-              <input
-                type="text"
-                value={(c.backgroundOverlay as string) ?? ""}
-                placeholder="None  e.g. #00000080"
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setConfig("backgroundOverlay", v === "" ? null : v);
-                }}
-                className="flex-1 min-w-0 bg-transparent border-none text-sm font-mono outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => setConfig("backgroundOverlay", null)}
-                className="text-(--color-muted) hover:text-red-400 transition-colors shrink-0"
-                title="Remove overlay"
-              >
-                <svg
-                  viewBox="0 0 16 16"
-                  width={14}
-                  height={14}
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  fill="none"
-                >
-                  <path d="M4 4l8 8m0-8l-8 8" />
-                </svg>
-              </button>
-            </div>
+            <ColorRow
+              label="Overlay (tint / scrim)"
+              value={(c.backgroundOverlay as string) ?? null}
+              placeholder="None  e.g. #00000080"
+              onChange={(v) => setConfig("backgroundOverlay", v)}
+              themeColors={themeColors}
+            />
             <p className="text-[10px] text-(--color-muted) mt-1">
               Use 8-digit hex for opacity, e.g. <code>#00000080</code> = 50%
               black
@@ -924,38 +977,13 @@ export function ContainerBlockEditor({
 
         {/* Text color */}
         <div>
-          <p className={subLabel}>Text Color</p>
-          <div className="flex items-center gap-2">
-            <div className="relative w-8 h-8 rounded border border-(--color-border) overflow-hidden shrink-0">
-              <input
-                type="color"
-                value={(c.textColor as string) || "#000000"}
-                onChange={(e) => setConfig("textColor", e.target.value)}
-                className="absolute opacity-0 inset-0 w-full h-full cursor-pointer"
-              />
-              <div
-                className="w-full h-full"
-                style={{ background: (c.textColor as string) || "transparent" }}
-              />
-            </div>
-            <input
-              type="text"
-              placeholder="#ffffff or inherit"
-              value={(c.textColor as string) ?? ""}
-              onChange={(e) => setConfig("textColor", e.target.value || null)}
-              className="flex-1 px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg) font-mono"
-            />
-            {!!(c.textColor as string) && (
-              <button
-                type="button"
-                onClick={() => setConfig("textColor", null)}
-                className="text-(--color-muted) hover:text-(--color-text) text-base leading-none shrink-0"
-                title="Clear"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          <ColorRow
+            label="Text Color"
+            value={(c.textColor as string) ?? null}
+            placeholder="Inherit"
+            onChange={(v) => setConfig("textColor", v)}
+            themeColors={themeColors}
+          />
         </div>
       </div>
 

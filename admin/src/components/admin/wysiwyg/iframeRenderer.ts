@@ -62,7 +62,7 @@ export function buildSrcdoc(
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     ${themeStyle}
-    body { margin: 0; padding: 0; font-family: var(--font-body, system-ui, sans-serif); color: var(--color-text, #111); }
+    body { margin: 0; padding: 0; font-family: var(--font-body, system-ui, sans-serif); color: var(--color-text, #111); background-color: var(--color-bg, #fff); }
     [data-wysiwyg-id] { position: relative; cursor: pointer; transition: outline 80ms; }
     [data-wysiwyg-id]:hover:not(.wysiwyg-selected) { outline: 1px dashed rgba(59,130,246,0.45); outline-offset: 1px; }
     .wysiwyg-selected { outline: 2px solid #3b82f6 !important; outline-offset: 1px; }
@@ -85,7 +85,8 @@ export function buildSrcdoc(
     .prose p { margin-bottom: .875em; line-height: 1.75; }
     .prose h1,.prose h2,.prose h3,.prose h4 { font-weight: 700; line-height: 1.25; margin-bottom: .5em; margin-top: 1em; }
     .prose h1 { font-size: 2em; } .prose h2 { font-size: 1.5em; } .prose h3 { font-size: 1.25em; }
-    .prose ul,.prose ol { padding-left: 1.5em; margin-bottom: .875em; }
+    .prose ul { padding-left: 1.5em; margin-bottom: .875em; list-style-type: disc; }
+    .prose ol { padding-left: 1.5em; margin-bottom: .875em; list-style-type: decimal; }
     .prose li { margin-bottom: .25em; }
     .prose blockquote { border-left: 4px solid #e5e7eb; padding-left: 1em; color: #6b7280; font-style: italic; margin: 1em 0; }
     .prose code { background: #f3f4f6; padding: .1em .3em; border-radius: 4px; font-size: .875em; }
@@ -115,6 +116,43 @@ export function renderBlocksHtml(
     .join("\n");
 }
 
+// ── Article grid mock data ────────────────────────────────────────────────────
+
+interface MockArticle {
+  title: string;
+  excerpt: string;
+  tag: string;
+  date: string;
+  cover: string;
+}
+
+const MOCK_ARTICLES: MockArticle[] = [
+  {
+    title: "Getting started with the new features",
+    excerpt:
+      "A quick walkthrough of all the new capabilities introduced in the latest release and how to make the most of them.",
+    tag: "Updates",
+    date: "Jun 12, 2025",
+    cover: "",
+  },
+  {
+    title: "Design tips for better readability",
+    excerpt:
+      "Typography and spacing choices that make a big difference to how readers engage with your content.",
+    tag: "Design",
+    date: "May 29, 2025",
+    cover: "",
+  },
+  {
+    title: "Behind the scenes: building in public",
+    excerpt:
+      "Why we chose to share our progress openly and what we've learned from the community along the way.",
+    tag: "Story",
+    date: "May 14, 2025",
+    cover: "",
+  },
+];
+
 // ── Block renderers ───────────────────────────────────────────────────────────
 
 function blockToHtml(
@@ -122,23 +160,46 @@ function blockToHtml(
   activeLang: string,
   mode: "home" | "page",
   navSnapshot: NavSnapshot = {},
+  articleCtx?: MockArticle,
 ): string {
   if (block.visible === false) return "";
   switch (block.type) {
     case "container":
-      return containerToHtml(block, activeLang, mode, navSnapshot);
+      return containerToHtml(block, activeLang, mode, navSnapshot, articleCtx);
     case "text":
       return textToHtml(block, activeLang, mode);
     case "image":
       return imageToHtml(block);
     case "button":
       return buttonToHtml(block);
+    case "rich-text":
+      return richTextToHtml(block, activeLang, mode);
     case "nav-links":
     case "subnav-links":
     case "single-nav-item":
     case "social-links":
     case "single-social-link":
       return navBlockHtml(block, navSnapshot);
+    case "article-grid":
+      return articleGridToHtml(block, activeLang, mode, navSnapshot);
+    case "article-card":
+      return articleCardToHtml(
+        block,
+        activeLang,
+        mode,
+        navSnapshot,
+        articleCtx,
+      );
+    case "article-image":
+      return articleImageHtml(block, articleCtx);
+    case "article-title":
+      return articleTitleHtml(block, articleCtx);
+    case "article-excerpt":
+      return articleExcerptHtml(block, articleCtx);
+    case "article-date":
+      return articleDateHtml(block, articleCtx);
+    case "article-tag":
+      return articleTagHtml(block, articleCtx);
     default:
       return templatePlaceholderHtml(block);
   }
@@ -151,6 +212,7 @@ function containerToHtml(
   activeLang: string,
   mode: "home" | "page",
   navSnapshot: NavSnapshot = {},
+  articleCtx?: MockArticle,
 ): string {
   const c = block.config;
   const baseCls = containerClassNames(c);
@@ -164,7 +226,7 @@ function containerToHtml(
   let inner = [...(block.children ?? [])]
     .filter((ch) => ch.visible !== false)
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((ch) => blockToHtml(ch, activeLang, mode, navSnapshot))
+    .map((ch) => blockToHtml(ch, activeLang, mode, navSnapshot, articleCtx))
     .join("\n");
 
   if (inner === "") {
@@ -190,6 +252,329 @@ ${label}
   }
 
   return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="container" class="${escAttr(cls)}"${styleAttr}>${label}${inner}</div>`;
+}
+
+// ── Article grid (canvas preview) ────────────────────────────────────────────
+
+function articleCardToHtml(
+  block: RenderBlock,
+  activeLang: string,
+  mode: "home" | "page",
+  navSnapshot: NavSnapshot,
+  articleCtx?: MockArticle,
+): string {
+  const c = block.config;
+  const id = escAttr(block.id);
+  // Standalone cards use the first mock article for preview
+  const ctx = articleCtx ?? MOCK_ARTICLES[0];
+  const baseCls = containerClassNames(c);
+  const extraCls = containerExtraClasses(c);
+  const cls = extraCls ? `${baseCls} ${extraCls}` : baseCls;
+  const label = `<span class="wysiwyg-label">⧫ Article Card</span>`;
+
+  const children = [...(block.children ?? [])]
+    .filter((ch) => ch.visible !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const inner = children.length
+    ? children
+        .map((ch) => blockToHtml(ch, activeLang, mode, navSnapshot, ctx))
+        .join("\n")
+    : `<div style="min-height:60px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px;">Select this card in the inspector to add article fields</div>`;
+
+  // Badge for standalone mode (no grid is supplying context)
+  const standaloneBadge = !articleCtx
+    ? `<span style="position:absolute;top:2px;right:2px;background:#8b5cf6;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;pointer-events:none;">standalone</span>`
+    : "";
+
+  return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="article-card" class="${escAttr(cls)}" style="position:relative;">${label}${standaloneBadge}${inner}</div>`;
+}
+
+function articleGridToHtml(
+  block: RenderBlock,
+  activeLang: string,
+  mode: "home" | "page",
+  navSnapshot: NavSnapshot,
+): string {
+  const c = block.config;
+  const id = escAttr(block.id);
+  const cols = (c.grid_cols as number) ?? 3;
+  const gap = (c.gap as number) ?? 6;
+  const pt = (c.padding_top as number) ?? 10;
+  const pb = (c.padding_bottom as number) ?? 10;
+  const showViewAll = c.show_view_all !== false;
+  const source = (c.source as string) ?? "latest";
+  const sourceBadge =
+    source === "featured"
+      ? "Featured"
+      : source === "tag"
+        ? `Tag: ${c.tag_filter ?? ""}`
+        : "Latest";
+
+  const gapPx = gap * 4;
+
+  // Find article-card child (card template)
+  const allChildren = [...(block.children ?? [])]
+    .filter((ch) => ch.visible !== false)
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const cardTemplate = allChildren.find((ch) => ch.type === "article-card");
+
+  // Render mock article cards
+  const cards = MOCK_ARTICLES.map((article, i) => {
+    const cardHtml = cardTemplate
+      ? articleCardToHtml(cardTemplate, activeLang, mode, navSnapshot, article)
+      : `<div style="padding:12px;font-size:13px;color:#9ca3af;border:1px dashed #d1d5db;border-radius:8px;">Add an <strong>Article Card</strong> child to define the card layout</div>`;
+    const dimStyle = i > 0 ? "opacity:0.5;pointer-events:none;" : "";
+    return `<div style="${dimStyle}">${cardHtml}</div>`;
+  });
+
+  return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="article-grid" style="padding-top:${pt * 4}px;padding-bottom:${pb * 4}px;position:relative;">
+    <span class="wysiwyg-label">◈ Article Grid <span style="background:#3b82f6;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;vertical-align:middle;">${escHtml(sourceBadge)}</span></span>
+    <div style="max-width:1280px;margin:0 auto;padding:0 24px;">
+      <div style="display:grid;grid-template-columns:repeat(${cols},minmax(0,1fr));gap:${gapPx}px;">
+        ${cards.join("\n")}
+      </div>
+      ${showViewAll ? `<div style="margin-top:${gapPx}px;text-align:right;"><a href="#" style="font-size:14px;color:var(--color-accent,#3b82f6);text-decoration:none;">View all →</a></div>` : ""}
+    </div>
+  </div>`;
+}
+
+// ── Article field blocks (used inside article-grid card template) ─────────────
+
+function articleImageHtml(block: RenderBlock, ctx?: MockArticle): string {
+  const c = block.config;
+  const id = escAttr(block.id);
+  // camelCase keys (matching ArticleFieldInspector / applyArticleImageDefaults)
+  const ratio = (c.aspectRatio as string) ?? "16/9";
+  const fit = (c.objectFit as string) ?? "cover";
+  const br = (c.borderRadius as number) ?? 0;
+
+  const ratioPctMap: Record<string, string> = {
+    "16/9": "56.25",
+    "4/3": "75",
+    "3/2": "66.67",
+    "1/1": "100",
+  };
+  const pct = ratioPctMap[ratio] ?? "56.25";
+
+  const wrapCls = [
+    spClass(c.paddingTop, "pt"),
+    spClass(c.paddingBottom, "pb"),
+    spClass(c.marginTop, "mt"),
+    spClass(c.marginBottom, "mb"),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  if (ctx?.cover) {
+    return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="article-image" class="${wrapCls}" style="position:relative;width:100%;">
+      <span class="wysiwyg-label">↗ Article Image</span>
+      <div style="position:relative;width:100%;padding-bottom:${pct}%;overflow:hidden;border-radius:${br}px;">
+        <img src="${escAttr(ctx.cover)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:${escAttr(fit)};" />
+      </div>
+    </div>`;
+  }
+  return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="article-image" class="${wrapCls}" style="position:relative;width:100%;">
+    <span class="wysiwyg-label">↗ Article Image</span>
+    <div style="position:relative;width:100%;padding-bottom:${pct}%;overflow:hidden;background:#e5e7eb;border-radius:${br}px;">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#9ca3af;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Article text fields share the same config keys as the text block (camelCase)
+// and use text-block-style Tailwind class building.
+
+const twWeightMap: Record<string, string> = {
+  normal: "font-normal",
+  medium: "font-medium",
+  semibold: "font-semibold",
+  bold: "font-bold",
+};
+const twAlignMap: Record<string, string> = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+  justify: "text-justify",
+};
+
+/**
+ * Build a full Tailwind class list for a text-like article field block,
+ * mirroring the property set that TextInspector exposes.
+ */
+function buildArticleTextCls(
+  c: Record<string, unknown>,
+  defaults: { fontSize?: string; fontWeight?: string; color?: string },
+): { classAttr: string; styleAttr: string } {
+  const fontSize = (c.fontSize as number | null) || null;
+  const fontWeight = (c.fontWeight as string) || defaults.fontWeight || "normal";
+  const textAlign = (c.textAlign as string) || "left";
+  const color = (c.color as string) || defaults.color || null;
+  const italic = !!c.italic;
+  const letterSpacing = (c.letterSpacing as number) ?? 0;
+  const lineHeight = (c.lineHeight as number) || null;
+  const textTransform = (c.textTransform as string) || "none";
+  const textDecoration = (c.textDecoration as string) || "none";
+  const bgColor = (c.bgColor as string) || null;
+  const maxWidth = (c.maxWidth as string) || "";
+  const customStyle = (c.customStyle as string) || "";
+
+  const cls: string[] = [];
+  cls.push(fontSize ? `text-[${fontSize}px]` : (defaults.fontSize ?? "text-base"));
+  cls.push(twWeightMap[fontWeight] ?? "font-normal");
+  cls.push(twAlignMap[textAlign] ?? "text-left");
+  if (italic) cls.push("italic");
+  if (color) cls.push(`text-[${color}]`);
+  if (letterSpacing) cls.push(`tracking-[${letterSpacing / 100}em]`);
+  if (lineHeight) cls.push(`leading-[${lineHeight}]`);
+  const twTransform: Record<string, string> = {
+    uppercase: "uppercase",
+    lowercase: "lowercase",
+    capitalize: "capitalize",
+  };
+  if (textTransform && textTransform !== "none")
+    cls.push(twTransform[textTransform] ?? "");
+  if (textDecoration === "underline") cls.push("underline");
+  else if (textDecoration === "line-through") cls.push("line-through");
+  if (bgColor) cls.push(`bg-[${bgColor}]`);
+  cls.push(spClass(c.paddingTop, "pt"));
+  cls.push(spClass(c.paddingBottom, "pb"));
+  cls.push(spClass(c.paddingLeft, "pl"));
+  cls.push(spClass(c.paddingRight, "pr"));
+  cls.push(spClass(c.marginTop, "mt"));
+  cls.push(spClass(c.marginBottom, "mb"));
+  cls.push(spClass(c.marginLeft, "ml"));
+  cls.push(spClass(c.marginRight, "mr"));
+  if (maxWidth) cls.push(`max-w-[${maxWidth}]`);
+
+  return {
+    classAttr: cls.filter(Boolean).join(" "),
+    styleAttr: customStyle ? ` style="${escAttr(customStyle)}"` : "",
+  };
+}
+
+function articleTitleHtml(block: RenderBlock, ctx?: MockArticle): string {
+  const c = block.config;
+  const id = escAttr(block.id);
+  const tag = (c.tag as string) ?? "h3";
+  const safeTag = ["h2", "h3", "h4"].includes(tag) ? tag : "h3";
+  const tagSizeMap: Record<string, string> = { h2: "text-2xl", h3: "text-xl", h4: "text-lg" };
+  const { classAttr, styleAttr } = buildArticleTextCls(c, {
+    fontSize: tagSizeMap[safeTag] ?? "text-xl",
+    fontWeight: "bold",
+    color: "var(--color-text,inherit)",
+  });
+  const title = ctx?.title ?? "Article title placeholder";
+  // Merge margin:0 with any customStyle
+  const headingStyle = styleAttr
+    ? styleAttr.replace(' style="', ' style="margin:0;')
+    : ' style="margin:0;"';
+  return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="article-title" style="position:relative;width:100%;">
+    <span class="wysiwyg-label">↗ Article Title</span>
+    <${safeTag} class="${escAttr(classAttr)}"${headingStyle}><a href="#" style="color:inherit;text-decoration:none;">${escHtml(title)}</a></${safeTag}>
+  </div>`;
+}
+
+function articleExcerptHtml(block: RenderBlock, ctx?: MockArticle): string {
+  const c = block.config;
+  const id = escAttr(block.id);
+  const lineClamp = (c.lineClamp as number) ?? 3;
+  const { classAttr, styleAttr } = buildArticleTextCls(c, {
+    fontSize: "text-sm",
+    fontWeight: "normal",
+    color: "var(--color-muted,#6b7280)",
+  });
+  const clampStyle =
+    lineClamp > 0
+      ? `overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${lineClamp};`
+      : "";
+  const text =
+    ctx?.excerpt ??
+    "Article excerpt will appear here with a preview of the first few lines of the content…";
+  // Merge clamp + margin:0 with any customStyle
+  const baseStyle = `margin:0;${clampStyle}`;
+  const pStyle = styleAttr
+    ? styleAttr.replace(' style="', ` style="${baseStyle}`)
+    : ` style="${baseStyle}"`;
+  return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="article-excerpt" style="position:relative;width:100%;">
+    <span class="wysiwyg-label">↗ Article Excerpt</span>
+    <p class="${escAttr(classAttr)}"${pStyle}>${escHtml(text)}</p>
+  </div>`;
+}
+
+function articleDateHtml(block: RenderBlock, ctx?: MockArticle): string {
+  const c = block.config;
+  const id = escAttr(block.id);
+  const { classAttr, styleAttr } = buildArticleTextCls(c, {
+    fontSize: "text-xs",
+    fontWeight: "normal",
+    color: "var(--color-muted,#6b7280)",
+  });
+  const date = ctx?.date ?? "Jan 1, 2025";
+  return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="article-date" style="position:relative;width:100%;">
+    <span class="wysiwyg-label">↗ Article Date</span>
+    <time class="${escAttr(classAttr)}"${styleAttr}>${escHtml(date)}</time>
+  </div>`;
+}
+
+function articleTagHtml(block: RenderBlock, ctx?: MockArticle): string {
+  const c = block.config;
+  const id = escAttr(block.id);
+  const fgColor = (c.color as string) || "var(--color-accent,#1a56db)";
+  const bgColor =
+    (c.bgColor as string) || `color-mix(in srgb, ${fgColor} 10%, transparent)`;
+  const fontSize = c.fontSize as number | null;
+  const fontWeight = (c.fontWeight as string) || "semibold";
+  const textAlign = (c.textAlign as string) || "left";
+  const italic = !!c.italic;
+  const letterSpacing = (c.letterSpacing as number) ?? 0;
+  const textTransform = (c.textTransform as string) || "none";
+  const textDecoration = (c.textDecoration as string) || "none";
+  const customStyle = (c.customStyle as string) || "";
+
+  const wrapCls = [
+    twAlignMap[textAlign] ?? "text-left",
+    spClass(c.paddingTop, "pt"),
+    spClass(c.paddingBottom, "pb"),
+    spClass(c.paddingLeft, "pl"),
+    spClass(c.paddingRight, "pr"),
+    spClass(c.marginTop, "mt"),
+    spClass(c.marginBottom, "mb"),
+    spClass(c.marginLeft, "ml"),
+    spClass(c.marginRight, "mr"),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const wrapStyle = `position:relative;width:100%;${customStyle ? customStyle : ""}`;
+
+  const fs = fontSize ? `${fontSize}px` : "11px";
+  const fw =
+    { normal: "400", medium: "500", semibold: "600", bold: "700" }[
+      fontWeight
+    ] ?? "600";
+  const badgeStyle = [
+    `display:inline-block`,
+    `padding:2px 8px`,
+    `border-radius:4px`,
+    `font-size:${fs}`,
+    `font-weight:${fw}`,
+    `color:${fgColor}`,
+    `background:${bgColor}`,
+    italic ? `font-style:italic` : "",
+    letterSpacing ? `letter-spacing:${letterSpacing / 100}em` : "",
+    textTransform !== "none" ? `text-transform:${textTransform}` : "",
+    textDecoration !== "none" ? `text-decoration:${textDecoration}` : "",
+  ].filter(Boolean).join(";") + ";";
+
+  const tag = ctx?.tag ?? "Tag";
+  return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="article-tag" class="${escAttr(wrapCls)}" style="${escAttr(wrapStyle)}">
+    <span class="wysiwyg-label">↗ Article Tag</span>
+    <span style="${escAttr(badgeStyle)}">${escHtml(tag)}</span>
+  </div>`;
 }
 
 function containerClassNames(c: Record<string, unknown>): string {
@@ -547,6 +932,56 @@ function imageToHtml(block: RenderBlock): string {
   return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="image" class="${escAttr(wrapCls.join(" "))}"><span class="wysiwyg-label">⬛ Image</span><img${imgIdAttr} src="${escAttr(src)}" alt="${alt}" class="${escAttr(imgCls.join(" "))}"${imgStyleAttr} /></div>`;
 }
 
+// ── Rich text inline renderer ────────────────────────────────────────────────
+
+function richTextToHtml(
+  block: RenderBlock,
+  activeLang: string,
+  mode: "home" | "page",
+): string {
+  const c = block.config;
+  const content =
+    mode === "home"
+      ? ((block.translations?.[activeLang]?.content as string) ?? "")
+      : ((c.content as string) ?? "");
+  const id = escAttr(block.id);
+  const label = `<span class="wysiwyg-label">¶ Rich Text</span>`;
+  const displayContent = content.trim()
+    ? content
+    : `<p style="color:#9ca3af;font-style:italic;">Double-click to edit rich text&hellip;</p>`;
+
+  // Spacing / sizing classes from config
+  const cls = [
+    spClass(c.paddingTop, "pt"),
+    spClass(c.paddingBottom, "pb"),
+    spClass(c.paddingLeft, "pl"),
+    spClass(c.paddingRight, "pr"),
+    spClass(c.marginTop, "mt"),
+    spClass(c.marginBottom, "mb"),
+    spClass(c.marginLeft, "ml"),
+    spClass(c.marginRight, "mr"),
+  ]
+    .filter(
+      (v) =>
+        v !== "pt-0" &&
+        v !== "pb-0" &&
+        v !== "pl-0" &&
+        v !== "pr-0" &&
+        v !== "mt-0" &&
+        v !== "mb-0" &&
+        v !== "ml-0" &&
+        v !== "mr-0",
+    )
+    .join(" ");
+
+  const customStyle = (c.customStyle as string) || "";
+  const idAttr = (c.elementId as string)
+    ? ` id="${escAttr(c.elementId as string)}"`
+    : "";
+
+  return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="rich-text"${idAttr} class="w-full ${cls}" style="position:relative;cursor:pointer;${customStyle}" title="Double-click to edit">${label}<div class="prose max-w-none w-full" style="pointer-events:none;">${displayContent}</div></div>`;
+}
+
 // ── Template placeholders ─────────────────────────────────────────────────────
 
 const TEMPLATE_ICONS: Partial<Record<BlockType, string>> = {
@@ -859,6 +1294,14 @@ function buildInteractionScript(): string {
           if(fromId&&fromId!==toId) window.parent.postMessage({type:'reorder',fromId:fromId,toId:toId,before:before},'*');
         });
       }
+    });
+    // Rich-text editing: double-click opens TipTap overlay in parent
+    document.querySelectorAll('[data-wysiwyg-type="rich-text"]').forEach(function(el){
+      el.addEventListener('dblclick',function(e){
+        e.stopPropagation();
+        var rect=el.getBoundingClientRect();
+        window.parent.postMessage({type:'richTextEdit',id:el.dataset.wysiwygId,rect:{top:rect.top,left:rect.left,width:rect.width,height:rect.height}},'*');
+      });
     });
     // Text editing: double-click to activate, blur to save, Escape to exit
     document.querySelectorAll('[data-wysiwyg-content-id]').forEach(function(el){

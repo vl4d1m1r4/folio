@@ -11,7 +11,9 @@ export default async function () {
     const langRes = await fetch(`${BACKEND_URL}/api/v1/config/languages`);
     if (langRes.ok) languages = await langRes.json();
   } catch {
-    console.warn("[folio] Could not fetch language config for footer_sections data");
+    console.warn(
+      "[folio] Could not fetch language config for footer_sections data",
+    );
   }
 
   const byLang = {};
@@ -32,7 +34,9 @@ export default async function () {
         byLang[lang.code] = [];
       }
     } catch {
-      console.warn(`[folio] Could not fetch footer_sections for lang ${lang.code}`);
+      console.warn(
+        `[folio] Could not fetch footer_sections for lang ${lang.code}`,
+      );
       byLang[lang.code] = [];
     }
   }

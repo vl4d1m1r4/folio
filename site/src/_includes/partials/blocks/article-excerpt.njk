@@ -1,0 +1,14 @@
+{#
+  article-excerpt.njk — sets content to _articleCtx.excerpt then delegates to text.njk.
+  Extra config: lineClamp (applied via customStyle). All TextInspector properties apply via text.njk.
+#}
+{%- if _articleCtx and _articleCtx.excerpt -%}
+{%- set _lc = b.config.lineClamp if b.config.lineClamp is not none else 3 -%}
+{%- set _lcStyle = "" -%}
+{%- if _lc and _lc > 0 -%}
+  {%- set _lcStyle = "overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:" + _lc + ";" -%}
+{%- endif -%}
+{%- set _mergedStyle = _lcStyle + (b.config.customStyle if b.config.customStyle else "") -%}
+{%- set b = b | merge({config: b.config | merge({content: _articleCtx.excerpt, tag: "p", customStyle: _mergedStyle if _mergedStyle else null})}) -%}
+{%- include "partials/blocks/text.njk" -%}
+{%- endif -%}

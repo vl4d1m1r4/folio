@@ -77,7 +77,9 @@ export function ColorRow({
                 title={key}
                 onClick={() => onChange(varRef)}
                 className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${
-                  isActive ? "border-(--color-accent) scale-110" : "border-transparent"
+                  isActive
+                    ? "border-(--color-accent) scale-110"
+                    : "border-transparent"
                 }`}
                 style={{ background: hex }}
               />

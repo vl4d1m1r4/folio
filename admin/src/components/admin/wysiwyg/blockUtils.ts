@@ -16,6 +16,13 @@ import {
   applySingleNavItemDefaults,
   applySocialLinksDefaults,
   applySingleSocialLinkDefaults,
+  applyArticleGridDefaults,
+  applyArticleCardDefaults,
+  applyArticleImageDefaults,
+  applyArticleTitleDefaults,
+  applyArticleExcerptDefaults,
+  applyArticleDateDefaults,
+  applyArticleTagDefaults,
 } from "../blockShared";
 
 // ── Shared structural interface ────────────────────────────────────────────────
@@ -154,11 +161,63 @@ function baseConfig(type: BlockType): Record<string, unknown> {
   if (type === "single-nav-item") applySingleNavItemDefaults(config);
   if (type === "social-links") applySocialLinksDefaults(config);
   if (type === "single-social-link") applySingleSocialLinkDefaults(config);
+  if (type === "article-grid") applyArticleGridDefaults(config);
+  if (type === "article-card") applyArticleCardDefaults(config);
+  if (type === "article-image") applyArticleImageDefaults(config);
+  if (type === "article-title") applyArticleTitleDefaults(config);
+  if (type === "article-excerpt") applyArticleExcerptDefaults(config);
+  if (type === "article-date") applyArticleDateDefaults(config);
+  if (type === "article-tag") applyArticleTagDefaults(config);
   return config;
 }
 
 function uniqueId(type: BlockType): string {
   return `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+/**
+/**
+ * Builds a default article-card block with the standard field children.
+ * structure: article-card → [article-image, content container → [article-tag, article-title, article-excerpt, article-date]]
+ */
+function buildDefaultArticleCard(order: number): HomeBlock {
+  const card = makeHomeBlock("article-card", order);
+
+  const img = makeHomeBlock("article-image", 0);
+
+  const content = makeHomeBlock("container", 1);
+  content.config.direction = "col";
+  content.config.wrap = "nowrap";
+  content.config.width = "w-full";
+  content.config.paddingTop = 4;
+  content.config.paddingBottom = 4;
+  content.config.paddingLeft = 4;
+  content.config.paddingRight = 4;
+  content.config.gapX = 0;
+  content.config.gapY = 2;
+
+  const tag = makeHomeBlock("article-tag", 0);
+  const title = makeHomeBlock("article-title", 1);
+  const excerpt = makeHomeBlock("article-excerpt", 2);
+  const date = makeHomeBlock("article-date", 3);
+
+  content.children = withNormalizedOrder([
+    tag,
+    title,
+    excerpt,
+    date,
+  ]) as HomeBlock[];
+  card.children = withNormalizedOrder([img, content]) as HomeBlock[];
+
+  return card;
+}
+
+/**
+ * Builds the default children for an article-grid block:
+ *   [0] article-card block (the card template)
+ */
+export function buildDefaultArticleGridChildren(): HomeBlock[] {
+  return [buildDefaultArticleCard(0)];
 }
 
 export function makePageBlock(type: BlockType, order: number): PageBlock {
@@ -168,7 +227,12 @@ export function makePageBlock(type: BlockType, order: number): PageBlock {
     visible: true,
     order,
     config: baseConfig(type),
-    children: type === "container" ? [] : undefined,
+    children:
+      type === "container"
+        ? []
+        : type === "article-grid"
+          ? (buildDefaultArticleGridChildren() as unknown as PageBlock[])
+          : undefined,
   };
 }
 
@@ -180,6 +244,11 @@ export function makeHomeBlock(type: BlockType, order: number): HomeBlock {
     order,
     config: baseConfig(type),
     translations: {},
-    children: type === "container" ? [] : undefined,
+    children:
+      type === "container"
+        ? []
+        : type === "article-grid"
+          ? buildDefaultArticleGridChildren()
+          : undefined,
   };
 }

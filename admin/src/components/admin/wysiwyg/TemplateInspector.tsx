@@ -3,12 +3,23 @@
  * Handles both home mode (text in translations[lang]) and page mode (text in config).
  */
 import { useState } from "react";
-import type { HomeBlock, PageBlock, BlockType, NavLink, SocialLink } from "../../../api/types";
+import type {
+  HomeBlock,
+  PageBlock,
+  BlockType,
+  NavLink,
+  SocialLink,
+} from "../../../api/types";
 import { RichTextEditor } from "../RichTextEditor";
 import { MediaPickerModal } from "../MediaPickerModal";
 import { Field } from "../blockShared";
 import { BLOCK_LABELS } from "../blockShared";
 import { NavBlockInspector } from "./NavBlockInspector";
+import {
+  SpacingSection,
+  ElementIdSection,
+  CustomStyleSection,
+} from "./InspectorShared";
 
 interface TemplateInspectorProps {
   block: HomeBlock | PageBlock;
@@ -195,10 +206,21 @@ function BlockTypeFields({
 
     case "rich-text":
       return (
-        <RichTextEditor
-          value={t("content")}
-          onChange={(v) => setT("content", v)}
-        />
+        <div className="divide-y divide-(--color-border)">
+          <div className="px-3 py-2">
+            <p className="text-[11px] text-(--color-muted) leading-relaxed">
+              Double-click the block on the canvas to open the rich text editor.
+            </p>
+          </div>
+          <div className="p-3 space-y-0 divide-y divide-(--color-border)">
+            <SpacingSection config={block.config} onChange={onConfigChange} />
+            <ElementIdSection config={block.config} onChange={onConfigChange} />
+            <CustomStyleSection
+              config={block.config}
+              onChange={onConfigChange}
+            />
+          </div>
+        </div>
       );
 
     case "image-text":

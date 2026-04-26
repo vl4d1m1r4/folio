@@ -74,9 +74,11 @@ export function WysiwygShell({
   activeLeftTab,
   onLeftTabChange,
   navSnapshot = {},
-  themeColors,
+  themeColors: themeColorsProp,
   onLoadDefaultTemplate,
 }: WysiwygShellProps) {
+  // Fall back to themeVars — they have the same `--color-*` key structure
+  const themeColors = themeColorsProp ?? themeVars;
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [viewportMode, setViewportMode] = useState<ViewportMode>("desktop");
   const [leftTabInternal, setLeftTabInternal] = useState<
@@ -143,6 +145,31 @@ export function WysiwygShell({
     );
   }
 
+  // Add a block as a child of an existing block (works for any block type, not just containers).
+  // opts.prepend=true puts the new child first (e.g. re-adding an article-grid header).
+  function addChildBlock(
+    parentId: string,
+    type: BlockType,
+    opts?: { prepend?: boolean; keepParentSelected?: boolean },
+  ) {
+    const parent = findBlock(anyBlocks(), parentId);
+    if (!parent) return;
+    const child =
+      mode === "home"
+        ? makeHomeBlock(type, parent.children?.length ?? 0)
+        : makePageBlock(type, parent.children?.length ?? 0);
+    const existing = parent.children ?? [];
+    const newChildren = opts?.prepend
+      ? [child, ...existing]
+      : [...existing, child];
+    commit(
+      patchBlocks(anyBlocks(), parentId, {
+        children: withNormalizedOrder(newChildren),
+      } as Partial<AnyBlock>),
+    );
+    if (!opts?.keepParentSelected) setSelectedBlockId(child.id);
+  }
+
   function addBlock(type: BlockType, targetId: string | null) {
     // Preset types expand into a complete block tree
     if (type === "preset-nav" || type === "preset-footer") {
@@ -168,7 +195,13 @@ export function WysiwygShell({
     if (targetId) {
       // Try to add as child of the target container
       const target = findBlock(anyBlocks(), targetId);
-      if (target?.type === "container") {
+      // article-card accepts article-* children; article-grid accepts article-card;
+      // container accepts anything
+      const canReceive =
+        target?.type === "container" ||
+        target?.type === "article-card" ||
+        (target?.type === "article-grid" && type === "article-card");
+      if (canReceive) {
         const childCount = target.children?.length ?? 0;
         const child =
           mode === "home"
@@ -360,6 +393,7 @@ export function WysiwygShell({
           onSelect={setSelectedBlockId}
           onRemoveBlock={removeBlock}
           onToggleVisibility={toggleVisibility}
+          onReorder={handleReorder}
           onStartDrag={(type) => setPaletteDragType(type)}
           onEndDrag={() => setPaletteDragType(null)}
           onAddBlock={(type) => addBlock(type, null)}
@@ -397,6 +431,7 @@ export function WysiwygShell({
           navSnapshot={navSnapshot?.navLinks as NavLink[] | undefined}
           footerSnapshot={navSnapshot?.footerLinks as NavLink[] | undefined}
           socialSnapshot={navSnapshot?.socialLinks as SocialLink[] | undefined}
+          onAddChild={addChildBlock}
         />
       </div>
     </div>

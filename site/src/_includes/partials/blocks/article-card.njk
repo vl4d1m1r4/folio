@@ -1,0 +1,21 @@
+{#
+  article-card.njk
+  Renders an article-card block.
+
+  When inside an article-grid loop, _articleCtx is already set by the grid.
+  When standalone, looks up the article by config.articleSlug from articles.byLang[lang].
+
+  After resolving _articleCtx, the block renders exactly like a container —
+  all layout config (direction, padding, gap, borderRadius, etc.) is applied the same way,
+  and children (article-image, article-title, article-excerpt, article-date, article-tag)
+  are dispatched via the same include chain as container.njk.
+#}
+{%- set _acc = b.config -%}
+
+{# Resolve article context for standalone use #}
+{%- if not _articleCtx and _acc.articleSlug -%}
+  {%- set _articleCtx = articles.byLang[lang] | selectattr("slug", "equalto", _acc.articleSlug) | first -%}
+{%- endif -%}
+
+{# Now render as a container so all layout config applies #}
+{%- include "partials/blocks/container.njk" -%}
