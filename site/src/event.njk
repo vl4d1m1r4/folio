@@ -1,0 +1,50 @@
+---
+pagination:
+  data: event_pages
+  size: 1
+  alias: event
+permalink: "{{ event.url }}index.html"
+---
+{% extends "layouts/base.njk" %}
+
+{% set lang = event.lang.code %}
+{% set dir = event.lang.dir %}
+
+{% block title %}{{ event.title }} · {{ site.name }}{% endblock %}
+{% block description %}{{ event.description or site.description }}{% endblock %}
+
+{% block content %}
+<article class="w-full max-w-4xl mx-auto px-6 py-12">
+  <a href="{{ event.backUrl | escape }}" class="inline-block mb-8 text-sm font-semibold" style="color: var(--color-accent);">
+    {{ event.backLabel | escape }}
+  </a>
+
+  {% if event.image %}
+    <img
+      src="{{ event.image | escape }}"
+      alt="{{ event.imageAlt | escape }}"
+      class="block w-full object-cover rounded-lg mb-8"
+      style="max-height: 480px;"
+      loading="eager" />
+  {% endif %}
+
+  <header class="mb-8">
+    {% if event.startDate %}
+      <time datetime="{{ event.startDate | escape }}" class="block text-sm font-semibold mb-3" style="color: var(--color-accent);">
+        {{ event.startDate | eventDateRange(event.endDate, lang) | escape }}
+      </time>
+    {% endif %}
+    <h1 class="text-4xl font-bold leading-tight">{{ event.title | escape }}</h1>
+    {% if event.location %}
+      <p class="mt-3 text-base" style="color: var(--color-muted);">{{ event.location | escape }}</p>
+    {% endif %}
+  </header>
+
+  {% if event.description %}
+    <p class="text-lg leading-relaxed mb-6">{{ event.description | escape }}</p>
+  {% endif %}
+  {% if event.details %}
+    <div class="text-base leading-relaxed" style="white-space: pre-line;">{{ event.details | escape }}</div>
+  {% endif %}
+</article>
+{% endblock %}

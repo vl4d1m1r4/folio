@@ -1,0 +1,60 @@
+{%- set ec = b.config -%}
+{%- set eventItems = ec.items if ec.items and ec.items.length else [] -%}
+{%- set columns = ec.columns if ec.columns and ec.columns >= 1 and ec.columns <= 3 else 1 -%}
+{%- set columnClasses = "" -%}
+{%- if columns === 2 -%}
+  {%- set columnClasses = " md:grid-cols-2" -%}
+{%- elif columns === 3 -%}
+  {%- set columnClasses = " md:grid-cols-2 lg:grid-cols-3" -%}
+{%- endif -%}
+{%- set detailLabel = ec.detailLabel or "Details" -%}
+{%- set emptyText = ec.emptyText or "No events found." -%}
+{%- if _inContainer or _inSlideshow -%}
+<div class="w-full"{% if ec.elementId %} id="{{ ec.elementId | escape }}"{% endif %}{% if ec.customStyle %} style="{{ ec.customStyle }}"{% endif %}
+{%- else -%}
+<section class="w-full max-w-5xl mx-auto px-6 py-10"{% if ec.elementId %} id="{{ ec.elementId | escape }}"{% endif %}{% if ec.customStyle %} style="{{ ec.customStyle }}"{% endif %}
+{%- endif %}
+  data-event-list
+  data-event-filter="{{ ec.filter if ec.filter === 'upcoming' or ec.filter === 'past' else 'all' }}"
+  data-event-sort="{{ 'descending' if ec.sort === 'descending' else 'ascending' }}"
+  data-event-max="{{ ec.maxItems if ec.maxItems and ec.maxItems > 0 else 0 }}">
+  {% if ec.title %}<h2 class="text-2xl font-bold mb-6">{{ ec.title | escape }}</h2>{% endif %}
+  <div data-event-grid class="grid grid-cols-1{{ columnClasses }} gap-6">
+    {% for item in eventItems %}
+      {%- set eventTitle = ec | eventField(item, "title") -%}
+      {%- set eventDescription = ec | eventField(item, "description") -%}
+      {%- set eventLocation = ec | eventField(item, "location") -%}
+      {%- set eventDetailUrl = ec | eventDetailUrl(item, lang) -%}
+      {%- set eventImageAlt = ec | eventField(item, "imageAlt") or eventTitle -%}
+      <article
+        data-event-item
+        data-event-start="{{ item.startDate | escape }}"
+        data-event-end="{{ item.endDate | escape }}"
+        class="flex flex-col min-w-0 overflow-hidden border rounded-lg"
+        style="background: var(--color-bg-surface); border-color: var(--color-border);">
+        {% if ec.showImages !== false and item.image %}
+          <img
+            src="{{ item.image | escape }}"
+            alt="{{ eventImageAlt | escape }}"
+            loading="lazy"
+            class="block w-full object-cover"
+            style="height: 200px;" />
+        {% endif %}
+        <div class="flex flex-col flex-1 gap-3 p-5">
+          {% if item.startDate %}
+            <time datetime="{{ item.startDate | escape }}" class="text-xs font-semibold" style="color: var(--color-accent);">
+              {{ item.startDate | eventDateRange(item.endDate, lang) | escape }}
+            </time>
+          {% endif %}
+          {% if eventTitle %}<h3 class="text-lg font-semibold leading-snug">{{ eventTitle | escape }}</h3>{% endif %}
+          {% if eventLocation %}<p class="text-sm" style="color: var(--color-muted);">{{ eventLocation | escape }}</p>{% endif %}
+          {% if eventDescription %}<p class="text-sm leading-relaxed">{{ eventDescription | escape }}</p>{% endif %}
+          {% if eventDetailUrl %}
+            <a href="{{ eventDetailUrl | escape }}" class="mt-auto pt-1 text-sm font-semibold" style="color: var(--color-accent);">{{ detailLabel | escape }}</a>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+  <p data-event-empty class="py-8 text-sm text-center" style="color: var(--color-muted);"{% if eventItems.length %} hidden{% endif %}>{{ emptyText | escape }}</p>
+{%- if _inContainer or _inSlideshow -%}</div>{%- else -%}</section>{%- endif -%}

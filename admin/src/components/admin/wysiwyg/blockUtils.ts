@@ -10,6 +10,7 @@ import {
   applyContainerDefaults,
   applyTextDefaults,
   applyImageDefaults,
+  applyEventListDefaults,
   applyButtonDefaults,
   applyNavLinksDefaults,
   applySubnavLinksDefaults,
@@ -202,6 +203,7 @@ function baseConfig(type: BlockType): Record<string, unknown> {
   if (type === "slideshow") applySlideshowDefaults(config);
   if (type === "text") applyTextDefaults(config);
   if (type === "image") applyImageDefaults(config);
+  if (type === "event-list") applyEventListDefaults(config);
   if (type === "button") applyButtonDefaults(config);
   if (type === "nav-links") applyNavLinksDefaults(config);
   if (type === "subnav-links") applySubnavLinksDefaults(config);

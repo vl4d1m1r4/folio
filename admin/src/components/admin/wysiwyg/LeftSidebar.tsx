@@ -49,8 +49,13 @@ const PALETTE: {
   },
   {
     label: "Content",
-    types: ["text", "image", "button"],
-    icons: { text: <TextIcon />, image: <ImageIcon />, button: <ButtonIcon /> },
+    types: ["text", "image", "event-list", "button"],
+    icons: {
+      text: <TextIcon />,
+      image: <ImageIcon />,
+      "event-list": <EventListIcon />,
+      button: <ButtonIcon />,
+    },
   },
   {
     label: "Templates",
@@ -569,6 +574,8 @@ function BlockTypeIcon({
       return <TextIcon size={size} />;
     case "image":
       return <ImageIcon size={size} />;
+    case "event-list":
+      return <EventListIcon size={size} />;
     case "button":
       return <ButtonIcon size={size} />;
     case "hero":
@@ -661,6 +668,23 @@ function ImageIcon({ size = 18 }: { size?: number }) {
       <rect x="2" y="2" width="12" height="12" rx="2" />
       <circle cx="5.5" cy="5.5" r="1" />
       <path d="M14 10l-3.5-3.5L6 12" />
+    </svg>
+  );
+}
+
+function EventListIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M8 3v4M16 3v4M3 10h18M8 14h3M8 17h6" />
     </svg>
   );
 }

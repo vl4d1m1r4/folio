@@ -105,6 +105,7 @@
       {%- elif child.type === "container" %}{%- include "partials/blocks/container.njk" %}
       {%- elif child.type === "text" %}{%- include "partials/blocks/text.njk" %}
       {%- elif child.type === "image" %}{%- include "partials/blocks/image.njk" %}
+      {%- elif child.type === "event-list" %}{%- include "partials/blocks/event-list.njk" %}
       {%- elif child.type === "button" %}{%- include "partials/blocks/button.njk" %}
       {%- elif child.type === "nav-links" %}{%- include "partials/blocks/nav-links.njk" %}
       {%- elif child.type === "subnav-links" %}{%- include "partials/blocks/subnav-links.njk" %}

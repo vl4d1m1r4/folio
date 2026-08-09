@@ -55,7 +55,13 @@ export function TemplateInspector({
     return (block.config[key] as string) ?? "";
   };
 
-  const setT = (key: string, value: string) => onTransChange(key, value);
+  const setT = (key: string, value: string) => {
+    if (mode === "home" || mode === "article") {
+      onTransChange(key, value);
+      return;
+    }
+    onConfigChange(key, value);
+  };
 
   return (
     <div>

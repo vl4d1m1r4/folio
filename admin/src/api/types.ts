@@ -215,6 +215,7 @@ export type BlockType =
   | "slideshow"
   | "text"
   | "image"
+  | "event-list"
   | "button"
   | "nav-links"
   | "subnav-links"

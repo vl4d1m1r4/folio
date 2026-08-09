@@ -3,6 +3,14 @@
  * Pure functions — no React imports.
  */
 import type { BlockType } from "../../../api/types";
+import {
+  eventTextKey,
+  filterAndSortEvents,
+  formatEventDateRange,
+  generatedEventPath,
+  type EventListItem,
+  type EventTextField,
+} from "./eventList";
 
 // ── Spacing class helper ──────────────────────────────────────────────────────
 // Converts a stored spacing value to a Tailwind class string.
@@ -132,6 +140,9 @@ export function buildSrcdoc(
     .slideshow-dots--vertical { flex-direction:column; bottom:auto; left:auto; right:.75rem; top:50%; transform:translateY(-50%); }
     .slideshow-dot { width:.5rem; height:.5rem; border-radius:50%; background:rgba(255,255,255,.5); border:none; cursor:pointer; padding:0; }
     .slideshow-dot.active { background:#fff; }
+    .event-list-preview-grid { display:grid; grid-template-columns:repeat(var(--event-columns,1),minmax(0,1fr)); gap:1.5rem; }
+    @media (max-width:767px) { .event-list-preview-grid { grid-template-columns:1fr; } }
+    @media (min-width:768px) and (max-width:1023px) { .event-list-preview-grid[data-columns="3"] { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   </style>
 </head>
 <body>
@@ -249,6 +260,8 @@ function blockToHtml(
       return textToHtml(block, activeLang, mode);
     case "image":
       return imageToHtml(block);
+    case "event-list":
+      return eventListToHtml(block, activeLang, mode);
     case "button":
       return buttonToHtml(block);
     case "rich-text":
@@ -284,6 +297,71 @@ function blockToHtml(
     default:
       return templatePlaceholderHtml(block);
   }
+}
+
+function eventListToHtml(
+  block: RenderBlock,
+  activeLang: string,
+  mode: "home" | "page" | "article",
+): string {
+  const c = block.config;
+  const translations =
+    mode === "home" || mode === "article"
+      ? (block.translations?.[activeLang] ?? {})
+      : c;
+  const text = (key: string, fallback = "") =>
+    (translations[key] as string) || fallback;
+  const itemText = (item: EventListItem, field: EventTextField) =>
+    mode === "home" || mode === "article"
+      ? text(eventTextKey(item.id, field), item[field] ?? "")
+      : (item[field] ?? "");
+  const items = Array.isArray(c.items) ? (c.items as EventListItem[]) : [];
+  const filter = ["all", "upcoming", "past"].includes(c.filter as string)
+    ? (c.filter as "all" | "upcoming" | "past")
+    : "all";
+  const sort = c.sort === "descending" ? "descending" : "ascending";
+  const maxItems = Math.max(0, Number(c.maxItems) || 0);
+  const visibleItems = filterAndSortEvents(
+    items,
+    filter,
+    sort,
+    maxItems,
+  );
+  const columns = Math.max(1, Math.min(3, Number(c.columns) || 1));
+  const showImages = c.showImages !== false;
+  const title = text("title");
+  const detailLabel = text("detailLabel", "Details");
+  const emptyText = text("emptyText", "No events found.");
+  const idAttr = c.elementId
+    ? ` id="${escAttr(c.elementId as string)}"`
+    : "";
+  const customStyle = (c.customStyle as string) || "";
+  const label = `<span class="wysiwyg-label">Event List</span>`;
+
+  const cards = visibleItems
+    .map((item) => {
+      const eventTitle = itemText(item, "title");
+      const description = itemText(item, "description");
+      const location = itemText(item, "location");
+      const detailUrl =
+        item.detailMode === "external"
+          ? itemText(item, "detailUrl")
+          : generatedEventPath(item, eventTitle, activeLang);
+      const imageAlt = itemText(item, "imageAlt") || eventTitle;
+      const date = formatEventDateRange(
+        item.startDate,
+        item.endDate,
+        activeLang,
+      );
+      return `<article style="display:flex;flex-direction:column;min-width:0;overflow:hidden;border:1px solid var(--color-border,#d1d5db);border-radius:8px;background:var(--color-bg-surface,#fff);">${
+        showImages && item.image
+          ? `<img src="${escAttr(item.image)}" alt="${escAttr(imageAlt)}" style="display:block;width:100%;height:200px;object-fit:cover;" />`
+          : ""
+      }<div style="display:flex;flex:1;flex-direction:column;gap:.65rem;padding:1.25rem;">${date ? `<time datetime="${escAttr(item.startDate)}" style="font-size:.75rem;font-weight:600;color:var(--color-accent,#2563eb);">${escHtml(date)}</time>` : ""}${eventTitle ? `<h3 style="margin:0;font-size:1.125rem;line-height:1.35;">${escHtml(eventTitle)}</h3>` : ""}${location ? `<p style="margin:0;font-size:.875rem;color:var(--color-muted,#6b7280);">${escHtml(location)}</p>` : ""}${description ? `<p style="margin:0;font-size:.875rem;line-height:1.55;color:var(--color-text,#111827);">${escHtml(description)}</p>` : ""}${detailUrl ? `<a href="${escAttr(detailUrl)}" style="margin-top:auto;padding-top:.35rem;font-size:.875rem;font-weight:600;color:var(--color-accent,#2563eb);">${escHtml(detailLabel)}</a>` : ""}</div></article>`;
+    })
+    .join("");
+
+  return `<section data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="event-list"${idAttr} style="position:relative;width:100%;max-width:64rem;margin:0 auto;padding:2.5rem 1.5rem;${escAttr(customStyle)}">${label}${title ? `<h2 style="margin:0 0 1.5rem;font-size:1.5rem;font-weight:700;">${escHtml(title)}</h2>` : ""}${cards ? `<div class="event-list-preview-grid" data-columns="${columns}" style="--event-columns:${columns};">${cards}</div>` : `<div class="block-placeholder"><span class="bp-label">Event List</span><span>${escHtml(emptyText)}</span></div>`}</section>`;
 }
 
 // ── Container ─────────────────────────────────────────────────────────────────

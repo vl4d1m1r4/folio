@@ -52,6 +52,9 @@ permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
     {% elif block.type === "image" %}
       {% set b = block %}
       {% include "partials/blocks/image.njk" %}
+    {% elif block.type === "event-list" %}
+      {% set b = block %}
+      {% include "partials/blocks/event-list.njk" %}
     {% elif block.type === "button" %}
       {% set b = block %}
       {% include "partials/blocks/button.njk" %}

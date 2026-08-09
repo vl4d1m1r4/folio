@@ -1,5 +1,11 @@
 import path from "node:path";
 import fs from "node:fs";
+import {
+  eventField,
+  eventDetailUrl,
+  formatEventDateRange,
+  safeEventUrl,
+} from "./lib/events.js";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 
@@ -94,6 +100,11 @@ export default function (eleventyConfig) {
     if (!Array.isArray(arr)) return arr;
     return arr.slice(0, n);
   });
+
+  eleventyConfig.addFilter("eventField", eventField);
+  eleventyConfig.addFilter("eventDetailUrl", eventDetailUrl);
+  eleventyConfig.addFilter("eventDateRange", formatEventDateRange);
+  eleventyConfig.addFilter("safeEventUrl", safeEventUrl);
 
   // ── selectattr — override Nunjucks built-in which only checks truthiness.
   // With one extra arg: returns items where item[attr] === val (equality).

@@ -29,8 +29,11 @@ export default function PagesPage() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: ({ id, is_published }: { id: number; is_published: boolean }) =>
-      adminApi.updatePage(id, { is_published } as Partial<Page>),
+    mutationFn: ({ page, isPublished }: { page: Page; isPublished: boolean }) =>
+      adminApi.updatePage(page.id, {
+        ...page,
+        is_published: isPublished,
+      }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "pages"] }),
   });
 
@@ -86,13 +89,18 @@ export default function PagesPage() {
                   <td className="px-4 py-3">
                     <button
                       onClick={() =>
-                        toggleMutation.mutate({ id: p.id, is_published: !p.is_published })
+                        toggleMutation.mutate({
+                          page: p,
+                          isPublished: !p.is_published,
+                        })
                       }
+                      disabled={toggleMutation.isPending}
                       className={`px-2 py-0.5 rounded text-xs font-semibold ${
                         p.is_published
                           ? "bg-green-100 text-green-800"
                           : "bg-yellow-100 text-yellow-800"
-                      }`}
+                      } disabled:opacity-50`}
+                      title={p.is_published ? "Click to unpublish" : "Click to publish"}
                     >
                       {p.is_published ? "Published" : "Draft"}
                     </button>
@@ -122,6 +130,12 @@ export default function PagesPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {toggleMutation.isError && (
+        <p className="mt-3 text-sm text-(--color-destructive)" role="alert">
+          Could not update page status: {toggleMutation.error.message}
+        </p>
       )}
 
       {totalPages > 1 && (

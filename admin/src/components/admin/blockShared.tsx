@@ -32,6 +32,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   slideshow: "Slideshow",
   text: "Text",
   image: "Image",
+  "event-list": "Event List",
   button: "Button",
   "nav-links": "Navigation",
   "subnav-links": "Sub-navigation",
@@ -124,6 +125,17 @@ export function applyImageDefaults(config: Record<string, unknown>): void {
   config.elementId = "";
   config.customStyle = "";
   applyAnimationDefaults(config);
+}
+
+export function applyEventListDefaults(config: Record<string, unknown>): void {
+  config.items = [];
+  config.filter = "all";
+  config.sort = "ascending";
+  config.maxItems = 0;
+  config.columns = 1;
+  config.showImages = true;
+  config.elementId = "";
+  config.customStyle = "";
 }
 
 export function applyContainerDefaults(config: Record<string, unknown>): void {
@@ -1174,7 +1186,7 @@ export function ContainerBlockEditor({
 
 const PALETTE_GROUPS: { label: string; types: BlockType[] }[] = [
   { label: "Layout", types: ["container"] },
-  { label: "Content", types: ["text", "image"] },
+  { label: "Content", types: ["text", "image", "event-list"] },
   {
     label: "Templates",
     types: [
