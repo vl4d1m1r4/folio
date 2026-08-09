@@ -52,6 +52,9 @@ permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
     {% elif block.type === "image" %}
       {% set b = block %}
       {% include "partials/blocks/image.njk" %}
+    {% elif block.type === "video" %}
+      {% set b = block %}
+      {% include "partials/blocks/video.njk" %}
     {% elif block.type === "button" %}
       {% set b = block %}
       {% include "partials/blocks/button.njk" %}
@@ -79,6 +82,9 @@ permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
     {% elif block.type === "article-body" %}
       {% set b = block %}
       {% include "partials/blocks/article-body.njk" %}
+    {% elif block.type === "slideshow" %}
+      {% set b = block %}
+      {% include "partials/blocks/slideshow.njk" %}
     {% endif %}
   {% endfor %}
 {% else %}

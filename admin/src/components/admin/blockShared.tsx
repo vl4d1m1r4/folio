@@ -32,6 +32,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   slideshow: "Slideshow",
   text: "Text",
   image: "Image",
+  video: "Video",
   button: "Button",
   "nav-links": "Navigation",
   "subnav-links": "Sub-navigation",
@@ -124,6 +125,17 @@ export function applyImageDefaults(config: Record<string, unknown>): void {
   config.elementId = "";
   config.customStyle = "";
   applyAnimationDefaults(config);
+}
+
+export function applyVideoDefaults(config: Record<string, unknown>): void {
+  config.url = "";
+  config.title = "";
+  config.caption = "";
+  config.aspectRatio = "16 / 9";
+  config.autoplay = false;
+  config.controls = true;
+  config.elementId = "";
+  config.customStyle = "";
 }
 
 export function applyContainerDefaults(config: Record<string, unknown>): void {
@@ -1174,7 +1186,7 @@ export function ContainerBlockEditor({
 
 const PALETTE_GROUPS: { label: string; types: BlockType[] }[] = [
   { label: "Layout", types: ["container"] },
-  { label: "Content", types: ["text", "image"] },
+  { label: "Content", types: ["text", "image", "video"] },
   {
     label: "Templates",
     types: [

@@ -3,6 +3,7 @@
  * Pure functions — no React imports.
  */
 import type { BlockType } from "../../../api/types";
+import { videoEmbedUrl } from "./videoEmbed";
 
 // ── Spacing class helper ──────────────────────────────────────────────────────
 // Converts a stored spacing value to a Tailwind class string.
@@ -249,6 +250,8 @@ function blockToHtml(
       return textToHtml(block, activeLang, mode);
     case "image":
       return imageToHtml(block);
+    case "video":
+      return videoToHtml(block, activeLang, mode);
     case "button":
       return buttonToHtml(block);
     case "rich-text":
@@ -284,6 +287,48 @@ function blockToHtml(
     default:
       return templatePlaceholderHtml(block);
   }
+}
+
+function videoToHtml(
+  block: RenderBlock,
+  activeLang: string,
+  mode: "home" | "page" | "article",
+): string {
+  const c = block.config;
+  const translated =
+    mode === "home" ? (block.translations?.[activeLang] ?? {}) : c;
+  const title = (translated.title as string) || "";
+  const caption = (translated.caption as string) || "";
+  const url = (c.url as string) || "";
+  const embedUrl = videoEmbedUrl(
+    url,
+    c.autoplay === true,
+    c.controls !== false,
+  );
+  const allowedRatios = new Set([
+    "16 / 9",
+    "4 / 3",
+    "1 / 1",
+    "9 / 16",
+    "21 / 9",
+  ]);
+  const ratio = allowedRatios.has(c.aspectRatio as string)
+    ? (c.aspectRatio as string)
+    : "16 / 9";
+  const idAttr = c.elementId
+    ? ` id="${escAttr(c.elementId as string)}"`
+    : "";
+  const customStyle = (c.customStyle as string) || "";
+  const label = `<span class="wysiwyg-label">Video</span>`;
+
+  if (!embedUrl) {
+    const message = url
+      ? "Enter a valid YouTube or Vimeo URL"
+      : "Add a YouTube or Vimeo URL";
+    return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="video"${idAttr} class="block-placeholder" style="${escAttr(customStyle)}">${label}<span class="bp-label">Video</span><span>${message}</span></div>`;
+  }
+
+  return `<section data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="video"${idAttr} style="position:relative;width:100%;max-width:64rem;margin:0 auto;padding:2.5rem 1.5rem;${escAttr(customStyle)}">${label}${title ? `<h2 style="margin:0 0 1rem;font-size:1.5rem;font-weight:700;">${escHtml(title)}</h2>` : ""}<div style="position:relative;width:100%;aspect-ratio:${ratio};background:#000;overflow:hidden;"><iframe src="${escAttr(embedUrl)}" title="${escAttr(title || "Embedded video")}" style="width:100%;height:100%;border:0;pointer-events:none;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe><div style="position:absolute;inset:0;" aria-hidden="true"></div></div>${caption ? `<p style="margin:.75rem 0 0;color:var(--color-muted,#6b7280);font-size:.875rem;">${escHtml(caption)}</p>` : ""}</section>`;
 }
 
 // ── Container ─────────────────────────────────────────────────────────────────

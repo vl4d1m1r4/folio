@@ -43,6 +43,8 @@ permalink: "/{{ item.lang.code }}/{{ item.page.slug }}/index.html"
         {% include "partials/blocks/text.njk" %}
       {% elif block.type === "image" %}
         {% include "partials/blocks/image.njk" %}
+      {% elif block.type === "video" %}
+        {% include "partials/blocks/video.njk" %}
       {% elif block.type === "button" %}
         {% include "partials/blocks/button.njk" %}
       {% elif block.type === "article-grid" %}
@@ -63,4 +65,3 @@ permalink: "/{{ item.lang.code }}/{{ item.page.slug }}/index.html"
   </article>
 {% endif %}
 {% endblock %}
-

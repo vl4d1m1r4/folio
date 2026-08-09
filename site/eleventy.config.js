@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
+import { videoAspectRatio, videoEmbedUrl } from "./lib/video.js";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8080";
 
@@ -94,6 +95,9 @@ export default function (eleventyConfig) {
     if (!Array.isArray(arr)) return arr;
     return arr.slice(0, n);
   });
+
+  eleventyConfig.addFilter("videoEmbedUrl", videoEmbedUrl);
+  eleventyConfig.addFilter("videoAspectRatio", videoAspectRatio);
 
   // ── selectattr — override Nunjucks built-in which only checks truthiness.
   // With one extra arg: returns items where item[attr] === val (equality).

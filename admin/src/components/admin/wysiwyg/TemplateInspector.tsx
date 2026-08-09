@@ -15,6 +15,7 @@ import { MediaPickerModal } from "../MediaPickerModal";
 import { Field } from "../blockShared";
 import { BLOCK_LABELS } from "../blockShared";
 import { NavBlockInspector } from "./NavBlockInspector";
+import { videoEmbedUrl } from "./videoEmbed";
 import {
   SpacingSection,
   ElementIdSection,
@@ -107,6 +108,76 @@ function BlockTypeFields({
   const [mediaPicker, setMediaPicker] = useState<string | null>(null);
 
   switch (type) {
+    case "video": {
+      const videoUrl = (block.config.url as string) ?? "";
+      const validUrl = !videoUrl || videoEmbedUrl(videoUrl) !== null;
+      return (
+        <>
+          <Field
+            label="YouTube or Vimeo URL"
+            value={videoUrl}
+            onChange={(v) => onConfigChange("url", v)}
+          />
+          {!validUrl && (
+            <p className="text-xs text-red-600">
+              Enter a valid YouTube or Vimeo video URL.
+            </p>
+          )}
+          <Field
+            label="Title"
+            value={t("title")}
+            onChange={(v) => setT("title", v)}
+          />
+          <Field
+            label="Caption"
+            value={t("caption")}
+            onChange={(v) => setT("caption", v)}
+          />
+          <div>
+            <label className="block text-xs font-medium mb-1">
+              Aspect ratio
+            </label>
+            <select
+              value={(block.config.aspectRatio as string) ?? "16 / 9"}
+              onChange={(e) => onConfigChange("aspectRatio", e.target.value)}
+              className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
+            >
+              <option value="16 / 9">Widescreen (16:9)</option>
+              <option value="4 / 3">Standard (4:3)</option>
+              <option value="1 / 1">Square (1:1)</option>
+              <option value="9 / 16">Portrait (9:16)</option>
+              <option value="21 / 9">Ultrawide (21:9)</option>
+            </select>
+          </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={block.config.autoplay === true}
+              onChange={(e) => onConfigChange("autoplay", e.target.checked)}
+              className="rounded"
+            />
+            Autoplay muted
+          </label>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={block.config.controls !== false}
+              onChange={(e) => onConfigChange("controls", e.target.checked)}
+              className="rounded"
+            />
+            Show player controls
+          </label>
+          <div className="pt-2 border-t border-(--color-border) divide-y divide-(--color-border)">
+            <ElementIdSection config={block.config} onChange={onConfigChange} />
+            <CustomStyleSection
+              config={block.config}
+              onChange={onConfigChange}
+            />
+          </div>
+        </>
+      );
+    }
+
     case "hero":
       return (
         <>

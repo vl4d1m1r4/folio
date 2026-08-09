@@ -34,6 +34,8 @@
 {%- for child in b.children %}
   {%- if child.visible !== false %}{%- set visibleSlides = (visibleSlides.push(child), visibleSlides) -%}{%- endif %}
 {%- endfor -%}
+{%- set _prevInSlideshow = _inSlideshow -%}
+{%- set _inSlideshow = true -%}
 
 <div {% if cc.elementId %}id="{{ cc.elementId }}"{% endif %}
      class="relative overflow-hidden {{ _wClass }} {{ _hClass }}"
@@ -65,6 +67,7 @@
       {%- elif child.type === "container" %}{%- include "partials/blocks/container.njk" %}
       {%- elif child.type === "text" %}{%- include "partials/blocks/text.njk" %}
       {%- elif child.type === "image" %}{%- include "partials/blocks/image.njk" %}
+      {%- elif child.type === "video" %}{%- include "partials/blocks/video.njk" %}
       {%- elif child.type === "button" %}{%- include "partials/blocks/button.njk" %}
       {%- elif child.type === "article-grid" %}{%- include "partials/blocks/article-grid.njk" %}
       {%- elif child.type === "article-card" %}{%- include "partials/blocks/article-card.njk" %}
@@ -76,6 +79,7 @@
       {%- endif %}
     </div>
   {%- endfor %}
+  {%- set _inSlideshow = _prevInSlideshow -%}
 
   {%- if _showArrows === "true" %}
   <button class="slideshow-prev slideshow-arrow" aria-label="Previous slide">

@@ -49,8 +49,13 @@ const PALETTE: {
   },
   {
     label: "Content",
-    types: ["text", "image", "button"],
-    icons: { text: <TextIcon />, image: <ImageIcon />, button: <ButtonIcon /> },
+    types: ["text", "image", "video", "button"],
+    icons: {
+      text: <TextIcon />,
+      image: <ImageIcon />,
+      video: <VideoIcon />,
+      button: <ButtonIcon />,
+    },
   },
   {
     label: "Templates",
@@ -569,6 +574,8 @@ function BlockTypeIcon({
       return <TextIcon size={size} />;
     case "image":
       return <ImageIcon size={size} />;
+    case "video":
+      return <VideoIcon size={size} />;
     case "button":
       return <ButtonIcon size={size} />;
     case "hero":
@@ -661,6 +668,23 @@ function ImageIcon({ size = 18 }: { size?: number }) {
       <rect x="2" y="2" width="12" height="12" rx="2" />
       <circle cx="5.5" cy="5.5" r="1" />
       <path d="M14 10l-3.5-3.5L6 12" />
+    </svg>
+  );
+}
+
+function VideoIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m10 9 5 3-5 3Z" />
     </svg>
   );
 }

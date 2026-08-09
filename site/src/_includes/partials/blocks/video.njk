@@ -1,0 +1,26 @@
+{%- set vc = b.config -%}
+{%- set videoUrl = vc.url | videoEmbedUrl(vc.autoplay === true, vc.controls !== false) -%}
+{%- if videoUrl -%}
+  {%- set videoTitle = vc.title or "Embedded video" -%}
+  {%- set videoCaption = vc.caption or "" -%}
+  {%- set ratio = vc.aspectRatio | videoAspectRatio -%}
+  {% if _inContainer or _inSlideshow %}
+<div class="w-full"{% if vc.elementId %} id="{{ vc.elementId | escape }}"{% endif %}{% if vc.customStyle %} style="{{ vc.customStyle }}"{% endif %}>
+  {% else %}
+<section class="w-full max-w-5xl mx-auto px-6 py-10"{% if vc.elementId %} id="{{ vc.elementId | escape }}"{% endif %}{% if vc.customStyle %} style="{{ vc.customStyle }}"{% endif %}>
+  {% endif %}
+  {% if vc.title %}<h2 class="text-2xl font-bold mb-4">{{ vc.title | escape }}</h2>{% endif %}
+  <div class="relative w-full overflow-hidden bg-black" style="aspect-ratio: {{ ratio }};">
+    <iframe
+      class="absolute inset-0 w-full h-full border-0"
+      src="{{ videoUrl }}"
+      title="{{ videoTitle | escape }}"
+      loading="lazy"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allow="autoplay; encrypted-media; picture-in-picture"
+      allowfullscreen
+    ></iframe>
+  </div>
+  {% if videoCaption %}<p class="mt-3 text-sm" style="color: var(--color-muted);">{{ videoCaption | escape }}</p>{% endif %}
+{% if _inContainer or _inSlideshow %}</div>{% else %}</section>{% endif %}
+{%- endif -%}
