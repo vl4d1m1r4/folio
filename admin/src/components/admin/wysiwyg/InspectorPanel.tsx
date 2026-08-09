@@ -15,6 +15,7 @@ import { ArticlesInspector } from "./ArticlesInspector";
 import { ArticleFieldInspector } from "./ArticleFieldInspector";
 import { ArticleCardInspector } from "./ArticleCardInspector";
 import { ArticleBodyInspector } from "./ArticleBodyInspector";
+import { ContactFormInspector } from "./ContactFormInspector";
 
 interface InspectorPanelProps {
   block: HomeBlock | PageBlock | null;
@@ -142,6 +143,16 @@ export function InspectorPanel({
           />
         )}
 
+        {block.type === "contact-form" && (
+          <ContactFormInspector
+            block={block}
+            mode={mode}
+            activeLang={activeLang}
+            onConfigChange={cfgChange}
+            onTransChange={transChange}
+          />
+        )}
+
         {block.type === "article-grid" && (
           <ArticlesInspector
             config={block.config}
@@ -205,6 +216,7 @@ export function InspectorPanel({
           "text",
           "image",
           "button",
+          "contact-form",
           "article-grid",
           "article-card",
           "article-image",

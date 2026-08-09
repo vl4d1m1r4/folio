@@ -211,6 +211,7 @@ export type BlockType =
   | "image-text"
   | "testimonials"
   | "newsletter"
+  | "contact-form"
   | "container"
   | "slideshow"
   | "text"

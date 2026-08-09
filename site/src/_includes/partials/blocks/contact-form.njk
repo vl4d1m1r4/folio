@@ -1,0 +1,59 @@
+{%- set cc = b.config -%}
+{%- set formId = "contact-" + b.id -%}
+{%- set columns = 2 if cc.columns === 2 else 1 -%}
+{%- set rows = cc.messageRows if cc.messageRows and cc.messageRows >= 3 and cc.messageRows <= 12 else 5 -%}
+{%- if _inContainer -%}
+<div data-contact-block class="w-full"{% if cc.elementId %} id="{{ cc.elementId | escape }}"{% endif %}{% if cc.customStyle %} style="{{ cc.customStyle }}"{% endif %}>
+{%- else -%}
+<section data-contact-block class="w-full max-w-3xl mx-auto px-6 py-10"{% if cc.elementId %} id="{{ cc.elementId | escape }}"{% endif %}{% if cc.customStyle %} style="{{ cc.customStyle }}"{% endif %}>
+{%- endif %}
+  <div class="mb-6">
+    {% if cc.title %}<h2 class="text-3xl font-bold mb-2" style="color:var(--color-text);">{{ cc.title }}</h2>{% endif %}
+    {% if cc.intro %}<p style="color:var(--color-muted);">{{ cc.intro }}</p>{% endif %}
+  </div>
+
+  <div data-contact-success class="hidden mb-6 rounded-lg px-5 py-4 text-sm" role="status" aria-live="polite" style="background:color-mix(in srgb,var(--color-accent) 10%,transparent);border:1px solid var(--color-accent);color:var(--color-accent);">
+    {{ cc.successMessage or "Thank you for your message. We'll be in touch soon." }}
+  </div>
+
+  <p class="mb-4 text-xs" style="color:var(--color-muted);"><span style="color:var(--color-accent);">*</span> {{ cc.requiredLabel or "Required" }}</p>
+
+  <form data-contact-form class="space-y-4" novalidate data-error="{{ cc.errorMessage or 'Something went wrong. Please try again.' }}">
+    <div class="grid grid-cols-1{% if columns === 2 %} md:grid-cols-2{% endif %} gap-4">
+      <div>
+        <label for="{{ formId }}-first-name" class="block text-sm font-medium mb-1" style="color:var(--color-text);">{{ cc.firstNameLabel or "First name" }} <span style="color:var(--color-accent);">*</span></label>
+        <input id="{{ formId }}-first-name" type="text" name="first_name" required class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border:1px solid var(--color-border);background:var(--color-bg-surface);color:var(--color-text);border-radius:var(--radius-input);" />
+      </div>
+      {% if cc.showLastName !== false %}
+        <div>
+          <label for="{{ formId }}-last-name" class="block text-sm font-medium mb-1" style="color:var(--color-text);">{{ cc.lastNameLabel or "Last name" }}</label>
+          <input id="{{ formId }}-last-name" type="text" name="last_name" class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border:1px solid var(--color-border);background:var(--color-bg-surface);color:var(--color-text);border-radius:var(--radius-input);" />
+        </div>
+      {% endif %}
+      {% if cc.showCompany !== false %}
+        <div>
+          <label for="{{ formId }}-company" class="block text-sm font-medium mb-1" style="color:var(--color-text);">{{ cc.companyLabel or "Company" }}</label>
+          <input id="{{ formId }}-company" type="text" name="company" class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border:1px solid var(--color-border);background:var(--color-bg-surface);color:var(--color-text);border-radius:var(--radius-input);" />
+        </div>
+      {% endif %}
+      <div>
+        <label for="{{ formId }}-email" class="block text-sm font-medium mb-1" style="color:var(--color-text);">{{ cc.emailLabel or "Email" }} <span style="color:var(--color-accent);">*</span></label>
+        <input id="{{ formId }}-email" type="email" name="email" required class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border:1px solid var(--color-border);background:var(--color-bg-surface);color:var(--color-text);border-radius:var(--radius-input);" />
+      </div>
+      {% if cc.showPhone !== false %}
+        <div>
+          <label for="{{ formId }}-phone" class="block text-sm font-medium mb-1" style="color:var(--color-text);">{{ cc.phoneLabel or "Phone" }}</label>
+          <input id="{{ formId }}-phone" type="tel" name="phone" class="rounded px-3 py-2 w-full focus:outline-none text-sm" style="border:1px solid var(--color-border);background:var(--color-bg-surface);color:var(--color-text);border-radius:var(--radius-input);" />
+        </div>
+      {% endif %}
+      <div{% if columns === 2 %} class="md:col-span-2"{% endif %}>
+        <label for="{{ formId }}-message" class="block text-sm font-medium mb-1" style="color:var(--color-text);">{{ cc.messageLabel or "Message" }} <span style="color:var(--color-accent);">*</span></label>
+        <textarea id="{{ formId }}-message" name="message" required rows="{{ rows }}" class="rounded px-3 py-2 w-full focus:outline-none text-sm resize-y" style="border:1px solid var(--color-border);background:var(--color-bg-surface);color:var(--color-text);border-radius:var(--radius-input);"></textarea>
+      </div>
+    </div>
+    <div data-contact-error class="hidden text-sm" role="alert" style="color:var(--color-destructive,#e02424);"></div>
+    <button type="submit" class="w-full py-3 px-5 font-semibold transition-colors text-sm text-white disabled:opacity-60" style="background:var(--color-accent);border-radius:var(--radius-button);">
+      {{ cc.submitLabel or "Send message" }}
+    </button>
+  </form>
+{%- if _inContainer -%}</div>{%- else -%}</section>{%- endif -%}

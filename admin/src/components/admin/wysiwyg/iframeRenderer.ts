@@ -91,6 +91,8 @@ export function buildSrcdoc(
     #wysiwyg-root-dropzone.dz-active { border-color:#3b82f6; background:rgba(59,130,246,0.05); color:#3b82f6; }
     .block-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; border: 2px dashed #d1d5db; border-radius: 8px; gap: 8px; padding: 20px; background: #f9fafb; color: #6b7280; font-size: 13px; text-align: center; }
     .block-placeholder .bp-label { font-weight: 600; color: #374151; font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase; }
+    .contact-form-preview-grid { display:grid; grid-template-columns:repeat(var(--contact-columns,1),minmax(0,1fr)); gap:1rem; }
+    @media (max-width:639px) { .contact-form-preview-grid { grid-template-columns:1fr; } }
     .prose p { margin-bottom: .875em; line-height: 1.75; }
     .prose h1,.prose h2,.prose h3,.prose h4 { font-weight: 700; line-height: 1.25; margin-bottom: .5em; margin-top: 1em; }
     .prose h1 { font-size: 2em; } .prose h2 { font-size: 1.5em; } .prose h3 { font-size: 1.25em; }
@@ -251,6 +253,8 @@ function blockToHtml(
       return imageToHtml(block);
     case "button":
       return buttonToHtml(block);
+    case "contact-form":
+      return contactFormToHtml(block, activeLang, mode);
     case "rich-text":
       return richTextToHtml(block, activeLang, mode);
     case "nav-links":
@@ -1274,6 +1278,62 @@ function richTextToHtml(
   return `<div data-wysiwyg-id="${id}" data-wysiwyg-type="rich-text"${idAttr} class="w-full ${cls}" style="position:relative;cursor:pointer;${customStyle}" title="Double-click to edit">${label}<div class="prose max-w-none w-full" style="pointer-events:none;">${displayContent}</div></div>`;
 }
 
+// ── Contact form ─────────────────────────────────────────────────────────────
+
+function contactFormToHtml(
+  block: RenderBlock,
+  activeLang: string,
+  mode: "home" | "page" | "article",
+): string {
+  const c = block.config;
+  const text = (key: string, fallback: string): string => {
+    const raw =
+      mode === "home" || mode === "article"
+        ? block.translations?.[activeLang]?.[key]
+        : c[key];
+    return escHtml(String(raw || fallback));
+  };
+  const columns = Number(c.columns) === 2 ? 2 : 1;
+  const rows = Math.min(12, Math.max(3, Number(c.messageRows) || 5));
+  const showLastName = c.showLastName !== false;
+  const showCompany = c.showCompany !== false;
+  const showPhone = c.showPhone !== false;
+  const idAttr = c.elementId
+    ? ` id="${escAttr(String(c.elementId))}"`
+    : "";
+  const customStyle = (c.customStyle as string) || "";
+  const field = (
+    name: string,
+    label: string,
+    required = false,
+    type = "text",
+  ) => `<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;min-width:0;">
+    <span>${label}${required ? ' <span style="color:var(--color-accent);">*</span>' : ""}</span>
+    <input type="${type}" name="${name}" readonly style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--color-border);border-radius:var(--radius-input,6px);background:var(--color-bg-surface);color:var(--color-text);" />
+  </label>`;
+
+  return `<section data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="contact-form"${idAttr} style="position:relative;width:100%;max-width:48rem;margin:0 auto;padding:2.5rem 1.5rem;${escAttr(customStyle)}">
+    <span class="wysiwyg-label">Contact Form</span>
+    <div style="margin-bottom:24px;">
+      <h2 style="margin:0 0 8px;font-size:1.875rem;font-weight:700;">${text("title", "Contact us")}</h2>
+      <p style="margin:0;color:var(--color-muted);">${text("intro", "Send us a message and we'll get back to you.")}</p>
+    </div>
+    <p style="margin:0 0 16px;font-size:12px;color:var(--color-muted);"><span style="color:var(--color-accent);">*</span> ${text("requiredLabel", "Required")}</p>
+    <form class="contact-form-preview-grid" style="--contact-columns:${columns};" onsubmit="return false;">
+      ${field("first_name", text("firstNameLabel", "First name"), true)}
+      ${showLastName ? field("last_name", text("lastNameLabel", "Last name")) : ""}
+      ${showCompany ? field("company", text("companyLabel", "Company")) : ""}
+      ${field("email", text("emailLabel", "Email"), true, "email")}
+      ${showPhone ? field("phone", text("phoneLabel", "Phone"), false, "tel") : ""}
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;min-width:0;grid-column:1/-1;">
+        <span>${text("messageLabel", "Message")} <span style="color:var(--color-accent);">*</span></span>
+        <textarea readonly rows="${rows}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--color-border);border-radius:var(--radius-input,6px);background:var(--color-bg-surface);color:var(--color-text);resize:vertical;"></textarea>
+      </label>
+      <button type="submit" style="grid-column:1/-1;padding:12px 20px;border:0;border-radius:var(--radius-button,6px);background:var(--color-accent);color:white;font-weight:600;">${text("submitLabel", "Send message")}</button>
+    </form>
+  </section>`;
+}
+
 // ── Template placeholders ─────────────────────────────────────────────────────
 
 const TEMPLATE_ICONS: Partial<Record<BlockType, string>> = {
@@ -1285,6 +1345,7 @@ const TEMPLATE_ICONS: Partial<Record<BlockType, string>> = {
   "image-text": `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="9" height="16" rx="1"/><path d="M15 8h5M15 12h5M15 16h5"/></svg>`,
   testimonials: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>`,
   newsletter: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>`,
+  "contact-form": `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M7 7h10M7 11h10M7 15h6"/></svg>`,
 };
 
 const TEMPLATE_DISPLAY: Partial<Record<BlockType, string>> = {
@@ -1296,6 +1357,7 @@ const TEMPLATE_DISPLAY: Partial<Record<BlockType, string>> = {
   "image-text": "Image + Text",
   testimonials: "Testimonials",
   newsletter: "Newsletter",
+  "contact-form": "Contact Form",
 };
 
 function templatePlaceholderHtml(block: RenderBlock): string {

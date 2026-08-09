@@ -43,6 +43,9 @@ permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
     {% elif block.type === "newsletter" %}
       {% set b = block %}
       {% include "partials/blocks/newsletter.njk" %}
+    {% elif block.type === "contact-form" %}
+      {% set b = block %}
+      {% include "partials/blocks/contact-form.njk" %}
     {% elif block.type === "container" %}
       {% set b = block %}
       {% include "partials/blocks/container.njk" %}

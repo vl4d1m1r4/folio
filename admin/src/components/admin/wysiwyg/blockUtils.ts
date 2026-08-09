@@ -11,6 +11,7 @@ import {
   applyTextDefaults,
   applyImageDefaults,
   applyButtonDefaults,
+  applyContactFormDefaults,
   applyNavLinksDefaults,
   applySubnavLinksDefaults,
   applySingleNavItemDefaults,
@@ -203,6 +204,7 @@ function baseConfig(type: BlockType): Record<string, unknown> {
   if (type === "text") applyTextDefaults(config);
   if (type === "image") applyImageDefaults(config);
   if (type === "button") applyButtonDefaults(config);
+  if (type === "contact-form") applyContactFormDefaults(config);
   if (type === "nav-links") applyNavLinksDefaults(config);
   if (type === "subnav-links") applySubnavLinksDefaults(config);
   if (type === "single-nav-item") applySingleNavItemDefaults(config);

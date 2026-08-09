@@ -7,7 +7,8 @@
     "build:css": "tailwindcss -i src/site-assets/style.css -o src/site-assets/tailwind.css --minify",
     "watch:css": "tailwindcss -i src/site-assets/style.css -o src/site-assets/tailwind.css --watch",
     "build": "npm run build:css && npx @11ty/eleventy",
-    "dev": "npx @11ty/eleventy --serve --port 8081"
+    "dev": "npx @11ty/eleventy --serve --port 8081",
+    "test": "node --test"
   },
   "devDependencies": {
     "@11ty/eleventy": "^3.0.0",

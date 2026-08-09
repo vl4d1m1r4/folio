@@ -28,6 +28,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   "image-text": "Image + Text",
   testimonials: "Testimonials",
   newsletter: "Newsletter Subscribe",
+  "contact-form": "Contact Form",
   container: "Container",
   slideshow: "Slideshow",
   text: "Text",
@@ -124,6 +125,18 @@ export function applyImageDefaults(config: Record<string, unknown>): void {
   config.elementId = "";
   config.customStyle = "";
   applyAnimationDefaults(config);
+}
+
+export function applyContactFormDefaults(
+  config: Record<string, unknown>,
+): void {
+  config.columns = 1;
+  config.showLastName = true;
+  config.showCompany = true;
+  config.showPhone = true;
+  config.messageRows = 5;
+  config.elementId = null;
+  config.customStyle = null;
 }
 
 export function applyContainerDefaults(config: Record<string, unknown>): void {
@@ -1186,6 +1199,7 @@ const PALETTE_GROUPS: { label: string; types: BlockType[] }[] = [
       "image-text",
       "testimonials",
       "newsletter",
+      "contact-form",
     ],
   },
 ];

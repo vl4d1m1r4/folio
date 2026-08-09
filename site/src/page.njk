@@ -37,6 +37,8 @@ permalink: "/{{ item.lang.code }}/{{ item.page.slug }}/index.html"
         {% include "partials/blocks/testimonials.njk" %}
       {% elif block.type === "newsletter" %}
         {% include "partials/blocks/newsletter.njk" %}
+      {% elif block.type === "contact-form" %}
+        {% include "partials/blocks/contact-form.njk" %}
       {% elif block.type === "container" %}
         {% include "partials/blocks/container.njk" %}
       {% elif block.type === "text" %}
@@ -63,4 +65,3 @@ permalink: "/{{ item.lang.code }}/{{ item.page.slug }}/index.html"
   </article>
 {% endif %}
 {% endblock %}
-

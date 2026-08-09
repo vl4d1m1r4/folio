@@ -17,15 +17,15 @@ permalink: "/{{ lang.code }}/contact/index.html"
 {% block cta_band %}{% endblock %}
 
 {% block content %}
-<div class="max-w-xl mx-auto px-6 py-16">
+<div data-contact-block class="max-w-xl mx-auto px-6 py-16">
   <h1 class="text-4xl font-extrabold mb-3" style="color: var(--color-text);">{{ i18n[lang].contact_title }}</h1>
   <p class="mb-10" style="color: var(--color-muted);">{{ i18n[lang].contact_intro }}</p>
 
-  <div id="contact-success" class="hidden mb-6 rounded-lg px-5 py-4 text-sm" style="background: color-mix(in srgb, var(--color-accent) 10%, transparent); border: 1px solid var(--color-accent); color: var(--color-accent);">{{ i18n[lang].contact_success }}</div>
+  <div id="contact-success" data-contact-success class="hidden mb-6 rounded-lg px-5 py-4 text-sm" style="background: color-mix(in srgb, var(--color-accent) 10%, transparent); border: 1px solid var(--color-accent); color: var(--color-accent);">{{ i18n[lang].contact_success }}</div>
 
   <p class="mb-6 text-xs" style="color: var(--color-muted);"><span style="color: var(--color-accent);">*</span> Required</p>
 
-  <form id="contact-form" class="space-y-5" novalidate
+  <form id="contact-form" data-contact-form class="space-y-5" novalidate
         data-error="{{ i18n[lang].contact_error }}">
     <div class="grid grid-cols-2 gap-4">
       <div>
@@ -53,7 +53,7 @@ permalink: "/{{ lang.code }}/contact/index.html"
       <label class="block text-sm font-medium mb-1" style="color: var(--color-text);">{{ i18n[lang].contact_message }} <span style="color: var(--color-accent);">*</span></label>
       <textarea name="message" required rows="5" class="rounded px-3 py-2 w-full focus:outline-none text-sm resize-y" style="border: 1px solid var(--color-border); background: var(--color-bg-surface); color: var(--color-text);"></textarea>
     </div>
-    <div id="contact-error" class="hidden text-sm" style="color: var(--color-destructive, #e02424);"></div>
+    <div id="contact-error" data-contact-error class="hidden text-sm" style="color: var(--color-destructive, #e02424);"></div>
     <button type="submit" class="w-full py-3 font-semibold transition-colors text-sm text-white" style="background: var(--color-accent); border-radius: var(--radius-button);">
       {{ i18n[lang].contact_submit }}
     </button>

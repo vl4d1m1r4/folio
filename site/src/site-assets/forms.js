@@ -2,10 +2,11 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   // ── Contact form ──────────────────────────────────────────────────────────
-  const form = document.getElementById("contact-form");
-  if (form) {
-    const successMsg = document.getElementById("contact-success");
-    const errorMsg = document.getElementById("contact-error");
+  document.querySelectorAll("[data-contact-form]").forEach((form) => {
+    const wrapper = form.closest("[data-contact-block]") ?? form.parentElement;
+    const successMsg = wrapper?.querySelector("[data-contact-success]");
+    const errorMsg = wrapper?.querySelector("[data-contact-error]");
+    const submit = form.querySelector('button[type="submit"]');
     const errorText =
       form.dataset.error || "Something went wrong. Please try again.";
 
@@ -15,6 +16,8 @@ document.addEventListener("DOMContentLoaded", () => {
         errorMsg.textContent = "";
         errorMsg.classList.add("hidden");
       }
+      if (submit) submit.disabled = true;
+      form.setAttribute("aria-busy", "true");
 
       const data = Object.fromEntries(new FormData(form).entries());
 
@@ -36,9 +39,12 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMsg.textContent = err.message || errorText;
           errorMsg.classList.remove("hidden");
         }
+      } finally {
+        form.removeAttribute("aria-busy");
+        if (submit) submit.disabled = false;
       }
     });
-  }
+  });
 
   // ── Newsletter subscribe blocks (multiple on a page) ──────────────────────
   document.querySelectorAll(".newsletter-subscribe-form").forEach((form) => {

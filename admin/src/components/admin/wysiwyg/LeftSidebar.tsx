@@ -63,6 +63,7 @@ const PALETTE: {
       "image-text",
       "testimonials",
       "newsletter",
+      "contact-form",
     ] as BlockType[],
     icons: {
       hero: <HeroIcon />,
@@ -73,6 +74,7 @@ const PALETTE: {
       "image-text": <ImageTextIcon />,
       testimonials: <TestimonialsIcon />,
       newsletter: <NewsletterIcon />,
+      "contact-form": <ContactFormIcon />,
     },
   },
   {
@@ -583,6 +585,8 @@ function BlockTypeIcon({
       return <TestimonialsIcon size={size} />;
     case "newsletter":
       return <NewsletterIcon size={size} />;
+    case "contact-form":
+      return <ContactFormIcon size={size} />;
     case "article-grid":
       return <ArticleGridIcon size={size} />;
     case "article-card":
@@ -764,6 +768,22 @@ function NewsletterIcon({ size = 18 }: { size?: number }) {
     >
       <rect x="1" y="3" width="14" height="10" rx="1.5" />
       <path d="M1 5l7 5 7-5" />
+    </svg>
+  );
+}
+
+function ContactFormIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="2" y="1.5" width="12" height="13" rx="1.5" />
+      <path d="M4.5 5h7M4.5 8h7M4.5 11h4" />
     </svg>
   );
 }
