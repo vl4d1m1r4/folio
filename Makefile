@@ -16,9 +16,11 @@ setup:
 
 # ── Dev: start backend + site (Eleventy) in watch mode ─────────────────────────
 dev:
-	@echo "→ Starting backend on :8080 and site on :8081…"
-	cd backend && go run ./cmd/server/main.go & \
-	cd site && npm run dev
+	@set -a; [ -f .env ] && . ./.env; set +a; \
+	port="$${PORT:-8080}"; \
+	echo "→ Starting backend on :$$port and site on :8081…"; \
+	(cd backend && go run ./cmd/server/main.go) & \
+	cd site && BACKEND_URL="http://localhost:$$port" npm run dev
 
 # ── Build: compile Go binary + build site ──────────────────────────────────────
 build:
