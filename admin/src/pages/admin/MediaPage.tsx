@@ -86,6 +86,17 @@ export default function MediaPage() {
         Drop images here or click to browse
       </div>
 
+      {uploadMutation.isError && (
+        <div
+          role="alert"
+          className="mb-6 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {uploadMutation.error instanceof Error
+            ? uploadMutation.error.message
+            : "Upload failed"}
+        </div>
+      )}
+
       {/* Grid */}
       {files.length === 0 ? (
         <div className="text-center text-(--color-muted) text-sm py-12">

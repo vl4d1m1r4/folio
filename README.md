@@ -7,7 +7,7 @@ A self-hostable, multilingual blog platform you can deploy in minutes.
 ### Content management
 - **Articles** — create and publish posts with a rich-text editor (bold, italic, headings, links, images, lists, tables); cover image, per-language translations, custom slugs, tags, author, and publish date
 - **Custom pages** — build free-form pages with the visual block editor and link them in the navigation
-- **Media library** — upload images and files; pick them directly inside the article editor or from any block inspector
+- **Media library** — upload images and files; JPEG and PNG uploads are resized and converted to WebP when `cwebp` is available
 - **Tags** — manage content tags in Settings → General; reflected live in the article editor and public tag filter
 - **Contact submissions** — view and manage enquiries submitted through the public contact form
 - **Newsletter** — view and export the subscriber list; subscribers opt in via the public unsubscribe page
@@ -382,4 +382,3 @@ Requires an Azure AD app registration with the `Mail.Send` application permissio
 ## License
 
 AGPL-3.0 license
-

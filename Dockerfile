@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/create-admin ./cm
 FROM node:20-alpine
 
 # bash is required by site/build.sh and the admin rebuild handler
-RUN apk --no-cache add ca-certificates tzdata bash
+RUN apk --no-cache add ca-certificates tzdata bash libwebp-tools
 
 # Install Eleventy site dependencies so npm is not needed at container runtime
 WORKDIR /app/site

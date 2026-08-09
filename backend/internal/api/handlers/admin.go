@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -16,7 +15,6 @@ import (
 	"folio/internal/config"
 	"folio/internal/models"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -290,8 +288,7 @@ func (h *AdminHandler) UploadMedia(c echo.Context) error {
 		return respondError(c, http.StatusBadRequest, "file is required")
 	}
 
-	const maxSize = 20 << 20 // 20 MB
-	if file.Size > maxSize {
+	if file.Size > maxUploadSize {
 		return respondError(c, http.StatusRequestEntityTooLarge, "file exceeds 20 MB limit")
 	}
 
@@ -301,31 +298,28 @@ func (h *AdminHandler) UploadMedia(c echo.Context) error {
 	}
 	defer src.Close()
 
-	ext := filepath.Ext(file.Filename)
-	filename := fmt.Sprintf("%s%s", uuid.NewString(), ext)
-	dst, err := os.Create(filepath.Join(h.uploadDir, filename))
+	stored, err := storeMediaUpload(src, file.Filename, h.uploadDir, optimizeImageWithCWebP)
 	if err != nil {
-		return respondError(c, http.StatusInternalServerError, "failed to save file")
-	}
-	defer dst.Close()
-
-	if _, err = io.Copy(dst, src); err != nil {
-		return respondError(c, http.StatusInternalServerError, "failed to write file")
-	}
-
-	ct := file.Header.Get("Content-Type")
-	if ct == "" {
-		ct = "application/octet-stream"
+		switch {
+		case errors.Is(err, errUploadTooLarge):
+			return respondError(c, http.StatusRequestEntityTooLarge, err.Error())
+		case errors.Is(err, errInvalidImage), errors.Is(err, errImageTooLarge):
+			return respondError(c, http.StatusUnsupportedMediaType, err.Error())
+		default:
+			log.Printf("[media] failed to store %q: %v", file.Filename, err)
+			return respondError(c, http.StatusInternalServerError, "failed to save file")
+		}
 	}
 
 	mf := models.MediaFile{
-		Filename:     filename,
+		Filename:     stored.Filename,
 		OriginalName: file.Filename,
-		MimeType:     ct,
-		SizeBytes:    file.Size,
+		MimeType:     stored.MimeType,
+		SizeBytes:    stored.Size,
 	}
 	id, err := h.repo.CreateMediaFile(c.Request().Context(), mf)
 	if err != nil {
+		_ = os.Remove(stored.Path)
 		return respondError(c, http.StatusInternalServerError, "failed to record media")
 	}
 	mf.ID = id

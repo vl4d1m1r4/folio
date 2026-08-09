@@ -50,6 +50,18 @@ if ! command -v node &>/dev/null; then
 fi
 echo "    node $(node --version), npm $(npm --version)"
 
+echo "==> Installing WebP image tools..."
+if ! command -v cwebp &>/dev/null; then
+    if command -v apt-get &>/dev/null; then
+        apt-get update
+        apt-get install -y webp
+    elif command -v dnf &>/dev/null; then
+        dnf install -y libwebp-tools
+    else
+        echo "WARNING: cwebp is unavailable; image uploads will be stored without optimization" >&2
+    fi
+fi
+
 echo "==> Writing /etc/folio.env..."
 cat > /etc/folio.env <<EOF
 PORT=8082
