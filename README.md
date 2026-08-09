@@ -17,7 +17,7 @@ A self-hostable, multilingual blog platform you can deploy in minutes.
 - **Block palette** — three categories of blocks:
   - *Layout:* Container, Slideshow
   - *Content:* Text, Image, Button
-  - *Templates:* Hero, CTA Band, Rich Text, Image + Text, Testimonials, Newsletter Subscribe, Featured Articles, Latest Articles
+  - *Templates:* Hero, Gallery, CTA Band, Rich Text, Image + Text, Testimonials, Newsletter Subscribe, Featured Articles, Latest Articles
 - **Article blocks** — Article Grid and Article Card blocks with configurable field slots (image, title, excerpt, date, tag) for embedding article lists anywhere on a page
 - **Header & footer builders** — dedicated builders with Nav Links, Sub-navigation, Social Links, and preset blocks; live preview with your active theme applied
 - **Layers panel** — tree view of all blocks with reorder (drag or arrow buttons), hide/show toggle, and delete
@@ -382,4 +382,3 @@ Requires an Azure AD app registration with the `Mail.Send` application permissio
 ## License
 
 AGPL-3.0 license
-

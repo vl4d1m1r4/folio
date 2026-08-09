@@ -1,4 +1,10 @@
-import { useState, useCallback, useEffect, type ReactNode } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from "react";
 import type {
   BlockType,
   HomeBlock,
@@ -103,6 +109,8 @@ export function WysiwygShell({
     null,
   );
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  const blocksRef = useRef(blocks);
+  blocksRef.current = blocks;
 
   function toggleCollapsed(id: string) {
     setCollapsedIds((prev) => {
@@ -116,10 +124,11 @@ export function WysiwygShell({
   // ── Block tree helpers ───────────────────────────────────────────────────────
 
   function anyBlocks(): AnyBlock[] {
-    return blocks as AnyBlock[];
+    return blocksRef.current as AnyBlock[];
   }
 
   function commit(updated: AnyBlock[]) {
+    blocksRef.current = updated;
     (onBlocksChange as (b: typeof updated) => void)(updated);
   }
 

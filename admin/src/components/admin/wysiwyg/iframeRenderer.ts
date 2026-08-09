@@ -132,6 +132,10 @@ export function buildSrcdoc(
     .slideshow-dots--vertical { flex-direction:column; bottom:auto; left:auto; right:.75rem; top:50%; transform:translateY(-50%); }
     .slideshow-dot { width:.5rem; height:.5rem; border-radius:50%; background:rgba(255,255,255,.5); border:none; cursor:pointer; padding:0; }
     .slideshow-dot.active { background:#fff; }
+    .gallery-preview-grid { display:grid; grid-template-columns:repeat(var(--gallery-columns,3),minmax(0,1fr)); gap:1rem; }
+    @media (max-width:767px) { .gallery-preview-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+    @media (max-width:479px) { .gallery-preview-grid { grid-template-columns:1fr; } }
+    .gallery-preview-grid[data-columns="1"] { grid-template-columns:1fr; }
   </style>
 </head>
 <body>
@@ -245,6 +249,8 @@ function blockToHtml(
       return containerToHtml(block, activeLang, mode, navSnapshot, articleCtx);
     case "slideshow":
       return slideshowToHtml(block, activeLang, mode, navSnapshot, articleCtx);
+    case "gallery":
+      return galleryToHtml(block);
     case "text":
       return textToHtml(block, activeLang, mode);
     case "image":
@@ -284,6 +290,41 @@ function blockToHtml(
     default:
       return templatePlaceholderHtml(block);
   }
+}
+
+// ── Gallery ──────────────────────────────────────────────────────────────────
+
+function galleryToHtml(block: RenderBlock): string {
+  const c = block.config;
+  const columns = Math.min(4, Math.max(1, Number(c.columns) || 3));
+  const imageHeight = Math.min(
+    800,
+    Math.max(120, Number(c.imageHeight) || 280),
+  );
+  const items = Array.isArray(c.items)
+    ? (c.items as Array<{ src?: string; alt?: string; caption?: string }>).filter(
+        (item) => item.src,
+      )
+    : [];
+  const label = `<span class="wysiwyg-label">▦ Gallery</span>`;
+  const elementId = (c.elementId as string) || "";
+  const idAttr = elementId ? ` id="${escAttr(elementId)}"` : "";
+  const customStyle = (c.customStyle as string) || "";
+
+  if (items.length === 0) {
+    return `<div data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="gallery"${idAttr} class="block-placeholder" style="${escAttr(customStyle)}">${label}<span class="bp-label">Gallery</span><span>Select this block to add images</span></div>`;
+  }
+
+  const images = items
+    .map((item) => {
+      const caption = item.caption
+        ? `<figcaption style="padding-top:.5rem;font-size:.875rem;color:var(--color-muted,#6b7280);">${escHtml(item.caption)}</figcaption>`
+        : "";
+      return `<figure style="margin:0;min-width:0;"><img src="${escAttr(item.src ?? "")}" alt="${escAttr(item.alt ?? "")}" style="display:block;width:100%;height:${imageHeight}px;object-fit:cover;border-radius:var(--radius-card,8px);" />${caption}</figure>`;
+    })
+    .join("");
+
+  return `<section data-wysiwyg-id="${escAttr(block.id)}" data-wysiwyg-type="gallery"${idAttr} style="position:relative;${escAttr(customStyle)}">${label}<div class="gallery-preview-grid" data-columns="${columns}" style="--gallery-columns:${columns};">${images}</div></section>`;
 }
 
 // ── Container ─────────────────────────────────────────────────────────────────

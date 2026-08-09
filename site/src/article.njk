@@ -22,6 +22,9 @@ permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
     {% if block.type === "hero" %}
       {% set b = block %}
       {% include "partials/blocks/hero.njk" %}
+    {% elif block.type === "gallery" %}
+      {% set b = block %}
+      {% include "partials/blocks/gallery.njk" %}
     {% elif block.type === "featured-articles" %}
       {% set b = block %}
       {% include "partials/blocks/featured-articles.njk" %}
@@ -134,8 +137,4 @@ permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
   </div>
 </div>
 {% endif %}
-{% endblock %}
-
-{% block scripts %}
-<script src="/site-assets/gallery.js" defer></script>
 {% endblock %}

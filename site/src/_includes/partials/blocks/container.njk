@@ -95,6 +95,7 @@
       {%- set b = child %}
       {%- set block = b -%}
       {%- if child.type === "hero" %}{%- include "partials/blocks/hero.njk" %}
+      {%- elif child.type === "gallery" %}{%- include "partials/blocks/gallery.njk" %}
       {%- elif child.type === "featured-articles" %}{%- include "partials/blocks/featured-articles.njk" %}
       {%- elif child.type === "latest-articles" %}{%- include "partials/blocks/latest-articles.njk" %}
       {%- elif child.type === "cta-band" %}{%- include "partials/blocks/cta-band.njk" %}

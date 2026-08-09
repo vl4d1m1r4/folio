@@ -200,7 +200,81 @@ img {
     padding-right: 1rem;
 }
 
-/* ── Image gallery lightbox ──────────────────────────────────────────────── */
+/* ── Gallery block and image lightbox ───────────────────────────────────── */
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--gallery-columns, 3), minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.gallery-grid[data-columns="1"] {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.gallery-item {
+    min-width: 0;
+    margin: 0;
+}
+
+.gallery-image-button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-card, 8px);
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.gallery-image-button:focus-visible {
+    outline: 3px solid var(--color-accent, #1a56db);
+    outline-offset: 3px;
+}
+
+.gallery-image {
+    display: block;
+    width: 100%;
+    height: var(--gallery-image-height, 280px);
+    object-fit: cover;
+    border-radius: var(--radius-card, 8px);
+}
+
+.gallery-image-button .gallery-image {
+    transition: transform 180ms ease;
+}
+
+.gallery-image-button:hover .gallery-image {
+    transform: scale(1.02);
+}
+
+.gallery-caption {
+    padding-top: 0.5rem;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 767px) {
+    .gallery-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .gallery-grid[data-columns="1"] {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 479px) {
+    .gallery-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gallery-image {
+        height: min(var(--gallery-image-height, 280px), 70vw);
+    }
+}
 
 #gallery-overlay {
     display: none;
@@ -213,6 +287,10 @@ img {
 
 #gallery-overlay.active {
     display: flex;
+}
+
+#gallery-overlay [hidden] {
+    display: none;
 }
 
 #gallery-backdrop {
@@ -229,6 +307,7 @@ img {
     justify-content: center;
     max-width: 90vw;
     max-height: 90vh;
+    flex-direction: column;
 }
 
 #gallery-img {
@@ -238,6 +317,15 @@ img {
     border-radius: 4px;
     user-select: none;
     display: block;
+}
+
+#gallery-caption {
+    max-width: min(80ch, 90vw);
+    padding-top: 0.75rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    text-align: center;
 }
 
 #gallery-close {

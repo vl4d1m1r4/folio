@@ -1,0 +1,44 @@
+{% set galleryItems = b.config.items if b.config.items and b.config.items.length else [] %}
+{% if galleryItems | length %}
+{%- if _inContainer -%}
+<div class="gallery-block w-full"{% if b.config.elementId %} id="{{ b.config.elementId }}"{% endif %}{% if b.config.customStyle %} style="{{ b.config.customStyle }}"{% endif %}>
+{%- else -%}
+<section class="gallery-block max-w-5xl mx-auto px-6 py-10"{% if b.config.elementId %} id="{{ b.config.elementId }}"{% endif %}{% if b.config.customStyle %} style="{{ b.config.customStyle }}"{% endif %}>
+{%- endif -%}
+  <div
+    class="gallery-grid"
+    data-columns="{{ b.config.columns | default(3) }}"
+    {% if b.config.lightbox !== false %}data-gallery{% endif %}
+    style="--gallery-columns: {{ b.config.columns | default(3) }}; --gallery-image-height: {{ b.config.imageHeight | default(280) }}px;"
+  >
+    {% for item in galleryItems %}
+      {% if item.src %}
+        <figure class="gallery-item">
+          {% if b.config.lightbox !== false %}
+            <button
+              type="button"
+              class="gallery-image-button"
+              data-gallery-item
+              data-gallery-caption="{{ item.caption or '' }}"
+              aria-label="{{ item.alt or item.caption or ('Open gallery image ' + loop.index) }}"
+            >
+          {% endif %}
+              <img
+                src="{{ item.src }}"
+                alt="{{ item.alt or '' }}"
+                class="gallery-image"
+                loading="lazy"
+                decoding="async"
+              />
+          {% if b.config.lightbox !== false %}
+            </button>
+          {% endif %}
+          {% if item.caption %}
+            <figcaption class="gallery-caption">{{ item.caption }}</figcaption>
+          {% endif %}
+        </figure>
+      {% endif %}
+    {% endfor %}
+  </div>
+{%- if _inContainer -%}</div>{%- else -%}</section>{%- endif -%}
+{% endif %}

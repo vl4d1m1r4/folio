@@ -21,6 +21,7 @@ import type { BlockType } from "../../api/types";
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
   hero: "Hero",
+  gallery: "Gallery",
   "featured-articles": "Featured Articles",
   "latest-articles": "Latest Articles",
   "cta-band": "CTA Band",
@@ -49,6 +50,15 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   "article-tag": "Article Tag",
   "article-body": "Article Body",
 };
+
+export function applyGalleryDefaults(config: Record<string, unknown>): void {
+  config.items = [];
+  config.columns = 3;
+  config.imageHeight = 280;
+  config.lightbox = true;
+  config.elementId = null;
+  config.customStyle = null;
+}
 
 // ── Default configs ───────────────────────────────────────────────────────────
 
@@ -1179,6 +1189,7 @@ const PALETTE_GROUPS: { label: string; types: BlockType[] }[] = [
     label: "Templates",
     types: [
       "hero",
+      "gallery",
       "featured-articles",
       "latest-articles",
       "cta-band",

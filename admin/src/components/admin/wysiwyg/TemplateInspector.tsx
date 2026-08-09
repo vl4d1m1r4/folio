@@ -3,6 +3,7 @@
  * Handles both home mode (text in translations[lang]) and page mode (text in config).
  */
 import { useState } from "react";
+import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import type {
   HomeBlock,
   PageBlock,
@@ -159,6 +160,188 @@ function BlockTypeFields({
           </div>
         </>
       );
+
+    case "gallery": {
+      type GalleryItem = { src: string; alt: string; caption: string };
+      const items = Array.isArray(block.config.items)
+        ? (block.config.items as GalleryItem[])
+        : [];
+      const updateItems = (next: GalleryItem[]) =>
+        onConfigChange("items", next);
+      const updateItem = (index: number, patch: Partial<GalleryItem>) => {
+        updateItems(
+          items.map((item, itemIndex) =>
+            itemIndex === index ? { ...item, ...patch } : item,
+          ),
+        );
+      };
+      const moveItem = (index: number, direction: -1 | 1) => {
+        const target = index + direction;
+        if (target < 0 || target >= items.length) return;
+        const next = [...items];
+        [next[index], next[target]] = [next[target], next[index]];
+        updateItems(next);
+      };
+
+      return (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1">Columns</label>
+              <select
+                value={(block.config.columns as number) ?? 3}
+                onChange={(e) =>
+                  onConfigChange("columns", Number(e.target.value))
+                }
+                className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
+              >
+                {[1, 2, 3, 4].map((count) => (
+                  <option key={count} value={count}>
+                    {count}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">
+                Image height
+              </label>
+              <input
+                type="number"
+                min={120}
+                max={800}
+                step={10}
+                value={(block.config.imageHeight as number) ?? 280}
+                onChange={(e) =>
+                  onConfigChange("imageHeight", Number(e.target.value))
+                }
+                className="w-full px-2 py-1.5 border border-(--color-border) rounded text-sm bg-(--color-bg)"
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 text-xs font-medium">
+            <input
+              type="checkbox"
+              checked={block.config.lightbox !== false}
+              onChange={(e) =>
+                onConfigChange("lightbox", e.target.checked)
+              }
+            />
+            Open images in lightbox
+          </label>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-medium">Images</label>
+              <button
+                type="button"
+                onClick={() =>
+                  updateItems([
+                    ...items,
+                    { src: "", alt: "", caption: "" },
+                  ])
+                }
+                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-(--color-border) hover:bg-(--color-bg-surface)"
+              >
+                <Plus size={13} aria-hidden="true" />
+                Add image
+              </button>
+            </div>
+
+            {items.length === 0 && (
+              <p className="text-xs text-(--color-muted)">
+                Add images from the media library.
+              </p>
+            )}
+
+            {items.map((item, index) => (
+              <div
+                key={index}
+                className="rounded border border-(--color-border) p-3 space-y-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold uppercase text-(--color-muted)">
+                    Image {index + 1}
+                  </span>
+                  <div className="flex items-center">
+                    <button
+                      type="button"
+                      title="Move image up"
+                      aria-label="Move image up"
+                      disabled={index === 0}
+                      onClick={() => moveItem(index, -1)}
+                      className="p-1 text-(--color-muted) hover:text-(--color-text) disabled:opacity-30"
+                    >
+                      <ChevronUp size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Move image down"
+                      aria-label="Move image down"
+                      disabled={index === items.length - 1}
+                      onClick={() => moveItem(index, 1)}
+                      className="p-1 text-(--color-muted) hover:text-(--color-text) disabled:opacity-30"
+                    >
+                      <ChevronDown size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Remove image"
+                      aria-label="Remove image"
+                      onClick={() =>
+                        updateItems(items.filter((_, i) => i !== index))
+                      }
+                      className="p-1 text-(--color-destructive)"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <ImagePickButton
+                  src={item.src}
+                  onPick={() => setMediaPicker(`gallery-${index}`)}
+                  onRemove={() => updateItem(index, { src: "" })}
+                />
+                <Field
+                  label="Alt text"
+                  value={item.alt ?? ""}
+                  onChange={(value) => updateItem(index, { alt: value })}
+                />
+                <Field
+                  label="Caption (optional)"
+                  value={item.caption ?? ""}
+                  onChange={(value) => updateItem(index, { caption: value })}
+                />
+              </div>
+            ))}
+          </div>
+
+          {mediaPicker?.startsWith("gallery-") && (
+            <MediaPickerModal
+              mode="image"
+              onSelect={(file) => {
+                const index = Number(mediaPicker.slice("gallery-".length));
+                if (Number.isInteger(index)) {
+                  updateItem(index, { src: `/uploads/${file.filename}` });
+                }
+                setMediaPicker(null);
+              }}
+              onClose={() => setMediaPicker(null)}
+            />
+          )}
+
+          <div className="pt-2 border-t border-(--color-border) divide-y divide-(--color-border)">
+            <ElementIdSection config={block.config} onChange={onConfigChange} />
+            <CustomStyleSection
+              config={block.config}
+              onChange={onConfigChange}
+            />
+          </div>
+        </>
+      );
+    }
 
     case "featured-articles":
     case "latest-articles":

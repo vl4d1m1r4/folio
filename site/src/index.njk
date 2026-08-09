@@ -20,6 +20,9 @@ permalink: "/{{ lang.code }}/index.html"
   {% if block.type === "hero" %}
     {% set b = block %}
     {% include "partials/blocks/hero.njk" %}
+  {% elif block.type === "gallery" %}
+    {% set b = block %}
+    {% include "partials/blocks/gallery.njk" %}
   {% elif block.type === "featured-articles" %}
     {% set b = block %}
     {% include "partials/blocks/featured-articles.njk" %}
@@ -65,4 +68,3 @@ permalink: "/{{ lang.code }}/index.html"
   {% endif %}
 {% endfor %}
 {% endblock %}
-
