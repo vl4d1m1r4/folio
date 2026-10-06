@@ -91,6 +91,31 @@ export function WysiwygShell({
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [viewportMode, setViewportMode] = useState<ViewportMode>("desktop");
   const [animating, setAnimating] = useState(false);
+
+  // ── Panel visibility ─────────────────────────────────────────────────────────
+  // Desktop: Blocks (left) and Inspector (right) are docked and can be hidden to
+  // give the canvas more room; the choice is remembered. Phones (< md): the
+  // canvas takes the full width and at most one panel slides over it as a drawer.
+  const isMobile = useIsMobile();
+  const [dockedPanels, setDockedPanels] = useState(readDockedPanels);
+  const [mobilePanel, setMobilePanel] = useState<"left" | "right" | null>(null);
+  const leftOpen = isMobile ? mobilePanel === "left" : dockedPanels.left;
+  const rightOpen = isMobile ? mobilePanel === "right" : dockedPanels.right;
+  const togglePanel = (side: "left" | "right") => {
+    if (isMobile) {
+      setMobilePanel((p) => (p === side ? null : side));
+      return;
+    }
+    setDockedPanels((p) => {
+      const next = { ...p, [side]: !p[side] };
+      try {
+        localStorage.setItem(PANELS_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* storage unavailable — keep in-memory state only */
+      }
+      return next;
+    });
+  };
   const [leftTabInternal, setLeftTabInternal] = useState<
     "add" | "layers" | "page"
   >("add");
@@ -378,36 +403,60 @@ export function WysiwygShell({
     ? (findBlock(anyBlocks(), selectedBlockId) as HomeBlock | PageBlock | null)
     : null;
 
+  // On phones, selecting a block (on the canvas, in Layers, or by adding one)
+  // opens the Inspector drawer so its settings are reachable.
+  useEffect(() => {
+    if (isMobile && selectedBlockId) setMobilePanel("right");
+  }, [isMobile, selectedBlockId]);
+
+  // Escape closes a mobile drawer; leaving the phone layout resets it.
+  useEffect(() => {
+    if (!isMobile) {
+      setMobilePanel(null);
+      return;
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobilePanel(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isMobile]);
+
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    // -m-6 counteracts AdminLayout's p-6; h-screen fills viewport
-    <div
-      className="-m-6 flex flex-col overflow-hidden"
-      style={{ height: "100vh" }}
-    >
+    // -m-6 counteracts AdminLayout's p-6; fills the viewport (minus AdminLayout's
+    // 3.5rem mobile top bar below md)
+    <div className="-m-6 flex flex-col overflow-hidden h-[calc(100dvh-3.5rem)] md:h-screen">
       {/* ── Top bar ── */}
-      <header className="h-14 shrink-0 bg-(--color-bg) border-b border-(--color-border) flex items-center justify-between px-4 z-10">
-        {/* Left: title */}
-        <div className="flex items-center gap-3">
+      <header className="h-14 shrink-0 bg-(--color-bg) border-b border-(--color-border) flex items-center justify-between gap-2 px-2 md:px-4 z-10">
+        {/* Left: Blocks panel toggle + title */}
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          <PanelToggle
+            side="left"
+            open={leftOpen}
+            onClick={() => togglePanel("left")}
+          />
           <div
-            className="w-7 h-7 rounded flex items-center justify-center text-white font-bold text-sm shrink-0"
+            className="hidden md:flex w-7 h-7 rounded items-center justify-center text-white font-bold text-sm shrink-0"
             style={{ background: "var(--color-accent)" }}
           >
             B
           </div>
-          <div>
-            <div className="font-semibold text-sm text-(--color-text) leading-tight">
+          <div className="min-w-0">
+            <div className="font-semibold text-sm text-(--color-text) leading-tight truncate">
               {title}
             </div>
             {subtitle && (
-              <div className="text-xs text-(--color-muted)">{subtitle}</div>
+              <div className="hidden md:block text-xs text-(--color-muted)">
+                {subtitle}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Center: viewport toggle */}
-        <div className="flex bg-(--color-bg-surface) rounded-lg p-0.5 border border-(--color-border)">
+        {/* Center: viewport toggle (on a phone the canvas is already phone-sized) */}
+        <div className="hidden md:flex bg-(--color-bg-surface) rounded-lg p-0.5 border border-(--color-border)">
           {(
             [
               { id: "desktop", label: "Desktop", icon: <DesktopIcon /> },
@@ -431,11 +480,11 @@ export function WysiwygShell({
         </div>
 
         {/* Right: save */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
           <button
             title={animating ? "Stop preview" : "Play animations"}
             onClick={() => setAnimating((a) => !a)}
-            className={`px-3 py-1.5 text-sm rounded border transition-colors ${
+            className={`hidden md:block px-3 py-1.5 text-sm rounded border transition-colors ${
               animating
                 ? "border-blue-500 bg-blue-50 text-blue-600"
                 : "border-(--color-border) text-(--color-muted) hover:text-(--color-text)"
@@ -444,7 +493,7 @@ export function WysiwygShell({
             {animating ? "■ Stop" : "▶ Animate"}
           </button>
           {serverError && (
-            <span className="text-xs text-(--color-destructive) max-w-[200px] truncate">
+            <span className="text-xs text-(--color-destructive) max-w-[120px] md:max-w-[200px] truncate">
               {serverError}
             </span>
           )}
@@ -456,7 +505,7 @@ export function WysiwygShell({
           <button
             onClick={onSave}
             disabled={saving}
-            className="px-4 py-1.5 text-sm text-white rounded disabled:opacity-50 transition-opacity"
+            className="px-3 md:px-4 py-1.5 text-sm text-white rounded disabled:opacity-50 transition-opacity whitespace-nowrap"
             style={{ background: "var(--color-accent)" }}
           >
             {saving
@@ -468,42 +517,58 @@ export function WysiwygShell({
           {onLoadDefaultTemplate && (
             <button
               onClick={onLoadDefaultTemplate}
-              className="px-3 py-1.5 text-sm border border-(--color-border) rounded text-(--color-muted) hover:text-(--color-text)"
+              className="hidden md:block px-3 py-1.5 text-sm border border-(--color-border) rounded text-(--color-muted) hover:text-(--color-text)"
             >
               Load default template
             </button>
           )}
+          <PanelToggle
+            side="right"
+            open={rightOpen}
+            onClick={() => togglePanel("right")}
+          />
         </div>
       </header>
 
       {/* ── Three panes ── */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
-        <LeftSidebar
-          mode={mode}
-          blocks={
-            blocks as (
-              | HomeBlock
-              | (PageBlock & { children?: (HomeBlock | PageBlock)[] })
-            )[]
-          }
-          selectedBlockId={selectedBlockId}
-          languages={languages}
-          activeLang={activeLang}
-          onActiveLangChange={onActiveLangChange}
-          onCopyBlocksFrom={onCopyBlocksFrom}
-          activeTab={leftTab}
-          onTabChange={setLeftTab}
-          onSelect={setSelectedBlockId}
-          onRemoveBlock={removeBlock}
-          onToggleVisibility={toggleVisibility}
-          onReorder={handleReorder}
-          onStartDrag={(type) => setPaletteDragType(type)}
-          onEndDrag={() => setPaletteDragType(null)}
-          onAddBlock={(type) => addBlock(type, null)}
-          pageSettingsNode={pageSettingsNode}
-          collapsedIds={collapsedIds}
-          onToggleCollapsed={toggleCollapsed}
-        />
+      <div className="relative flex-1 flex min-h-0 overflow-hidden">
+        {/* Phone: dim the canvas behind an open drawer; tap to close */}
+        {isMobile && mobilePanel && (
+          <div
+            className="absolute inset-0 z-20 bg-black/30"
+            onClick={() => setMobilePanel(null)}
+            aria-hidden="true"
+          />
+        )}
+
+        <div className={panelWrapperClass("left", leftOpen, isMobile)}>
+          <LeftSidebar
+            mode={mode}
+            blocks={
+              blocks as (
+                | HomeBlock
+                | (PageBlock & { children?: (HomeBlock | PageBlock)[] })
+              )[]
+            }
+            selectedBlockId={selectedBlockId}
+            languages={languages}
+            activeLang={activeLang}
+            onActiveLangChange={onActiveLangChange}
+            onCopyBlocksFrom={onCopyBlocksFrom}
+            activeTab={leftTab}
+            onTabChange={setLeftTab}
+            onSelect={setSelectedBlockId}
+            onRemoveBlock={removeBlock}
+            onToggleVisibility={toggleVisibility}
+            onReorder={handleReorder}
+            onStartDrag={(type) => setPaletteDragType(type)}
+            onEndDrag={() => setPaletteDragType(null)}
+            onAddBlock={(type) => addBlock(type, null)}
+            pageSettingsNode={pageSettingsNode}
+            collapsedIds={collapsedIds}
+            onToggleCollapsed={toggleCollapsed}
+          />
+        </div>
 
         <Canvas
           blocks={blocks as any}
@@ -528,20 +593,108 @@ export function WysiwygShell({
           articleCtx={articleCtx ?? undefined}
         />
 
-        <InspectorPanel
-          block={selectedBlock}
-          mode={mode}
-          activeLang={activeLang}
-          onConfigChange={updateBlockConfig}
-          onTransChange={updateBlockTranslation}
-          themeColors={themeColors}
-          navSnapshot={navSnapshot?.navLinks as NavLink[] | undefined}
-          footerSnapshot={navSnapshot?.footerLinks as NavLink[] | undefined}
-          socialSnapshot={navSnapshot?.socialLinks as SocialLink[] | undefined}
-          onAddChild={addChildBlock}
-        />
+        <div className={panelWrapperClass("right", rightOpen, isMobile)}>
+          <InspectorPanel
+            block={selectedBlock}
+            mode={mode}
+            activeLang={activeLang}
+            onConfigChange={updateBlockConfig}
+            onTransChange={updateBlockTranslation}
+            themeColors={themeColors}
+            navSnapshot={navSnapshot?.navLinks as NavLink[] | undefined}
+            footerSnapshot={navSnapshot?.footerLinks as NavLink[] | undefined}
+            socialSnapshot={navSnapshot?.socialLinks as SocialLink[] | undefined}
+            onAddChild={addChildBlock}
+          />
+        </div>
       </div>
     </div>
+  );
+}
+
+// ── Panel helpers ─────────────────────────────────────────────────────────────
+
+const PANELS_STORAGE_KEY = "folio-builder-panels";
+const MOBILE_QUERY = "(max-width: 767px)";
+
+function readDockedPanels(): { left: boolean; right: boolean } {
+  try {
+    const raw = localStorage.getItem(PANELS_STORAGE_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      return { left: p.left !== false, right: p.right !== false };
+    }
+  } catch {
+    /* ignore — default to both panels open */
+  }
+  return { left: true, right: true };
+}
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia(MOBILE_QUERY).matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return isMobile;
+}
+
+/** Docked flex column on desktop; a drawer over the canvas on phones. Hidden
+ *  panels stay mounted (display:none) so their scroll/tab state survives. */
+function panelWrapperClass(
+  side: "left" | "right",
+  open: boolean,
+  isMobile: boolean,
+): string {
+  if (!open) return "hidden";
+  if (!isMobile) return "flex shrink-0";
+  return `absolute inset-y-0 ${side === "left" ? "left-0" : "right-0"} z-30 flex max-w-[90vw] shadow-xl`;
+}
+
+function PanelToggle({
+  side,
+  open,
+  onClick,
+}: {
+  side: "left" | "right";
+  open: boolean;
+  onClick: () => void;
+}) {
+  const label = side === "left" ? "Blocks" : "Inspector";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`${open ? "Hide" : "Show"} ${label.toLowerCase()} panel`}
+      aria-label={`${open ? "Hide" : "Show"} ${label.toLowerCase()} panel`}
+      aria-pressed={open}
+      className={`flex items-center gap-1.5 px-2 py-1.5 rounded border text-sm transition-colors shrink-0 ${
+        open
+          ? "border-(--color-accent) text-(--color-accent) bg-(--color-bg-surface)"
+          : "border-(--color-border) text-(--color-muted) hover:text-(--color-text)"
+      }`}
+    >
+      <svg
+        viewBox="0 0 16 16"
+        width={16}
+        height={16}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
+        <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" />
+        {side === "left" ? (
+          <path d="M6 2.5v11" />
+        ) : (
+          <path d="M10 2.5v11" />
+        )}
+      </svg>
+      <span className="hidden lg:inline">{label}</span>
+    </button>
   );
 }
 
