@@ -220,6 +220,10 @@ func main() {
 	// 7. Echo setup
 	e := echo.New()
 	e.HideBanner = true
+	// Read the visitor's IP from X-Forwarded-For, but only when the request
+	// comes from a private/loopback address (Caddy, ONCE's proxy). Direct
+	// clients can't spoof it. Used by the rate limiter.
+	e.IPExtractor = echo.ExtractIPFromXFFHeader()
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
@@ -257,7 +261,12 @@ func main() {
 	api := e.Group("/api/v1")
 
 	// Auth
-	api.POST("/auth/login", authH.Login)
+	// Per-IP rate limits on public POST endpoints: slow down password
+	// guessing on login, and spam on forms that send email / store data.
+	loginLimit := jwtMiddleware.RateLimit(5)
+	formLimit := jwtMiddleware.RateLimit(10)
+
+	api.POST("/auth/login", authH.Login, loginLimit)
 	api.POST("/auth/refresh", authH.Refresh, jwtMiddleware.JWTMiddleware(jwtSecret))
 
 	// Public config
@@ -282,9 +291,9 @@ func main() {
 	api.GET("/pages/:slug", pagesH.GetPublicPage)
 
 	// Public forms
-	api.POST("/contact", contactH.SubmitContact)
-	api.POST("/newsletter/subscribe", newsletterH.Subscribe)
-	api.POST("/newsletter/unsubscribe", newsletterH.Unsubscribe)
+	api.POST("/contact", contactH.SubmitContact, formLimit)
+	api.POST("/newsletter/subscribe", newsletterH.Subscribe, formLimit)
+	api.POST("/newsletter/unsubscribe", newsletterH.Unsubscribe, formLimit)
 
 	// Admin (JWT protected)
 	admin := api.Group("/admin", jwtMiddleware.JWTMiddleware(jwtSecret))
