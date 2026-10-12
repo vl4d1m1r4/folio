@@ -50,9 +50,24 @@ export default async function () {
   const enStored = stored["en"] ?? {};
   const merged = { en: { ...EN_DEFAULTS, ...enStored } };
 
+  // Every configured language needs an entry, even with no saved strings,
+  // or its labels render empty.
+  let langCodes = Object.keys(stored);
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/config/languages`);
+    if (res.ok) {
+      const languages = await res.json();
+      if (Array.isArray(languages))
+        langCodes = [...new Set([...langCodes, ...languages.map((l) => l.code)])];
+    }
+  } catch {
+    console.warn("[folio] Could not fetch languages for ui-strings.");
+  }
+
   // For other languages, fall back key-by-key to the merged English values
-  for (const [lang, values] of Object.entries(stored)) {
+  for (const lang of langCodes) {
     if (lang === "en") continue;
+    const values = stored[lang] ?? {};
     merged[lang] = {};
     for (const key of Object.keys(EN_DEFAULTS)) {
       merged[lang][key] = values[key] || merged["en"][key];

@@ -94,7 +94,7 @@
           <div class="absolute right-0 top-full mt-1 rounded shadow-md min-w-20 hidden" style="background:var(--color-bg-surface);border:1px solid var(--color-border);" data-lang-menu>
             {% for l in config.languages %}
               {% if l.code !== lang %}
-                <a href="/{{ l.code }}/" class="block px-4 py-2 text-sm uppercase" style="color:var(--color-text);" onmouseover="this.style.background='var(--color-border)'" onmouseout="this.style.background=''">{{ l.code }}</a>
+                <a href="{{ l.code | langSwitchUrl(lang, collections.all) }}" class="block px-4 py-2 text-sm uppercase" style="color:var(--color-text);" onmouseover="this.style.background='var(--color-border)'" onmouseout="this.style.background=''">{{ l.code }}</a>
               {% endif %}
             {% endfor %}
           </div>

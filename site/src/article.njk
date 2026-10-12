@@ -3,6 +3,7 @@ pagination:
   data: articles.pages
   size: 1
   alias: item
+  addAllPagesToCollections: true
 permalink: "/{{ item.lang.code }}/articles/{{ item.article.slug }}.html"
 ---
 {% extends "layouts/base.njk" %}

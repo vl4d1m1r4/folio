@@ -77,6 +77,48 @@ export default function (eleventyConfig) {
   // ── Nunjucks environment ────────────────────────────────────────────────────
   eleventyConfig.setNunjucksEnvironmentOptions({ throwOnUndefined: false });
 
+  // ── Language switcher URL ───────────────────────────────────────────────────
+  // Link to the same page in another language. Articles and custom pages are
+  // matched by ID, since each translation can have its own slug
+  // (/en/articles/hello.html → /mk/articles/zdravo.html). Other pages swap the
+  // language prefix (/en/contact/ → /mk/contact/). Falls back to that
+  // language's home page if no matching page was built.
+  // Usage: {{ l.code | langSwitchUrl(lang, collections.all) }}
+  const langIndexCache = new WeakMap();
+  function buildLangIndex(allPages) {
+    const urls = new Set();
+    const keyByUrl = new Map(); // "/en/articles/hello.html" → "article:3"
+    const urlByKey = new Map(); // "article:3|mk" → "/mk/articles/zdravo.html"
+    for (const p of allPages) {
+      if (!p.url) continue;
+      urls.add(p.url);
+      const item = p.data?.item;
+      const langCode = item?.lang?.code;
+      const key = item?.article?.id != null ? `article:${item.article.id}`
+        : item?.page?.id != null ? `page:${item.page.id}`
+        : null;
+      if (!key || !langCode) continue;
+      keyByUrl.set(p.url, key);
+      urlByKey.set(`${key}|${langCode}`, p.url);
+    }
+    return { urls, keyByUrl, urlByKey };
+  }
+  eleventyConfig.addFilter("langSwitchUrl", function (toLang, fromLang, allPages) {
+    const home = `/${toLang}/`;
+    const url = this.page?.url;
+    const prefix = `/${fromLang}/`;
+    if (!url || !url.startsWith(prefix) || !Array.isArray(allPages)) return home;
+    let index = langIndexCache.get(allPages);
+    if (!index) {
+      index = buildLangIndex(allPages);
+      langIndexCache.set(allPages, index);
+    }
+    const key = index.keyByUrl.get(url);
+    if (key) return index.urlByKey.get(`${key}|${toLang}`) ?? home;
+    const target = home + url.slice(prefix.length);
+    return index.urls.has(target) ? target : home;
+  });
+
   // ── Date filter ─────────────────────────────────────────────────────────────
   // Usage: {{ article.published_at | localizedDate(lang.code) }}
   eleventyConfig.addFilter("localizedDate", (dateStr, langCode) => {
